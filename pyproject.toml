@@ -1,7 +1,7 @@
 [project]
 name = "xiarch-assessment"
-version = "0.1.0"
-description = "Autonomous Research Agent - LangGraph + Groq + Tavily"
+version = "0.2.0"
+description = "Autonomous Research Agent — chat + deep research, RAG, self-improving, multi-provider gateway"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

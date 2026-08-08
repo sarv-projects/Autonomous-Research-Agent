@@ -1,150 +1,140 @@
 # Autonomous Research Agent
 
-An autonomous AI agent that researches any topic by searching the web, analyzing results, and generating a structured Markdown report. All decisions (what to search, when to stop, how to structure findings) are made by an LLM -- no hardcoded rules.
+Enterprise-grade autonomous research agent with **durable execution, bias mitigation, token optimization, and mathematical rendering**. Built with LangGraph, Temporal.io, and a production-style LLM gateway.
 
-Built with: **LangGraph** (agent orchestration), **Groq** (LLM inference), **Tavily** (web search API).
+| | |
+|--|--|
+| **Specs (target product)** | [`docs/SPEC.md`](docs/SPEC.md) · [full index](docs/INDEX.md) |
+| **Audit (built vs target)** | [`docs/AUDIT.md`](docs/AUDIT.md) |
+| **Install** | [`docs/INSTALL.md`](docs/INSTALL.md) |
 
-## Prerequisites
+---
 
-- Python 3.14+
-- **uv** (Python package manager) -- install it:
+## Built today vs target
 
-  ```bash
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
-  Or see other install methods at https://docs.astral.sh/uv/#installation
+| Built **now** (code) | Target (docs / roadmap) |
+|----------------------|-------------------------|
+| 9-node research graph, max 3 loops | Multi-iter RAG + progressive section write |
+| Tavily search + extract | + MCP (wiki, Firecrawl, Exa), MinerU/Nougat PDF |
+| Gateway: Groq / OpenAI / OpenRouter **with API keys** | Empty URL → OpenCode free; Claude/Gemini/NIM/DeepSeek/… |
+| JSON search history | Vault + self-improve traces |
+| Ops dashboard | Full chat + research web product |
+| `main.py "topic"` · `--history` | `chat` · `doctor` · `eval` · modes |
+| Basic research loop | **NEW: Temporal durable execution (24h+ runs)** |
+| Single-model approach | **NEW: Bias mitigation via adversarial triangulation** |
+| Raw chunk RAG | **NEW: Factoid extraction (90% token reduction)** |
+| Basic source retrieval | **NEW: Retriever Guard (source verification)** |
+| Plain markdown output | **NEW: Mathematical rendering (MathJax/KaTeX)** |
 
-- A **Groq API key** (free) -- get one at https://console.groq.com
-- A **Tavily API key** (free) -- get one at https://app.tavily.com
+See **[docs/AUDIT.md](docs/AUDIT.md)** for the full checklist.
 
-## Setup
+---
+
+## New capabilities (roadmap)
+
+The agent is evolving with advanced research capabilities:
+
+### 🔄 Durable Execution (Phase C3)
+- **Temporal.io integration** for 24h+ research runs
+- Automatic crash recovery and workflow resumption
+- Human-in-the-loop pause/approval capabilities
+- Distributed execution across multiple workers
+
+### ⚖️ Bias Mitigation (Phase E)
+- **Adversarial triangulation** for subjective/controversial queries
+- Multi-provider setup (OpenAI, Anthropic, Google)
+- Pro/Con/Neutral agent system with bias assessment scoring
+- Mechanically cancels model bias via cross-agent critique
+
+### 🎯 Token Optimization (Phase F)
+- **Factoid extraction pipeline** for 90% token reduction
+- Local inference with Ollama/vLLM (Llama 3 8B, Phi-3)
+- Structured JSON factoids (entity, relation, event, statistic, definition)
+- Gap-aware evidence assembly (AdaGATE pattern)
+
+### 🛡️ Source Verification (Phase G)
+- **Retriever Guard** for source credibility filtering
+- Domain reputation analysis and content freshness detection
+- Blocks low-quality sources (SEO spam, content farms)
+- Promotes high-quality sources (peer-reviewed, official docs)
+
+### 📐 Mathematical Rendering (Phase L)
+- **MathJax/KaTeX integration** for LaTeX rendering
+- Inline math (`$...$`) and block math (`$$...$$`) support
+- Multi-modal model integration for equation images
+- Export formats: HTML with MathJax, PDF with proper typesetting
+
+See [ROADMAP.md](docs/ROADMAP.md) for implementation phases and details.
+
+---
+
+## Quick start (what works now)
+
+### Prerequisites
+
+- Python **3.14+**, [uv](https://docs.astral.sh/uv/)
+- **`GROQ_API_KEY`** (or `OPENAI_API_KEY` / `OPENROUTER_API_KEY`)
+- **`TAVILY_API_KEY`** for web search
+- **Optional:** Temporal Server (for durable execution) — see [INSTALL.md](docs/INSTALL.md)
+- **Optional:** Ollama/vLLM (for factoid extraction) — see [INSTALL.md](docs/INSTALL.md)
+
+### Bash
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd xiarch_assessment
-
-# 2. Create virtual environment and install dependencies
-uv venv
-uv sync
-
-# 3. Create .env file with your API keys
-cp .env.example .env
-# Then edit .env and paste your actual keys:
-#   GROQ_API_KEY=gsk_abc123...
-#   TAVILY_API_KEY=tvly-xyz789...
-```
-
-## Usage
-
-```bash
-# Research a topic
-uv run python main.py "your research topic here"
-
-# View past searches
-uv run python main.py --history
-```
-
-### Example
-
-```bash
+git clone <repo-url> && cd Autonomous-Research-Agent
+bash scripts/install.sh
+# edit .env with Groq + Tavily keys
 uv run python main.py "latest developments in quantum computing"
+uv run python main.py --history
+uv run python -m src.dashboard --port 8080
+uv run python test_gateway.py
 ```
 
-The agent will:
-1. Analyze your query via LLM
-2. Generate 3-5 search queries
-3. Run all searches in parallel (5 concurrent)
-4. Extract full content from top results
-5. Deduplicate and filter using LLM
-6. Evaluate if more research is needed (loops up to 3 times)
-7. Synthesize a structured report
-8. Save to `reports/` directory as Markdown
+### PowerShell
 
-### Expected Output
-
-```
-============================================================
-  RESEARCH: latest developments in quantum computing
-============================================================
-
-[0] Analyzing your query...
-[1] Planning search queries (iteration 1)...
-[1] Searching the web...
-  Found 21 unique results
-...
-[3] Synthesizing research report...
-  Report generated (8085 chars)
-
-============================================================
-  RESEARCH COMPLETE
-============================================================
-  Time: 137.4s
-  Iterations: 3
-  Findings: 22
-  Sources: 24
-  Report: /home/user/xiarch_assessment/reports/research_...md
+```powershell
+git clone <repo-url>; cd Autonomous-Research-Agent
+.\scripts\install.ps1
+# edit .env
+uv run python main.py "your research topic"
 ```
 
-Your report is at the path shown under "Report:".
+---
 
-## Project Structure
+## Documentation
+
+| Doc | Role |
+|------|------|
+| [SPEC.md](docs/SPEC.md) | Product requirements (target) |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Engine / RAG / progressive write design |
+| [PROVIDERS.md](docs/PROVIDERS.md) | Official LLM bases & model IDs |
+| [ROADMAP.md](docs/ROADMAP.md) | Phases A–L (including new capabilities) |
+| [GATEWAY.md](docs/GATEWAY.md) | Built gateway + dashboard + Temporal integration |
+| [FACTOID_PIPELINE.md](docs/FACTOID_PIPELINE.md) | Factoid extraction for token optimization |
+| [EVALS.md](docs/EVALS.md) | Eval design |
+| [INSTALL.md](docs/INSTALL.md) | Install detail (includes Temporal, Ollama/vLLM) |
+| [AUDIT.md](docs/AUDIT.md) | Deep verification report |
+| [RESEARCH_NOTES.md](docs/RESEARCH_NOTES.md) | Background research |
+
+---
+
+## Layout
 
 ```
-src/
-  llm.py       Groq LLM wrapper (with rate limit retry)
-  search.py    Tavily search (parallel execution)
-  state.py     State type definition (the data backpack)
-  nodes.py     9 LangGraph node functions
-  graph.py     Graph builder with conditional edges
-  memory.py    Past search memory (JSON file)
-  export.py    Markdown report export
-main.py        CLI entry point
-test_run.py    Unit tests
+src/gateway/     # resilient LLM gateway (built)
+src/dashboard/   # ops metrics (built)
+src/nodes.py     # research nodes (prototype)
+src/graph.py     # LangGraph
+src/search.py    # Tavily
+src/llm.py       # → gateway
+main.py
+test_gateway.py  # offline 9/9
+docs/
+scripts/install.sh | install.ps1
 ```
 
-## Report Format
+---
 
-Each generated report includes:
-- **Overview** -- 2-3 paragraph summary
-- **Key Points** -- bullet points of most important findings
-- **Detailed Findings** -- deeper dive into key topics
-- **Sources/References** -- numbered list with URLs
-- **Actionable Insights** -- specific takeaways
-- **Methodology** -- how the research was conducted
+## License / contributing
 
-## Tests
-
-```bash
-uv run python test_run.py
-```
-
-Expected output: `5/5 tests passed`
-
-## Troubleshooting
-
-**"Rate limit reached" error (429)**
-Groq free tier allows 8K tokens per minute. Each research session uses 5-8 LLM calls. If you hit the limit:
-- Wait 60 seconds and retry
-- The agent has built-in retry (exponential backoff: 2s, 4s, 8s)
-
-**"No module named 'src.xxx'"**
-Make sure you ran `uv sync` from the project root directory.
-
-## Features
-
-### Required
-- Accepts any user query/topic as input
-- Searches external sources via Tavily web search API
-- Extracts full content from top results
-- LLM-powered deduplication of irrelevant/duplicate content
-- Generates structured report: key points, findings, sources, insights
-
-### Bonus
-- LLM allows to autonomously selects search strategies and sources
-- Parallel information gathering (5 concurrent searches per iteration)
-- Export as Markdown
-- Stores past searches in JSON memory (keyword-based recall)
-- Multi-step reasoning with up to 3 research iterations
-- Conditional looping: LLM decides when research is complete
-- Progress output with status messages
+Implement against [docs/ROADMAP.md](docs/ROADMAP.md). Specs are normative for the target product; AUDIT is normative for “what works today.”

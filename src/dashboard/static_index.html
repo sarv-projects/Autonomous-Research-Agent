@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LLM Gateway · Control Room</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#131722; --panel2:#1a1f2e; --line:#232a3b;
+    --text:#e6e9f0; --muted:#8b93a7; --accent:#4f8cff; --green:#2ecc8f;
+    --red:#ff5c5c; --amber:#ffb648; --cyan:#38c6d4; --mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+       background:radial-gradient(1200px 600px at 20% -10%,#16203a 0%,var(--bg) 55%);
+       color:var(--text);min-height:100vh}
+  header{display:flex;align-items:center;gap:16px;padding:20px 28px;border-bottom:1px solid var(--line);
+         position:sticky;top:0;background:rgba(11,14,20,.85);backdrop-filter:blur(8px);z-index:5}
+  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7a5cff);
+        display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.3px}
+  header .sub{color:var(--muted);font-size:12px}
+  .spacer{flex:1}
+  .pill{font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);
+        background:var(--panel);color:var(--muted)}
+  .pill.ok{color:#b8f3dc;border-color:#1f5c44;background:#0f2b20}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;padding:22px 28px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+  .big{font-size:30px;font-weight:700;font-family:var(--mono)}
+  .metric .label{color:var(--muted);font-size:11px;margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;padding:0 28px 22px}
+  @media(max-width:980px){.grid2{grid-template-columns:1fr}}
+  .routes{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .route{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:150px;background:var(--panel2)}
+  .route .rname{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .route .rstat{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+  .st{font-family:var(--mono);font-size:13px;font-weight:600}
+  .st.closed{color:#7cf2b5}.st.open{color:var(--red)}.st.half_open{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.6px}
+  td.num{font-family:var(--mono)}
+  .err{color:var(--red)}.cost{color:var(--cyan)}
+  .log{font-family:var(--mono);font-size:11px;max-height:320px;overflow-y:auto}
+  .log .row{padding:5px 10px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .log .type{width:70px;flex:0 0 auto;color:var(--muted)}
+  .ts{color:#5a6478}
+  .tag{border-radius:6px;padding:1px 7px;font-size:10px;font-weight:600}
+  .tag.call{background:#123054;color:#7db4ff}.tag.error{background:#3a1414;color:#ff9c9c}
+  .tag.circuit{background:#3a2c10;color:#ffd27a}.tag.ratelimit{background:#12302e;color:#7ff0e4}
+  .tag.success{background:#123024;color:#7ff0b5}
+  .empty{color:var(--muted);text-align:center;padding:40px 0;font-size:13px}
+  .pulse{animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">⚡</div>
+  <div>
+    <h1>LLM Gateway Control Room</h1>
+    <div class="sub" id="subhead">connecting…</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill" id="pill-live">● LIVE</span>
+</header>
+
+<section class="grid">
+  <div class="card metric"><h3>Total Calls</h3><div class="big" id="m-calls">0</div><div class="label" id="m-calls-label">across all providers</div></div>
+  <div class="card metric"><h3>Errors</h3><div class="big" id="m-errors">0</div><div class="label" id="m-err-rate">error rate —</div></div>
+  <div class="card metric"><h3>Est. Cost</h3><div class="big cost" id="m-cost">$0.0000</div><div class="label">per 1M tokens pricing</div></div>
+  <div class="card metric"><h3>Rate Limit</h3><div class="big" id="m-rl">0 adm / 0 den</div><div class="label" id="m-inflight">in flight —</div></div>
+</section>
+
+<div class="grid2">
+  <section class="card">
+    <h3>Model Endpoints</h3>
+    <div id="model-table"><div class="empty">waiting for data…</div></div>
+  </section>
+  <section class="card">
+    <h3>Circuit Breakers</h3>
+    <div class="routes" id="circuits"><div class="empty">no routes yet</div></div>
+  </section>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h3>Live Event Stream</h3>
+    <div class="log" id="log"><div class="empty">waiting for gateway activity…</div></div>
+  </section>
+  <section class="card">
+    <h3>Uptime &amp; Health</h3>
+    <div id="health" class="pulse"><div class="empty">loading…</div></div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':String(n);
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function render(s){
+  $('m-calls').textContent = fmt(s.total_calls||0);
+  $('m-errors').textContent = fmt(s.total_errors||0);
+  const er = s.total_calls?(s.total_errors/s.total_calls*100).toFixed(2):'0.00';
+  $('m-err-rate').textContent = 'error rate '+er+'%';
+  let cost=0; for(const p in (s.per_provider_model||{})) for(const m in s.per_provider_model[p]) cost+=s.per_provider_model[p][m].cost_usd;
+  $('m-cost').textContent = '$'+cost.toFixed(4);
+  const rl=s.ratelimit||{}; $('m-rl').textContent = (rl.admitted||0)+' adm / '+(rl.denied||0)+' den';
+  $('m-inflight').textContent = 'uptime '+(s.uptime_s?s.uptime_s.toFixed(0)+'s':'—');
+
+  // model table
+  const pp=s.per_provider_model||{}; const keys=Object.keys(pp);
+  if(!keys.length){ $('model-table').innerHTML='<div class="empty">no calls recorded yet</div>'; }
+  else{
+    let h='<table><tr><th>Provider</th><th>Model</th><th>Calls</th><th>Errors</th><th>Avg s</th><th>Tokens</th><th>Cost</th></tr>';
+    for(const p of keys){ for(const m of Object.keys(pp[p])){ const r=pp[p][m];
+      h+=`<tr><td>${esc(p)}</td><td>${esc(m)}</td><td class="num">${fmt(r.calls)}</td>`+
+         `<td class="num ${r.errors?'err':''}">${r.errors}</td><td class="num">${r.avg_latency_s}</td>`+
+         `<td class="num">${fmt(r.prompt_tokens+r.completion_tokens)}</td><td class="num cost">$${r.cost_usd.toFixed(4)}</td></tr>`; }
+    }
+    $('model-table').innerHTML = h+'</table>';
+  }
+
+  // circuits
+  const c=s.circuits||{}; const ck=Object.keys(c);
+  if(!ck.length){ $('circuits').innerHTML='<div class="empty">no endpoints exercised yet</div>'; }
+  else{
+    let h=''; for(const name of ck){ const st=c[name].state.toLowerCase();
+      h+=`<div class="route"><span class="rstat" style="background:${st==='open'?'var(--red)':st==='half_open'?'var(--amber)':'var(--green)'}"></span>`+
+         `<span class="st ${st}">${c[name].state}</span><br><span class="rname">${esc(name)}</span></div>`; }
+    $('circuits').innerHTML = h;
+  }
+
+  // health
+  $('health').innerHTML = `<div class="metric" style="margin-bottom:12px"><div class="big">${fmt(s.total_calls||0)}</div><div class="label">requests served</div></div>`+
+    `<div class="metric"><div class="big cost">$${cost.toFixed(4)}</div><div class="label">estimated spend</div></div>`;
+}
+
+function prependLog(e){
+  const log=$('log'); if(log.querySelector('.empty')) log.innerHTML='';
+  const st = log.firstChild;
+  const row=document.createElement('div'); row.className='row';
+  const tag = `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>`;
+  const ts = new Date(e.ts*1000).toLocaleTimeString();
+  let body='';
+  if(e.type==='call'||e.type==='success') body=`${esc(e.provider)}/${esc(e.model)} · ${(e.latency_s||0).toFixed(2)}s · $${(e.cost_usd||0).toFixed(5)}`;
+  else if(e.type==='error') body=`${esc(e.provider)}/${esc(e.model)} · ${esc(e.error_type)}`;
+  else if(e.type==='circuit') body=`${esc(e.route)} → ${esc(e.state)}`;
+  else if(e.type==='ratelimit') body=`${esc(e.admitted?'admitted':'denied')} · ${esc(e.model)}`;
+  else body=JSON.stringify(e).slice(0,120);
+  row.innerHTML=`<span class="ts">${ts}</span>${tag}<span>${body}</span>`;
+  log.insertBefore(row, st||null);
+  while(log.children.length>200) log.removeChild(log.lastChild);
+}
+
+async function poll(){
+  try{ const r=await fetch('/api/status'); const s=await r.json(); render(s);
+       $('subhead').textContent = 'live · '+ (s.generated_at? 'refreshed '+new Date(s.generated_at*1000).toLocaleTimeString():''); }
+  catch(err){ $('pill-live').textContent='● RECONNECT'; }
+}
+function sse(){
+  const es = new EventSource('/api/events');
+  es.onmessage = ev => { try{ prependLog(JSON.parse(ev.data)); }catch(_){ } };
+  es.onerror = ()=> es.close(); // reconnect via polling
+}
+poll();
+setInterval(poll, 3000);
+sse();
+</script>
+</body>
+</html>
