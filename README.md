@@ -2,6 +2,12 @@
 
 Enterprise-grade autonomous research agent with **durable execution, bias mitigation, token optimization, and mathematical rendering**. Built with LangGraph, Temporal.io, and a production-style LLM gateway.
 
+<!-- TODO: Add hero image/screenshot here -->
+<!-- 
+![Hero Screenshot](docs/screenshots/hero.png)
+*Web dashboard with chat and research interfaces*
+-->
+
 | | |
 |--|--|
 | **Specs (target product)** | [`docs/SPEC.md`](docs/SPEC.md) · [full index](docs/INDEX.md) |
@@ -31,6 +37,12 @@ See **[docs/AUDIT.md](docs/AUDIT.md)** for the full checklist.
 ---
 
 ## New capabilities (roadmap)
+
+<!-- TODO: Add capabilities overview screenshot -->
+<!-- 
+![Capabilities Overview](docs/screenshots/capabilities.png)
+*Key capabilities: Durable execution, bias mitigation, token optimization*
+-->
 
 The agent is evolving with advanced research capabilities:
 
@@ -70,6 +82,12 @@ See [ROADMAP.md](docs/ROADMAP.md) for implementation phases and details.
 
 ## Quick start (what works now)
 
+<!-- TODO: Add demo video -->
+<!-- 
+[![Demo Video](docs/screenshots/video-thumbnail.png)](https://youtube.com/watch?v=TODO)
+*Watch the demo video (2 min)*
+-->
+
 ### Prerequisites
 
 - Python **3.14+**, [uv](https://docs.astral.sh/uv/)
@@ -89,6 +107,12 @@ uv run python main.py --history
 uv run python -m src.dashboard --port 8080
 uv run python test_gateway.py
 ```
+
+<!-- TODO: Add terminal screenshot -->
+<!-- 
+![Terminal Demo](docs/screenshots/terminal.png)
+*Terminal output showing research in progress*
+-->
 
 ### PowerShell
 
@@ -111,12 +135,21 @@ uv run python main.py "your research topic"
 | [ROADMAP.md](docs/ROADMAP.md) | Phases A–L (including new capabilities) |
 | [GATEWAY.md](docs/GATEWAY.md) | Built gateway + dashboard + Temporal integration |
 | [FACTOID_PIPELINE.md](docs/FACTOID_PIPELINE.md) | Factoid extraction for token optimization |
+| [UX_DESIGN.md](docs/UX_DESIGN.md) | Web UI/UX design specification |
 | [EVALS.md](docs/EVALS.md) | Eval design |
 | [INSTALL.md](docs/INSTALL.md) | Install detail (includes Temporal, Ollama/vLLM) |
 | [AUDIT.md](docs/AUDIT.md) | Deep verification report |
 | [RESEARCH_NOTES.md](docs/RESEARCH_NOTES.md) | Background research |
 
 ---
+
+## Architecture
+
+<!-- TODO: Add architecture diagram -->
+<!-- 
+![Architecture Diagram](docs/screenshots/architecture.png)
+*System architecture showing multi-agent design, Temporal integration, and RAG pipeline*
+-->
 
 ## Layout
 
@@ -132,6 +165,38 @@ test_gateway.py  # offline 9/9
 docs/
 scripts/install.sh | install.ps1
 ```
+
+---
+
+## Web UI
+
+<!-- TODO: Add web UI screenshots -->
+<!-- 
+![Chat Interface](docs/screenshots/chat-ui.png)
+*Chat interface with streaming responses and tool usage*
+
+![Research Interface](docs/screenshots/research-ui.png)
+*Research interface with progressive output and real-time progress*
+
+![Export Options](docs/screenshots/export-ui.png)
+*Export panel supporting Markdown, PDF, and HTML formats*
+-->
+
+---
+
+## Example Output
+
+<!-- TODO: Add example report screenshot -->
+<!-- 
+![Sample Report](docs/screenshots/sample-report.png)
+*Sample research report with citations and mathematical formulas*
+-->
+
+The agent produces comprehensive research reports with:
+- **Citations** — Every claim backed by sources
+- **Mathematical formulas** — LaTeX rendering for equations
+- **Progressive structure** — Section-by-section streaming
+- **Export formats** — Markdown, PDF, HTML downloads
 
 ---
 
