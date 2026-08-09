@@ -8,10 +8,9 @@ Always available (no API key, no Docker, no setup):
   - MinerU — PDF & document parser (PyPDF fallback)
   - Nougat — Academic PDF & LaTeX equation OCR (PyPDF fallback)
 
-Optional (register when API keys are set):
-  - Tavily — comprehensive web search + extract (needs TAVILY_API_KEY)
-  - Firecrawl — cloud (needs FIRECRAWL_API_KEY) or self-hosted (Docker, localhost:3002)
-  - Exa — neural search (needs EXA_API_KEY)
+Primary Search & Crawling (Firecrawl):
+  - Self-hosted: http://localhost:3002 (zero API key, free local Docker container)
+  - Cloud: https://api.firecrawl.dev (if FIRECRAWL_API_KEY set)
 """
 
 import os
@@ -61,39 +60,26 @@ def _register_nougat() -> None:
         priority=20,
     )
 
-# ── Tavily (optional — needs TAVILY_API_KEY) ──────────────────────────
-def _register_tavily() -> None:
-    try:
-        from src.search import search_web, extract_content
-        register_tool(
-            name="tavily",
-            capabilities={"web_search", "extract", "paid", "primary"},
-            search_fn=search_web,
-            extract_fn=extract_content,
-            priority=100,
-        )
-    except Exception:
-        pass
-
+# ── Firecrawl (Primary Web Search & Crawling — Cloud or Self-Hosted Docker) ──
 def _register_firecrawl() -> None:
     from .firecrawl import firecrawl_search, firecrawl_extract, _is_self_hosted
     has_key = bool(os.getenv("FIRECRAWL_API_KEY"))
     self_hosted = _is_self_hosted()
-    if not has_key and not self_hosted:
-        return
-    caps = {"web_search", "crawl", "extract"}
+    caps = {"web_search", "crawl", "extract", "primary"}
     if has_key:
         caps.add("paid")
-    if self_hosted and not has_key:
+    else:
         caps.add("free")
+
     register_tool(
         name="firecrawl",
         capabilities=caps,
         search_fn=firecrawl_search,
         extract_fn=firecrawl_extract,
-        priority=80,
+        priority=100,
     )
 
+# ── Exa (optional — needs EXA_API_KEY) ───────────────────────────────
 def _register_exa() -> None:
     from .exa import exa_search, exa_extract
     if not os.getenv("EXA_API_KEY"):
@@ -107,11 +93,10 @@ def _register_exa() -> None:
     )
 
 
-# Auto-register: always-available first, then optional
+# Auto-register tools
 _register_wikipedia()
 _register_builtin()
 _register_mineru()
 _register_nougat()
-_register_tavily()
 _register_firecrawl()
 _register_exa()

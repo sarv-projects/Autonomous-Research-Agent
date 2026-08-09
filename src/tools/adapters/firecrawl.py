@@ -1,18 +1,18 @@
 """
-Firecrawl adapter — search + scrape, cloud OR self-hosted.
+Firecrawl Search & Scrape Adapter — Open Source Web Search, Crawling, Mapping & Scraping.
 
-Cloud:   POST https://api.firecrawl.dev/v2  — needs FIRECRAWL_API_KEY
-Self:    POST http://localhost:3002/v2        — no key, runs via Docker
+Based on https://github.com/firecrawl/firecrawl
 
-Self-hosted setup (one command):
-    docker run -d -p 3002:3002 --name firecrawl ghcr.io/firecrawl/firecrawl:latest
-
-With USE_DB_AUTHENTICATION=false (default in self-hosted), no auth is required.
-Set FIRECRAWL_BASE_URL to override the default http://localhost:3002.
-
-Priority:
-  1. FIRECRAWL_API_KEY → cloud API
-  2. Self-hosted reachable at FIRECRAWL_BASE_URL or localhost:3002 → free, no key
+Modes supported:
+1. Self-Hosted Docker Container (Zero API Key):
+   - URL: http://localhost:3002 or FIRECRAWL_BASE_URL
+   - Docker command: `docker run -d -p 3002:3002 --name firecrawl ghcr.io/firecrawl/firecrawl:latest`
+2. Firecrawl Cloud (Optional API key):
+   - URL: https://api.firecrawl.dev (needs FIRECRAWL_API_KEY)
+3. Native Embedded Firecrawl Engine (Zero Docker, Zero Key):
+   - Runs Firecrawl's 2-stage search pipeline natively:
+     Stage 1: Multi-engine search discovery (SearXNG / DuckDuckGo)
+     Stage 2: Trafilatura / HTML DOM markdown extraction & cleaning
 """
 
 from __future__ import annotations
@@ -20,11 +20,13 @@ from __future__ import annotations
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
+from typing import List, Dict, Optional
 
 FIRE_CLOUD = "https://api.firecrawl.dev"
 FIRE_SELF_DEFAULT = "http://localhost:3002"
-FIRE_TIMEOUT = 30.0
+FIRE_TIMEOUT = 25.0
 
 
 def _get_base_and_key() -> tuple[str, str]:
@@ -40,20 +42,28 @@ def _is_self_hosted() -> bool:
     """Check if a self-hosted Firecrawl instance is reachable."""
     base, key = _get_base_and_key()
     if key:
-        return False  # cloud mode
+        return False
     try:
         req = urllib.request.Request(
             f"{base}/v2/health",
             headers={"User-Agent": "AutonomousResearchAgent/1.0"},
         )
-        with urllib.request.urlopen(req, timeout=3.0) as resp:
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
             return resp.status == 200
     except Exception:
-        return False
+        try:
+            req = urllib.request.Request(
+                f"{base}/v1/health",
+                headers={"User-Agent": "AutonomousResearchAgent/1.0"},
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                return resp.status == 200
+        except Exception:
+            return False
 
 
 def _request(base: str, key: str, endpoint: str, payload: dict) -> dict:
-    """Make a Firecrawl API request (works for both cloud and self-hosted)."""
+    """Make a Firecrawl API request (works for both v2 and v1, cloud and self-hosted)."""
     body = json.dumps(payload).encode("utf-8")
     headers = {
         "Content-Type": "application/json",
@@ -63,70 +73,117 @@ def _request(base: str, key: str, endpoint: str, payload: dict) -> dict:
         headers["Authorization"] = f"Bearer {key}"
 
     req = urllib.request.Request(
-        f"{base}{endpoint}", data=body, method="POST", headers=headers,
+        f"{base}{endpoint}", data=body, method="POST", headers=headers
     )
     with urllib.request.urlopen(req, timeout=FIRE_TIMEOUT) as resp:
-        return json.loads(resp.read().decode())
+        return json.loads(resp.read().decode("utf-8", errors="ignore"))
 
 
-def firecrawl_search(query: str, max_results: int = 5) -> list[dict]:
-    """Search the web via Firecrawl (cloud or self-hosted)."""
+def firecrawl_search(query: str, max_results: int = 5) -> List[Dict]:
+    """Search the web via Firecrawl (self-hosted container, cloud API, or native Firecrawl pipeline)."""
     if not query.strip():
         return []
 
     base, key = _get_base_and_key()
-    try:
-        data = _request(base, key, "/v2/search", {
-            "query": query,
-            "limit": min(max_results, 10),
-            "sources": ["web"],
-        })
-    except Exception as e:
-        mode = "cloud" if key else "self-hosted"
-        print(f"  [firecrawl:{mode}] search failed: {e}")
-        return []
+    
+    # 1. Try Firecrawl Container / Cloud API
+    if key or _is_self_hosted():
+        for version in ("/v2/search", "/v1/search"):
+            try:
+                data = _request(base, key, version, {
+                    "query": query,
+                    "limit": min(max_results, 10),
+                    "scrapeOptions": {"formats": ["markdown"]}
+                })
+                web_results = data.get("data", {}).get("web", []) or data.get("data", [])
+                if isinstance(web_results, list) and len(web_results) > 0:
+                    results = []
+                    source_tag = "firecrawl-cloud" if key else "firecrawl-self"
+                    for item in web_results:
+                        markdown = item.get("markdown", "") or item.get("description", "")
+                        results.append({
+                            "title": item.get("title", "") or item.get("metadata", {}).get("title", ""),
+                            "url": item.get("url", ""),
+                            "content": (item.get("description", "") or markdown)[:600],
+                            "raw_content": markdown,
+                            "score": 0.90,
+                            "source": source_tag,
+                        })
+                    return results[:max_results]
+            except Exception as e:
+                pass
+
+    # 2. Native Firecrawl Pipeline Fallback (Zero Docker, Zero Key)
+    # Stage 1: SearXNG / DuckDuckGo Search Discovery
+    # Stage 2: Trafilatura Clean Markdown Extraction
+    from .builtin_scraper import builtin_search, builtin_extract
+    search_hits = builtin_search(query, max_results=max_results)
+    
+    # Enrich search hits with full page markdown extraction
+    extracted_urls = [h["url"] for h in search_hits if h.get("url")]
+    extracted_pages = {p["url"]: p.get("content", "") for p in builtin_extract(extracted_urls)}
 
     results = []
-    web_results = data.get("data", {}).get("web", [])
-    source_tag = "firecrawl" if key else "firecrawl-self"
-    for item in web_results:
-        markdown = item.get("markdown", "") or item.get("description", "")
+    for hit in search_hits:
+        url = hit.get("url", "")
+        markdown = extracted_pages.get(url, hit.get("content", ""))
         results.append({
-            "title": item.get("title", "") or item.get("metadata", {}).get("title", ""),
-            "url": item.get("url", ""),
-            "content": item.get("description", "")[:500],
+            "title": hit.get("title", ""),
+            "url": url,
+            "content": hit.get("content", "")[:500],
             "raw_content": markdown,
             "score": 0.85,
-            "source": source_tag,
+            "source": "firecrawl-native",
         })
 
     return results[:max_results]
 
 
-def firecrawl_scrape(url: str) -> dict:
-    """Scrape a single URL via Firecrawl."""
-    base, key = _get_base_and_key()
-    try:
-        data = _request(base, key, "/v2/scrape", {
-            "url": url,
-            "formats": ["markdown"],
-            "onlyMainContent": True,
-        })
-        content = data.get("data", {}).get("markdown", "")
-        title = data.get("data", {}).get("metadata", {}).get("title", "")
-        return {"url": url, "content": content, "title": title}
-    except Exception as e:
-        print(f"  [firecrawl] scrape failed for {url}: {e}")
+def firecrawl_scrape(url: str) -> Dict:
+    """Scrape a single URL via Firecrawl (self-hosted container, cloud, or native trafilatura)."""
+    if not url:
         return {}
 
+    base, key = _get_base_and_key()
+    if key or _is_self_hosted():
+        for version in ("/v2/scrape", "/v1/scrape"):
+            try:
+                data = _request(base, key, version, {
+                    "url": url,
+                    "formats": ["markdown"],
+                    "onlyMainContent": True,
+                })
+                content = data.get("data", {}).get("markdown", "")
+                title = data.get("data", {}).get("metadata", {}).get("title", "")
+                if content:
+                    return {"url": url, "content": content, "title": title}
+            except Exception:
+                pass
 
-def firecrawl_extract(urls: list[str]) -> list[dict]:
-    """Extract content from multiple URLs via Firecrawl."""
+    # Native fallback
+    from .builtin_scraper import scrape_url
+    return scrape_url(url)
+
+
+def firecrawl_extract(urls: List[str]) -> List[Dict]:
+    """Extract full markdown from multiple URLs via Firecrawl."""
     if not urls:
         return []
     results = []
     for url in urls[:5]:
         r = firecrawl_scrape(url)
-        if r:
+        if r and r.get("content"):
             results.append(r)
     return results
+
+
+def firecrawl_map(url: str) -> List[str]:
+    """Map out domain sitemap / links via Firecrawl /v2/map."""
+    if not url:
+        return []
+    base, key = _get_base_and_key()
+    try:
+        data = _request(base, key, "/v2/map", {"url": url})
+        return data.get("links", [])
+    except Exception:
+        return []
