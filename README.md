@@ -1,25 +1,24 @@
 <div align="center">
 
-# 🔬 Autonomous Research Agent
+# Autonomous Research Agent
 
-### *The Deep Multi-Agent Research Engine Powered by LangGraph, Temporal & Resilient BYOK Gateway*
+### *Multi-Agent Deep Research System built with LangGraph, Temporal & Resilient LLM Gateway*
 
-[![Python 3.14+](https://img.shields.io/badge/python-3.14+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-FF6F00.svg?style=for-the-badge&logo=langchain&logoColor=white)](https://github.com/langchain-ai/langgraph)
 [![Temporal](https://img.shields.io/badge/Durable-Temporal.io-24292E.svg?style=for-the-badge&logo=temporal&logoColor=white)](https://temporal.io)
 [![Next.js 14](https://img.shields.io/badge/Frontend-Next.js%2014-000000.svg?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![Zero-Config Free Tier](https://img.shields.io/badge/LLM_Gateway-Zero--Config_Free_Tier-00C853.svg?style=for-the-badge)](docs/PROVIDERS.md)
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen.svg?style=for-the-badge)](docs/IMPLEMENTATION_STATUS.md)
+[![Provider Gateway](https://img.shields.io/badge/LLM_Gateway-Resilient_BYOK-00C853.svg?style=for-the-badge)](docs/PROVIDERS.md)
 
 ---
 
-**An enterprise-grade autonomous research system that plans, searches, verifies, triangulates, and synthesizes cited research reports with live progress streaming, LaTeX math rendering, and 24-hour crash-resilient execution.**
+**A multi-agent research application that plans, searches, verifies, and synthesizes cited research reports with live progress streaming, LaTeX math rendering, and durable execution support.**
 
-*Works immediately out-of-the-box with **zero API key configuration** using the built-in free tier gateway fallback.*
+*Runs out-of-the-box using built-in free tier fallback (OpenCode Zen) or with your own provider API keys (Groq, OpenAI, Gemini, DeepSeek).*
 
 ---
 
-[Key Differentiators](#-key-differentiators) •
+[Features](#-key-features) •
 [Quick Start](#-quick-start) •
 [Architecture](#-architecture) •
 [Research Modes](#-research-modes) •
@@ -29,17 +28,17 @@
 
 </div>
 
-## 🌟 Key Differentiators
+## 🌟 Key Features
 
-| Capability | Description | Benefit |
+| Feature | Technical Implementation | Purpose |
 | :--- | :--- | :--- |
-| 🤖 **7-Agent LangGraph Topology** | **Planner**, **Thinker**, **Researcher**, **Critic**, **Triangulator**, **Synthesizer**, & **Compiler** operating in coordinated feedback loops. | Eliminates single-prompt hallucinations through rigorous multi-agent verification. |
-| ⚖️ **Adversarial Triangulation** | Deploys **Pro**, **Con**, and **Neutral** sub-agents in parallel, arbitrated by a **Synthesis Arbiter** that outputs a 0–10 bias score. | Uncovers hidden biases and synthesizes objective, balanced viewpoints on controversial queries. |
-| ⚡ **Resilient BYOK Gateway** | Standard-library resilient LLM router with circuit breakers per endpoint, token-bucket rate limiters, retries with jitter, and automatic provider failover. | Fallback from paid APIs (Groq, OpenAI, Gemini, DeepSeek) to **OpenCode Zen Free Tier** with zero downtime. |
-| 🧠 **Factoid RAG & Token Reduction** | Hybrid retrieval combining **Dense Vector Search**, **SQLite FTS5 Sparse Search**, and **Factoid Extraction**. | Compresses raw web dumps by **~90%** while boosting citation accuracy and reducing inference cost. |
-| ⏳ **Durable Temporal.io Workflows** | Event-driven 24-hour research execution with state checkpointing, crash recovery, and human-in-the-loop approval gates. | Enables ultra-long research runs that survive network drops, API outages, and system restarts. |
-| 🧮 **Native MathJax & LaTeX** | Automatic detection and sanitization of inline and block LaTeX expressions into rendered HTML and Markdown. | Renders mathematical proofs, scientific notation, and financial models accurately. |
-| 🎨 **Next.js & FastAPI Interface** | Sleek ChatGPT-style Web UI with live Server-Sent Events (SSE) progress tracking, history management, and dark mode. | Delivers a premium, interactive user experience for research exploration. |
+| 🤖 **7-Agent LangGraph Topology** | Modular agent graph (**Planner**, **Thinker**, **Researcher**, **Critic**, **Triangulator**, **Synthesizer**, & **Compiler**) with iterative review loops. | Breaks complex research queries into structured subtasks and verifies section coverage before export. |
+| ⚖️ **Adversarial Triangulation** | Parallel **Pro**, **Con**, and **Neutral** sub-agent calls arbitrated by a **Synthesis Arbiter**. | Identifies opposing perspectives and potential biases on comparative or subjective research topics. |
+| ⚡ **Resilient BYOK Gateway** | In-process REST router with circuit breakers per endpoint, token-bucket rate limiters, retries with jitter, and automatic provider failover. | Gracefully handles rate limits and API outages, falling back to **OpenCode Zen Free** when no paid keys are set. |
+| 🧠 **Factoid RAG & Compression** | Hybrid retrieval combining **Dense Vector Search**, **SQLite FTS5 Sparse Search**, and **Factoid Extraction**. | Extracts structured factual claims from web pages to reduce prompt token consumption during report writing. |
+| ⏳ **Durable Temporal Workflows** | Event-driven workflow definitions with state checkpointing and activity-based task execution. | Supports long-running research tasks with crash recovery and human-in-the-loop approval readiness. |
+| 🧮 **LaTeX & MathJax Rendering** | Automated detection and sanitization of inline and block LaTeX expressions into rendered HTML and Markdown. | Formats mathematical equations, formulas, and scientific notation accurately. |
+| 🎨 **Next.js & FastAPI Interface** | Web UI with live Server-Sent Events (SSE) progress tracking, history management, and dark mode. | Provides a clean web app interface alongside CLI and REST API entry points. |
 
 ---
 
@@ -47,7 +46,7 @@
 
 ### 1. Installation
 
-Requires **Python 3.14+** and [**uv**](https://docs.astral.sh/uv/) package manager.
+Requires **Python 3.10+** and [**uv**](https://docs.astral.sh/uv/) package manager.
 
 ```bash
 # Clone the repository
@@ -59,13 +58,11 @@ bash scripts/install.sh       # Linux / macOS
 # or .\scripts\install.ps1     # Windows PowerShell
 ```
 
-> **Note:** The agent works **immediately out-of-the-box** without any API keys by routing through the free OpenCode Zen tier!
-
 ---
 
 ### 2. Configuration (Optional)
 
-To enable premium LLM providers or specialized search APIs, create a `.env` file:
+To enable premium LLM providers or search APIs, create a `.env` file:
 
 ```bash
 cp .env.example .env
@@ -88,7 +85,7 @@ TAVILY_API_KEY=tvly-...
 
 ### 3. Usage Options
 
-#### 🖥️ Web Interface (Recommended)
+#### 🖥️ Web Interface
 
 Start the FastAPI backend server:
 
@@ -115,10 +112,10 @@ uv run python main.py doctor
 # Interactive Chat with memory
 uv run python main.py chat
 
-# Run Deep Autonomous Research
-uv run python main.py research "Quantum Computing breakthroughs in 2026" --mode deep
+# Run Autonomous Research
+uv run python main.py research "Recent developments in quantum computing" --mode deep
 
-# Execute Automated Evaluation Suite
+# Execute Evaluation Suite
 uv run python main.py eval all
 
 # Inspect Past Research History
@@ -146,7 +143,7 @@ graph TB
     subgraph Core_Engine[" Multi-Agent Research Engine "]
         Graph[LangGraph Orchestrator]
         Agents[7-Agent Topology]
-        Temporal[Temporal.io Workflow Engine]
+        Temporal[Temporal Workflow Engine]
     end
 
     subgraph Resiliency[" Resilient LLM Gateway "]
@@ -201,7 +198,7 @@ graph TD
     Critic -->|Needs More Research| ResGather
     Critic -->|Approved| Triangulator{⚖️ Triangulator Agent}
     
-    subgraph Triangulation[" Adversarial Bias Mitigation "]
+    subgraph Triangulation[" Perspective Comparison "]
         Triangulator -->|Parallel| Pro[🟢 Pro Agent]
         Triangulator -->|Parallel| Con[🔴 Con Agent]
         Triangulator -->|Parallel| Neutral[🔵 Neutral Agent]
@@ -220,27 +217,23 @@ graph TD
 
 ### Research Modes
 
-Select the optimal depth and scope for your research task:
-
-| Mode | Target Use Case | Iterations | Autonomy Level | Durable Execution |
+| Mode | Target Use Case | Max Iterations | Autonomy Level | Temporal Execution |
 | :--- | :--- | :---: | :---: | :---: |
 | `chat` | Conversational Q&A with memory context | 1 | L0 | ❌ |
 | `quick` | Surface-level fact finding & summary | 1–2 | L1 | ❌ |
 | `standard` | Balanced technical & general research *(default)* | 3–4 | L1 | ❌ |
 | `deep` | Thorough investigation with multi-wave verification | 5–6 | L2 | ❌ |
-| `recency` | Focus on latest developments, news, & current events | 3 | L1 | ❌ |
-| `academic` | Scholarly citations, methodology, & formal paper style | 4 | L2 | ❌ |
+| `recency` | Focus on recent developments & news | 3 | L1 | ❌ |
+| `academic` | Scholarly citations, methodology, & formal style | 4 | L2 | ❌ |
 | `compare` | Multi-option technical or market comparison | 4 | L2 | ❌ |
-| `ultra-long` | **24-hour durable execution** via Temporal.io | 10+ | L3 | ✅ |
+| `ultra-long` | **Long-running execution** via Temporal.io | 10+ | L3 | ✅ |
 
 ### Quality Dials
 
-Overlay quality presets to control reasoning depth and tool behavior:
-
-- ⚡ **ultra-fast**: Speed optimized, minimal chunking.
+- ⚡ **ultra-fast**: Fast execution, minimal chunking.
 - ⚖️ **balanced**: Standard depth with hybrid retrieval.
 - 🎯 **accurate**: Enables Thinker contradiction checks and deeper claim extraction.
-- 🔬 **comprehensive**: Enables full Thinker reasoning, Adversarial Triangulation, and Factoid compression.
+- 🔬 **comprehensive**: Enables full Thinker reasoning, perspective triangulation, and factoid compression.
 
 ---
 
@@ -249,49 +242,49 @@ Overlay quality presets to control reasoning depth and tool behavior:
 ```
 Autonomous-Research-Agent/
 ├── main.py                 # CLI & Web Server Entry Point
-├── config/                 # Declarative YAML Configurations
-│   ├── providers.yaml     # LLM Provider & Route Priority Catalog
+├── config/                 # YAML Configurations
+│   ├── providers.yaml     # LLM Provider Catalog
 │   └── modes.yaml         # Research Modes & Quality Dials
 ├── src/
-│   ├── graph.py           # LangGraph Orchestration & Edge Logic
-│   ├── state.py           # Research State TypedDict Schema
+│   ├── graph.py           # LangGraph Orchestration
+│   ├── state.py           # Research State Schema
 │   ├── llm.py             # Resilient Gateway Interface
 │   ├── gateway/           # Resilient BYOK LLM Gateway
 │   │   ├── router.py      # Request Routing & Failover Chains
-│   │   ├── circuit.py     # Circuit Breakers (CLOSED/OPEN/HALF-OPEN)
-│   │   ├── ratelimit.py   # Token-Bucket RPM/TPM & Concurrency Caps
-│   │   ├── keys.py        # BYOK Virtual Key Manager & Accounting
+│   │   ├── circuit.py     # Circuit Breakers
+│   │   ├── ratelimit.py   # Token-Bucket Rate Limiter
+│   │   ├── keys.py        # Key Manager & Accounting
 │   │   ├── metrics.py     # Telemetry & Performance Metrics
-│   │   └── providers.py   # REST Adapters for Providers
+│   │   └── providers.py   # REST Adapters
 │   ├── engine/            # Multi-Agent Architecture
 │   │   ├── agents/        # Planner, Thinker, Researcher, Critic, Triangulator, Synthesizer, Compiler
-│   │   ├── temporal/      # Temporal.io Durable Workflows & Activities
+│   │   ├── temporal/      # Temporal Workflows & Activities
 │   │   ├── modes.py       # Mode & Budget Resolution
 │   │   └── progress.py    # Progress Tracker & Event Streamer
 │   ├── rag/               # Retrieval-Augmented Generation
 │   │   ├── pipeline.py    # End-to-End Ingestion & Retrieval
-│   │   ├── factoid.py     # Factoid Extraction & Token Compression
+│   │   ├── factoid.py     # Factoid Extraction
 │   │   ├── guard.py       # Retriever Guard Source Quality Scorer
-│   │   ├── hybrid.py      # Dense Vector + Sparse FTS5 Fusion
-│   │   └── vault.py       # Persistent Cross-Session Source Cache
-│   ├── tools/             # MCP Tool Bus & Discovery Registry
+│   │   ├── hybrid.py      # Dense Vector + Sparse FTS5 Search
+│   │   └── vault.py       # Source Cache
+│   ├── tools/             # Tool Bus & Registry
 │   │   ├── executor.py    # Tool Execution Orchestrator
 │   │   └── adapters/      # Built-in Scraper, Wikipedia, Tavily, Firecrawl
-│   ├── render/            # LaTeX Math Sanitizer & MathJax HTML Renderer
-│   ├── eval/              # Component & System Evaluation Framework
+│   ├── render/            # LaTeX Math Sanitizer & HTML Renderer
+│   ├── eval/              # Evaluation Framework
 │   └── web/               # FastAPI REST API Backend
-├── frontend/              # Modern Next.js 14 Web Interface
-│   ├── app/               # Next.js Pages & App Router
-│   └── components/        # Tailwind UI Components
-├── docs/                  # System Specifications & Architecture Docs
-└── reports/               # Output Directory for Generated Markdown & HTML Reports
+├── frontend/              # Next.js 14 Web Interface
+│   ├── app/               # Next.js App Router
+│   └── components/        # UI Components
+├── docs/                  # System Specifications & Audit Notes
+└── reports/               # Output Directory for Generated Reports
 ```
 
 ---
 
 ## 🧪 Evaluation System
 
-The repository includes a comprehensive, multi-tiered evaluation suite for assessing both isolated components and full agent trajectories:
+Run evaluation benchmarks locally using the evaluation framework:
 
 ```bash
 # Run all component and system evaluations
@@ -302,36 +295,21 @@ uv run python main.py eval component
 uv run python main.py eval system
 ```
 
-**Evaluated Metrics:**
-- **Component**: Tool selection accuracy, Plan coherence, Memory recall, RAG IR precision, Citation grounding.
-- **System**: Task completion rate, Trajectory efficiency, Report quality scoring, Budget adherence.
-
 ---
 
 ## 📚 Documentation Index
 
 | Document | Description |
 | :--- | :--- |
-| 📖 [**SPEC.md**](docs/SPEC.md) | Product requirements, core target specifications, and design goals. |
-| 🏗️ [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) | In-depth technical architecture, graph topology, and data flows. |
-| 🚀 [**INSTALL.md**](docs/INSTALL.md) | Detailed installation, dependency management, and setup guide. |
-| 🔌 [**PROVIDERS.md**](docs/PROVIDERS.md) | Provider catalog setup, API keys, pricing tables, and free tier options. |
-| 📊 [**IMPLEMENTATION_STATUS.md**](docs/IMPLEMENTATION_STATUS.md) | Verification audit of implemented features vs specification targets. |
-| 🧪 [**EVALS.md**](docs/EVALS.md) | Evaluation framework methodology, test benchmarks, and scoring metrics. |
-| 🛡️ [**GATEWAY.md**](docs/GATEWAY.md) | Architecture specification for the Resilient BYOK LLM Gateway. |
-| 🧩 [**FACTOID_PIPELINE.md**](docs/FACTOID_PIPELINE.md) | Deep dive into the ~90% token-reducing factoid extraction pipeline. |
-| 🗺️ [**ROADMAP.md**](docs/ROADMAP.md) | Implementation phase status and upcoming feature roadmap. |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Review [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
-2. Fork the repository and create a feature branch.
-3. Ensure all tests pass: `uv run python test_gateway.py && uv run python main.py eval all`.
-4. Submit a Pull Request with a clear description of your changes.
+| 📖 [**SPEC.md**](docs/SPEC.md) | Product requirements and design goals. |
+| 🏗️ [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) | Technical architecture and data flows. |
+| 🚀 [**INSTALL.md**](docs/INSTALL.md) | Setup and installation instructions. |
+| 🔌 [**PROVIDERS.md**](docs/PROVIDERS.md) | Provider catalog setup and API keys. |
+| 📊 [**IMPLEMENTATION_STATUS.md**](docs/IMPLEMENTATION_STATUS.md) | Audit notes on implemented features and missing items. |
+| 🧪 [**EVALS.md**](docs/EVALS.md) | Evaluation framework methodology and benchmarks. |
+| 🛡️ [**GATEWAY.md**](docs/GATEWAY.md) | Architecture specification for the Resilient BYOK Gateway. |
+| 🧩 [**FACTOID_PIPELINE.md**](docs/FACTOID_PIPELINE.md) | Details on the factoid extraction pipeline. |
+| 🗺️ [**ROADMAP.md**](docs/ROADMAP.md) | Feature roadmap and implementation status. |
 
 ---
 

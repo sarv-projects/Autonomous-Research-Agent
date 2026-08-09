@@ -1,9 +1,9 @@
 [project]
 name = "xiarch-assessment"
 version = "0.2.0"
-description = "Autonomous Research Agent — chat + deep research, RAG, self-improving, multi-provider gateway"
+description = "Autonomous Research Agent — chat + deep research, RAG, multi-provider gateway"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "groq>=1.5.0",
     "lancedb>=0.17",
