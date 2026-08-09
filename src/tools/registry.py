@@ -67,7 +67,7 @@ class ToolRegistry:
     ) -> list[dict]:
         """Search using the best available tool, always fusing Wikipedia.
 
-        1. Primary tool (highest priority, e.g. Tavily or Firecrawl)
+        1. Primary tool (highest priority, e.g. Firecrawl)
         2. Wikipedia (always queried in parallel as supplementary source)
         Results are merged: primary first (deduped by URL), then Wikipedia novel URLs.
         """

@@ -2,7 +2,7 @@
 Researcher agent — executes the research loop: search, extract, ingest, retrieve, analyze.
 
 Uses the modular tool bus for search and extraction. Tools are auto-discovered
-from the registry: Tavily (paid), Wikipedia (free), Firecrawl, Exa.
+from the registry: Firecrawl (primary), Wikipedia (free), Built-in Scraper, Exa.
 """
 
 import json
@@ -35,7 +35,7 @@ def researcher_gather(state: ResearchState) -> ResearchState:
     if not queries:
         queries = [state["query"]]
 
-    # Search using tool bus (Tavily > Wikipedia > fallback)
+    # Search using tool bus (Firecrawl > Wikipedia > Built-in fallback)
     registry = get_registry()
     available = [t.name for t in registry.list_all()]
     print(f"  Tools available: {available}")

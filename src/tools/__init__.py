@@ -5,8 +5,8 @@ Tools are registered with capability tags and executed through a unified
 interface. The Researcher agent queries the registry to find available tools
 and falls back gracefully when tools are unavailable.
 
-Built-in: Tavily (web search), Wikipedia (free background facts).
-Optional: Firecrawl (crawl), Exa (neural search).
+Built-in: Firecrawl (web search & crawl, self-hosted or cloud), Wikipedia (free background facts).
+Optional: Exa (neural search), MinerU (PDF), Nougat (Math OCR).
 """
 
 from .registry import ToolRegistry, register_tool, get_registry
