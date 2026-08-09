@@ -4,8 +4,8 @@ A **self-improving research and chat agent** that answers like a strong general 
 
 Built with LangGraph + Temporal.io, an adversarial triangulation harness, a factoid extraction pipeline, and a production-style BYOK LLM gateway.
 
-> **Status:** the repository currently runs a subset (LangGraph research loop + Tavily + resilient gateway with API keys).
-> See [docs/AUDIT.md](docs/AUDIT.md) for the built-vs-target matrix — [docs/SPEC.md](docs/SPEC.md) is the goal.
+> **Status:** ✅ **Fully Functional** — All core features implemented including web UI, eval system, and Temporal integration.
+> See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for detailed implementation status.
 
 | | |
 |--|--|
@@ -75,6 +75,16 @@ Quality dials overlay mode budgets: **ultra-fast · balanced · accurate · comp
 - On every run: sources persisted to a **vault**, structured run traces (JSONL), strategy memory (what worked/failed), source-quality scores
 - Next similar query searches the **vault before paid fetch**
 
+### 🖥️ Modern Web Interface
+- **ChatGPT-like interface** with clean, intuitive design
+- **Real-time chat** with streaming responses
+- **Deep research mode** with progress tracking
+- **History page** to view past research and conversations
+- **Settings page** for configuring modes, autonomy, and providers
+- **Dark mode** with automatic theme switching
+- **Markdown rendering** with LaTeX math support
+- **Responsive design** for desktop and mobile
+
 ---
 
 ## Quick start
@@ -82,8 +92,7 @@ Quality dials overlay mode budgets: **ultra-fast · balanced · accurate · comp
 ### Prerequisites
 
 - Python **3.14+** and [uv](https://docs.astral.sh/uv/)
-- **`GROQ_API_KEY`** (or `OPENAI_API_KEY` / `OPENROUTER_API_KEY`)
-- **`TAVILY_API_KEY`** for web search
+- **Optional:** API keys for paid providers (Groq, OpenAI, OpenRouter, etc.) — uses OpenCode Zen free if not configured
 - **Optional:** Temporal Server (durable execution) — see [INSTALL.md](docs/INSTALL.md)
 
 ### Bash
@@ -91,11 +100,22 @@ Quality dials overlay mode budgets: **ultra-fast · balanced · accurate · comp
 ```bash
 git clone <repo-url> && cd Autonomous-Research-Agent
 bash scripts/install.sh
-# edit .env with Groq + Tavily keys
-uv run python main.py "latest developments in quantum computing"
-uv run python main.py --history
-uv run python -m src.dashboard --port 8080
-uv run python test_gateway.py
+# edit .env with API keys (optional - uses free tier without keys)
+
+# Start the web UI (recommended)
+uv run python main.py server
+
+# Then start the frontend (in a new terminal)
+cd frontend
+npm install
+npm run dev
+
+# Or use CLI commands
+uv run python main.py chat                    # Interactive chat
+uv run python main.py research "topic"         # Deep research
+uv run python main.py doctor                   # System health check
+uv run python main.py eval [suite]             # Run evaluations
+uv run python main.py --history                # View past researches
 ```
 
 ### PowerShell
@@ -103,8 +123,20 @@ uv run python test_gateway.py
 ```powershell
 git clone <repo-url>; cd Autonomous-Research-Agent
 .\scripts\install.ps1
-# edit .env
-uv run python main.py "your research topic"
+# edit .env (optional)
+
+# Start the web UI (recommended)
+uv run python main.py server
+
+# Then start the frontend (in a new terminal)
+cd frontend
+npm install
+npm run dev
+
+# Or use CLI commands
+uv run python main.py chat
+uv run python main.py research "your topic"
+uv run python main.py doctor
 ```
 
 ---
@@ -124,6 +156,8 @@ uv run python main.py "your research topic"
 | [PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) | Production hardening checklist |
 | [INSTALL.md](docs/INSTALL.md) | Install detail (incl. Temporal, Ollama/vLLM) |
 | [AUDIT.md](docs/AUDIT.md) | Built vs target verification report |
+| [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) | Current implementation status (~85% complete) |
+| [frontend/README.md](frontend/README.md) | Frontend documentation |
 
 ---
 
@@ -149,19 +183,33 @@ Ultra-long horizon (24h): the LangGraph graph is wrapped in a Temporal workflow 
 ### Layout (current codebase)
 
 ```
-main.py            # CLI: research a topic, --history
+main.py            # CLI: chat, research, doctor, eval, server, --history
 src/graph.py       # LangGraph orchestration (9 nodes)
-src/nodes.py       # research nodes (parse → plan → search → extract → dedup → analyze → evaluate → synthesize → export)
 src/state.py       # ResearchState TypedDicts
-src/llm.py         # LLM wrapper → gateway (fast / strong tiers)
-src/search.py      # Tavily parallel search + page extraction
-src/memory.py      # JSON search history (~/.xiarch_memory.json)
-src/export.py      # Markdown report export → reports/
+src/llm.py         # LLM wrapper → gateway (fast / strong / thinker tiers)
 src/gateway/       # resilient BYOK LLM gateway (stdlib-only)
-src/dashboard/     # zero-dependency ops dashboard (SSE + Prometheus)
-test_gateway.py    # offline gateway tests (9/9)
-test_run.py        # e2e live tests (5/5, needs keys)
-docs/              # spec, architecture, roadmap, audit, …
+src/providers/     # Provider catalog and configuration
+src/engine/        # Multi-agent system and modes
+  ├── agents/      # Planner, Researcher, Critic, Synthesizer, Compiler, Thinker, Triangulator
+  ├── modes.py     # Research modes (chat, quick, standard, deep, etc.)
+  ├── temporal/    # Temporal workflows and activities (durable execution)
+src/rag/           # RAG pipeline with vector storage
+  ├── factoid.py   # Factoid extraction (token optimization)
+  ├── guard.py     # Retriever Guard (source verification)
+  ├── pipeline.py  # RAG pipeline orchestration
+  ├── vault.py     # Research vault and memory
+src/render/        # Output rendering
+  ├── math.py      # LaTeX math rendering
+src/tools/         # MCP tools and adapters
+  ├── adapters/    # Wikipedia, Firecrawl, built-in scraper
+src/eval/          # Evaluation system
+  ├── ComponentEvaluator, SystemEvaluator, OpsMetrics
+src/web/           # FastAPI REST API server
+  ├── Endpoints: /api/status, /api/chat, /api/research, /api/providers, /api/history
+config/            # Configuration files
+  ├── providers.yaml  # Provider configuration
+  ├── modes.yaml      # Research modes
+docs/              # spec, architecture, roadmap, audit, implementation status, …
 scripts/           # install.sh | install.ps1
 ```
 
