@@ -1,10 +1,12 @@
 """
-Tool adapters — zero-config by default, optional paid tools if keys present.
+Tool adapters — zero-config by default, optional paid/local tools if available.
 
 Always available (no API key, no Docker, no setup):
   - Wikipedia — search + extract (free, factual)
   - Built-in scraper — extract any URL to clean markdown via trafilatura
   - DuckDuckGo — lightweight web search fallback
+  - MinerU — PDF & document parser (PyPDF fallback)
+  - Nougat — Academic PDF & LaTeX equation OCR (PyPDF fallback)
 
 Optional (register when API keys are set):
   - Tavily — comprehensive web search + extract (needs TAVILY_API_KEY)
@@ -35,6 +37,28 @@ def _register_builtin() -> None:
         search_fn=builtin_search,
         extract_fn=builtin_extract,
         priority=5,
+    )
+
+# ── MinerU Document Parser (ALWAYS — PDF/Office parser) ───────────────
+def _register_mineru() -> None:
+    from .mineru import mineru_extract
+    register_tool(
+        name="mineru",
+        capabilities={"extract", "pdf", "documents", "free", "always"},
+        search_fn=lambda q, n: [],
+        extract_fn=mineru_extract,
+        priority=15,
+    )
+
+# ── Nougat Academic OCR (ALWAYS — Math PDF parser) ───────────────────
+def _register_nougat() -> None:
+    from .nougat import nougat_extract
+    register_tool(
+        name="nougat",
+        capabilities={"extract", "pdf", "latex", "math", "academic", "free", "always"},
+        search_fn=lambda q, n: [],
+        extract_fn=nougat_extract,
+        priority=20,
     )
 
 # ── Tavily (optional — needs TAVILY_API_KEY) ──────────────────────────
@@ -71,13 +95,14 @@ def _register_firecrawl() -> None:
     )
 
 def _register_exa() -> None:
+    from .exa import exa_search, exa_extract
     if not os.getenv("EXA_API_KEY"):
         return
     register_tool(
         name="exa",
-        capabilities={"web_search", "neural", "paid"},
-        search_fn=lambda q, n: [],
-        extract_fn=None,
+        capabilities={"web_search", "neural", "extract", "paid"},
+        search_fn=exa_search,
+        extract_fn=exa_extract,
         priority=40,
     )
 
@@ -85,6 +110,8 @@ def _register_exa() -> None:
 # Auto-register: always-available first, then optional
 _register_wikipedia()
 _register_builtin()
+_register_mineru()
+_register_nougat()
 _register_tavily()
 _register_firecrawl()
 _register_exa()

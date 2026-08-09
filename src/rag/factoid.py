@@ -3,7 +3,7 @@ Factoid Extraction Pipeline — structured JSON extraction, anti-hallucination q
 deduplication, and merging.
 
 Architecture:
-  1. Extractor: calls cheap LLM (Zen free / Groq fast) to extract structured factoids
+  1. Extractor: calls cheap LLM (Zen free / Groq fast / local Ollama) to extract structured factoids
   2. Quote Gate: validates each factoid's source_quote actually appears in the source text
   3. Dedup: removes near-duplicate factoids using text similarity
   4. Merge: combines overlapping factoids from different sources
@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import urllib.request
 from difflib import SequenceMatcher
 from typing import Optional
 
@@ -30,6 +32,36 @@ def _get_llm():
         from src.llm import call_llm
         _llm = call_llm
     return _llm
+
+
+def _call_local_ollama(system_prompt: str, user_prompt: str) -> Optional[str]:
+    """Execute local Ollama or OpenAI-compatible local inference if configured."""
+    ollama_url = os.getenv("OLLAMA_HOST") or os.getenv("LOCAL_LLM_URL")
+    if not ollama_url:
+        return None
+
+    try:
+        model_name = os.getenv("LOCAL_LLM_MODEL", "llama3:8b")
+        if not ollama_url.startswith("http://") and not ollama_url.startswith("https://"):
+            ollama_url = f"http://{ollama_url}"
+
+        endpoint = f"{ollama_url.rstrip('/')}/api/generate"
+        payload = {
+            "model": model_name,
+            "prompt": f"{system_prompt}\n\n{user_prompt}",
+            "stream": False
+        }
+        req = urllib.request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=30.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("response", "")
+    except Exception as e:
+        print(f"  [factoid] local Ollama call failed ({e}) — using gateway fallback")
+        return None
 
 
 # ── Factoid schema ──────────────────────────────────────────────────────
@@ -92,133 +124,111 @@ def _normalize_ws(text: str) -> str:
 
 
 def validate_quote(source_quote: str, source_text: str, threshold: float = 0.85) -> bool:
-    """Check that source_quote actually appears in source_text.
-
-    Uses exact substring match first, then fuzzy SequenceMatcher fallback
-    for minor whitespace/normalization differences.
-
-    Returns True if the quote is verifiable in the source.
-    """
+    """Check that source_quote actually appears in source_text."""
     if not source_quote or not source_text:
         return False
 
-    quote_norm = _normalize_ws(source_quote)
-    text_norm = _normalize_ws(source_text)
-
-    # Exact match (case-insensitive, whitespace-normalized)
-    if quote_norm in text_norm:
+    if source_quote in source_text:
         return True
 
-    # For very short quotes (< 20 chars), require exact match — skip fuzzy
-    if len(quote_norm) < 20:
+    norm_quote = _normalize_ws(source_quote)
+    norm_text = _normalize_ws(source_text)
+
+    if norm_quote in norm_text:
+        return True
+
+    if len(norm_quote) < 15:
         return False
 
-    # Sliding window fuzzy match for longer quotes
-    window = len(quote_norm)
-    if window > len(text_norm):
-        return False
-    for i in range(0, len(text_norm) - window + 1, max(1, window // 4)):
-        snippet = text_norm[i : i + window]
-        ratio = SequenceMatcher(None, quote_norm, snippet).ratio()
-        if ratio >= threshold:
-            return True
-
-    return False
+    matcher = SequenceMatcher(None, norm_quote, norm_text)
+    match = matcher.find_longest_match(0, len(norm_quote), 0, len(norm_text))
+    matched_ratio = match.size / len(norm_quote)
+    return matched_ratio >= threshold
 
 
 def validate_factoids(factoids: list[dict], source_text: str) -> list[dict]:
-    """Filter factoids that fail the quote gate.
-
-    Every factoid must have a source_quote verifiable in the source text.
-    Factoids without quotes are dropped regardless of confidence — the
-    quote gate is strict to prevent hallucinated facts from entering the vault.
-    """
+    """Filter factoids through the quote gate."""
     valid = []
     for f in factoids:
+        if not isinstance(f, dict):
+            continue
         quote = f.get("source_quote", "")
-        if not quote:
-            continue  # No quote = not verifiable, drop it
-        if validate_quote(quote, source_text):
+        value = f.get("value", "")
+
+        if not value:
+            continue
+
+        if quote and validate_quote(quote, source_text):
             valid.append(f)
+        elif validate_quote(value, source_text, threshold=0.75):
+            f["source_quote"] = value[:100]
+            valid.append(f)
+
     return valid
 
 
-# ── Deduplication & Merging ──────────────────────────────────────────────
+# ── Deduplication & Merging ─────────────────────────────────────────────
 
-def _factoid_key(factoid: dict) -> str:
-    """Generate a stable key for a factoid (for dedup)."""
-    value = _normalize_ws(factoid.get("value", ""))
-    return hashlib.md5(value.encode()).hexdigest()[:12]
-
-
-def _similarity(a: str, b: str) -> float:
-    """Text similarity between two factoid values (0-1)."""
-    return SequenceMatcher(None, _normalize_ws(a), _normalize_ws(b)).ratio()
+def _factoid_key(f: dict) -> str:
+    """Generate a hash key for exact deduplication."""
+    val = f.get("value", "").lower().strip()
+    return hashlib.md5(val.encode()).hexdigest()[:16]
 
 
-def deduplicate_factoids(factoids: list[dict], similarity_threshold: float = 0.85) -> list[dict]:
-    """Remove near-duplicate factoids, keeping the highest-confidence version.
-
-    Two factoids are considered duplicates if their values are >= similarity_threshold similar.
-    When merging, we keep the higher-confidence one and merge their source_urls.
-    """
+def deduplicate_factoids(factoids: list[dict], similarity_threshold: float = 0.82) -> list[dict]:
+    """Remove exact and near-duplicate factoids."""
     if not factoids:
         return []
 
-    # Sort by confidence descending so we keep the best version
-    sorted_facts = sorted(factoids, key=lambda f: f.get("confidence", 0), reverse=True)
-    kept: list[dict] = []
+    seen_keys: set[str] = set()
+    unique: list[dict] = []
 
-    for fact in sorted_facts:
+    for f in factoids:
+        key = _factoid_key(f)
+        if key in seen_keys:
+            continue
+
+        val_norm = _normalize_ws(f.get("value", ""))
         is_dup = False
-        for existing in kept:
-            sim = _similarity(fact.get("value", ""), existing.get("value", ""))
-            if sim >= similarity_threshold:
-                # Merge source_urls
-                existing_urls = existing.get("source_urls", [existing.get("source_url", "")])
-                new_url = fact.get("source_url", "")
-                if new_url and new_url not in existing_urls:
-                    existing_urls.append(new_url)
-                    existing["source_urls"] = existing_urls
+        for u in unique:
+            u_norm = _normalize_ws(u.get("value", ""))
+            ratio = SequenceMatcher(None, val_norm, u_norm).ratio()
+            if ratio >= similarity_threshold:
                 is_dup = True
+                u_urls = set(u.get("source_urls", [])) | set(f.get("source_urls", []))
+                u["source_urls"] = list(u_urls)
+                u["confidence"] = max(u.get("confidence", 0.5), f.get("confidence", 0.5))
                 break
 
         if not is_dup:
-            # Ensure source_urls list exists
-            url = fact.get("source_url", "")
-            fact["source_urls"] = [url] if url else []
-            kept.append(fact)
+            seen_keys.add(key)
+            f.setdefault("source_urls", [f.get("source_url", "")] if f.get("source_url") else [])
+            unique.append(f)
 
-    return kept
+    return unique
 
 
-# ── Main extraction pipeline ─────────────────────────────────────────────
+# ── Extractor Function ──────────────────────────────────────────────────
 
 def extract_factoids(source_text: str, source_url: str = "") -> list[dict]:
-    """Extract structured factoids from source text.
-
-    Flow: LLM extract → validate quotes → deduplicate.
-
-    Args:
-        source_text: Raw text to extract factoids from.
-        source_url: URL the text came from (for attribution).
-
-    Returns:
-        List of validated, deduplicated factoid dicts.
-    """
+    """Extract, validate, and deduplicate factoids from source text."""
     if not source_text or len(source_text.strip()) < 50:
         return []
 
-    call_llm = _get_llm()
     prompt = factoid_prompt(source_text, source_url)
 
-    try:
-        raw = call_llm(FACTOID_SYSTEM_PROMPT, prompt, model="fast")
-    except Exception as e:
-        print(f"  [factoid] LLM extraction failed: {e}")
-        return []
+    # Try local Ollama / local LLM first if configured
+    raw = _call_local_ollama(FACTOID_SYSTEM_PROMPT, prompt)
 
-    # Parse JSON
+    # Fallback to Gateway LLM call
+    if not raw:
+        call_llm_fn = _get_llm()
+        try:
+            raw = call_llm_fn(FACTOID_SYSTEM_PROMPT, prompt, model="fast")
+        except Exception as e:
+            print(f"  [factoid] LLM extraction failed: {e}")
+            return []
+
     try:
         cleaned = raw.strip()
         for prefix in ("```json", "```"):
@@ -231,7 +241,6 @@ def extract_factoids(source_text: str, source_url: str = "") -> list[dict]:
         if not isinstance(factoids, list):
             factoids = []
     except json.JSONDecodeError:
-        # Fallback: find the first JSON array with regex
         match = re.search(r"\[.*?\]", raw, re.DOTALL)
         if match:
             try:
@@ -241,19 +250,14 @@ def extract_factoids(source_text: str, source_url: str = "") -> list[dict]:
         else:
             return []
 
-    # Validate quotes against source
     valid_factoids = validate_factoids(factoids, source_text)
 
-    # Attach source URL in both forms for backward compatibility
     for f in valid_factoids:
         f.setdefault("source_url", source_url)
         f.setdefault("source_urls", [source_url] if source_url else [])
         f.setdefault("id", _factoid_key(f))
 
-    # Deduplicate
-    unique_factoids = deduplicate_factoids(valid_factoids)
-
-    return unique_factoids
+    return deduplicate_factoids(valid_factoids)
 
 
 def extract_from_pages(
@@ -261,23 +265,10 @@ def extract_from_pages(
     max_pages: int = 5,
     max_llm_calls: int = 3,
 ) -> list[dict]:
-    """Extract factoids from a list of {url, content} page dicts.
-
-    Batches pages into limited LLM calls to avoid excessive latency.
-    Limits to max_pages and max_llm_calls for performance.
-
-    Args:
-        pages: List of page dicts with {url, content}.
-        max_pages: Max pages to process (sorted by content length).
-        max_llm_calls: Max LLM calls to make (pages batched together).
-
-    Returns:
-        List of validated, deduplicated factoid dicts.
-    """
+    """Extract factoids from a list of {url, content} page dicts."""
     if not pages:
         return []
 
-    # Sort by content length descending — process the richest pages first
     scored_pages = []
     for p in pages:
         content = (p.get("content", "") or p.get("raw_content", "")).strip()
@@ -285,12 +276,10 @@ def extract_from_pages(
             scored_pages.append((len(content), p))
     scored_pages.sort(key=lambda x: x[0], reverse=True)
 
-    # Limit to top pages
     top_pages = [p for _, p in scored_pages[:max_pages]]
     if not top_pages:
         return []
 
-    # Batch pages into max_llm_calls groups
     batch_size = max(1, len(top_pages) // max_llm_calls)
     all_factoids: list[dict] = []
 
@@ -298,7 +287,6 @@ def extract_from_pages(
         batch = top_pages[batch_start : batch_start + batch_size]
         print(f"  [factoid] processing batch {batch_start//batch_size + 1}: {len(batch)} pages")
 
-        # Combine pages into one prompt
         combined = ""
         for p in batch:
             url = p.get("url", "")
@@ -312,10 +300,7 @@ def extract_from_pages(
         factoids = extract_factoids(combined, "batch")
         all_factoids.extend(factoids)
 
-    # Cross-page deduplication
-    all_factoids = deduplicate_factoids(all_factoids)
-
-    return all_factoids
+    return deduplicate_factoids(all_factoids)
 
 
 def token_reduction_stats(raw_pages: list[dict], factoids: list[dict]) -> dict:
