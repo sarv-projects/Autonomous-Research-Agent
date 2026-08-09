@@ -8,9 +8,10 @@ Always available (no API key, no Docker, no setup):
   - MinerU — PDF & document parser (PyPDF fallback)
   - Nougat — Academic PDF & LaTeX equation OCR (PyPDF fallback)
 
-Primary Search & Crawling (Firecrawl):
-  - Self-hosted: http://localhost:3002 (zero API key, free local Docker container)
-  - Cloud: https://api.firecrawl.dev (if FIRECRAWL_API_KEY set)
+Primary Search & Crawling:
+  - Exa — ultra-fast neural search (needs EXA_API_KEY, priority 110)
+  - Tavily — search + extract (needs TAVILY_API_KEY, priority 105)
+  - Firecrawl — self-hosted Docker (localhost:3002) or cloud API (priority 100)
 """
 
 import os
@@ -79,6 +80,19 @@ def _register_firecrawl() -> None:
         priority=100,
     )
 
+# ── Tavily (optional — needs TAVILY_API_KEY) ──────────────────────────
+def _register_tavily() -> None:
+    from .tavily import tavily_search, tavily_extract
+    if not os.getenv("TAVILY_API_KEY"):
+        return
+    register_tool(
+        name="tavily",
+        capabilities={"web_search", "extract", "paid"},
+        search_fn=tavily_search,
+        extract_fn=tavily_extract,
+        priority=105,
+    )
+
 # ── Exa (optional — needs EXA_API_KEY) ───────────────────────────────
 def _register_exa() -> None:
     from .exa import exa_search, exa_extract
@@ -89,7 +103,7 @@ def _register_exa() -> None:
         capabilities={"web_search", "neural", "extract", "paid"},
         search_fn=exa_search,
         extract_fn=exa_extract,
-        priority=40,
+        priority=110,
     )
 
 
@@ -99,4 +113,5 @@ _register_builtin()
 _register_mineru()
 _register_nougat()
 _register_firecrawl()
+_register_tavily()
 _register_exa()
