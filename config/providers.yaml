@@ -59,8 +59,9 @@ providers:
     base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
     api_key_env: "GEMINI_API_KEY"
     models:
-      - gemini-3.6-flash
       - gemini-2.5-flash
+      - gemini-2.0-flash
+      - gemini-1.5-pro
 
   # ── Groq ──
   groq:
@@ -92,7 +93,7 @@ providers:
       - command-a-plus-05-2026
       - command-a-03-2025
 
-# ── Tier definitions (fast / strong) ──
+# ── Tier definitions (fast / strong / thinker) ──
 tiers:
   fast:
     - provider: opencode_free
@@ -114,6 +115,8 @@ tiers:
 
   thinker:
     - provider: gemini
-      model: gemini-3.6-flash
+      model: gemini-2.5-flash
+    - provider: gemini
+      model: gemini-2.0-flash
     - provider: opencode_free
       model: big-pickle
