@@ -175,35 +175,37 @@ def _factoid_key(f: dict) -> str:
     return hashlib.md5(val.encode()).hexdigest()[:16]
 
 
-def deduplicate_factoids(factoids: list[dict], similarity_threshold: float = 0.82) -> list[dict]:
-    """Remove exact and near-duplicate factoids."""
+def deduplicate_factoids(factoids: list[dict], similarity_threshold: float = 0.75) -> list[dict]:
+    """Remove exact and near-duplicate factoids, retaining highest confidence and merging URLs."""
     if not factoids:
         return []
 
-    seen_keys: set[str] = set()
     unique: list[dict] = []
 
     for f in factoids:
-        key = _factoid_key(f)
-        if key in seen_keys:
-            continue
-
         val_norm = _normalize_ws(f.get("value", ""))
+        f_url = f.get("source_url") or ""
+        f_urls = set(f.get("source_urls", []))
+        if f_url:
+            f_urls.add(f_url)
+
+        f_conf = f.get("confidence", 0.5)
+
         is_dup = False
         for u in unique:
             u_norm = _normalize_ws(u.get("value", ""))
             ratio = SequenceMatcher(None, val_norm, u_norm).ratio()
-            if ratio >= similarity_threshold:
+            if ratio >= similarity_threshold or val_norm == u_norm:
                 is_dup = True
-                u_urls = set(u.get("source_urls", [])) | set(f.get("source_urls", []))
+                u_urls = set(u.get("source_urls", [])) | f_urls
                 u["source_urls"] = list(u_urls)
-                u["confidence"] = max(u.get("confidence", 0.5), f.get("confidence", 0.5))
+                u["confidence"] = max(u.get("confidence", 0.5), f_conf)
                 break
 
         if not is_dup:
-            seen_keys.add(key)
-            f.setdefault("source_urls", [f.get("source_url", "")] if f.get("source_url") else [])
-            unique.append(f)
+            f_copy = dict(f)
+            f_copy["source_urls"] = list(f_urls)
+            unique.append(f_copy)
 
     return unique
 
@@ -217,10 +219,8 @@ def extract_factoids(source_text: str, source_url: str = "") -> list[dict]:
 
     prompt = factoid_prompt(source_text, source_url)
 
-    # Try local Ollama / local LLM first if configured
     raw = _call_local_ollama(FACTOID_SYSTEM_PROMPT, prompt)
 
-    # Fallback to Gateway LLM call
     if not raw:
         call_llm_fn = _get_llm()
         try:
