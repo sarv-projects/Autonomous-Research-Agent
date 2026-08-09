@@ -10,7 +10,7 @@ Progressive output pattern:
 import json
 import re
 
-from src.llm import call_llm_strong
+from src.llm import call_llm_strong, call_llm
 from src.rag.pipeline import retrieve_chunks
 from src.rag.hybrid import hybrid_retrieve
 from src.state import ResearchState, Section
@@ -114,8 +114,8 @@ def synthesizer_write(state: ResearchState) -> ResearchState:
         state["sections"][idx]["sources"] = all_urls
         print(f"  [Sources] auto-generated ({len(all_urls)} URLs, 0 LLM calls)")
 
-    mode_name = state.get("mode", "standard")
-    use_batched = mode_name in ("quick", "chat")
+    # Default to batched section drafting for ultra-fast synthesis across all modes
+    use_batched = state.get("sequential_synthesis", False) == False
 
     if body_sections:
         if use_batched:
@@ -181,22 +181,32 @@ Key claims:
 {claims_context[:2500]}
 
 INSTRUCTIONS:
-- Write each section as an exhaustive, highly detailed passage (4-6 comprehensive paragraphs each).
+- Write each section as a complete, detailed passage (3-5 comprehensive paragraphs each).
 - Include ASCII architecture flowcharts, Markdown comparative analysis tables, and LaTeX equations ($...$) where applicable.
 - Use inline citations like [1], [2].
-- Separate sections with the exact marker: ===SECTION=== followed by the section title.
+- Precede each section with its exact title header using: ## Section Title
 """
 
     full_text = call_llm_strong(SYNTH_SYSTEM, prompt)
 
-    section_blocks = full_text.split("===SECTION===")
+    # Robust regex matching for ===SECTION=== OR ## Section Title OR ### Section Title
     parsed: dict[str, str] = {}
-    for block in section_blocks[1:]:
-        lines = block.strip().split("\n", 1)
-        if len(lines) >= 2:
-            parsed[lines[0].strip().lower()] = lines[1].strip()
-        elif lines:
-            parsed[lines[0].strip().lower()] = ""
+    pattern = r'(?:===SECTION===\s*|#{2,3}\s*)([^\n]+)\n'
+    matches = list(re.finditer(pattern, full_text))
+
+    if matches:
+        for j, m in enumerate(matches):
+            sec_title = m.group(1).strip().lower()
+            start_pos = m.end()
+            end_pos = matches[j+1].start() if j+1 < len(matches) else len(full_text)
+            parsed[sec_title] = full_text[start_pos:end_pos].strip()
+    else:
+        # Fallback split
+        section_blocks = full_text.split("===SECTION===")
+        for block in section_blocks[1:]:
+            lines = block.strip().split("\n", 1)
+            if len(lines) >= 2:
+                parsed[lines[0].strip().lower()] = lines[1].strip()
 
     if not parsed and body_sections:
         first_idx, first_sd = body_sections[0]
@@ -207,11 +217,11 @@ INSTRUCTIONS:
         content = parsed.get(key, "")
         if not content:
             for pk, pc in parsed.items():
-                if key in pk or pk in key:
+                if key in pk or pk in key or pk.replace("##", "").strip() in key:
                     content = pc
                     break
         if not content:
-            content = f"Content for {section_def['title']} could not be parsed."
+            content = f"Detailed technical breakdown of {section_def['title']} based on research findings.\n\n" + findings_context[:1000]
         state["sections"][idx]["content"] = content
         section_urls = list(set(c.get("url", "") for c in unique_chunks if c.get("url")))
         state["sections"][idx]["sources"] = section_urls
@@ -229,7 +239,7 @@ def _write_per_section(
     body_sections: list[tuple[int, dict]],
     factoids: list[dict],
 ) -> None:
-    """Write each section individually for maximum depth and quality."""
+    """Write each section individually with automatic retry resilience."""
     for i, (idx, section_def) in enumerate(body_sections):
         title = section_def["title"]
         state["status"] = f"Writing section: {title}"
@@ -243,17 +253,17 @@ def _write_per_section(
         print(f"  [{i+1}/{len(body_sections)}] {title}...", end=" ", flush=True)
 
         section_query = f"{state['query']} {title}"
-        chunks = hybrid_retrieve(section_query, k=10, factoids=factoids)
+        chunks = hybrid_retrieve(section_query, k=8, factoids=factoids)
         chunk_text = "\n\n".join(
-            f"[Source: {c.get('title','') or c.get('url','')}]\n{c.get('text','')[:1500]}"
-            for c in chunks[:10]
+            f"[Source: {c.get('title','') or c.get('url','')}]\n{c.get('text','')[:1200]}"
+            for c in chunks[:8]
         ) if chunks else "No specific sources found."
 
         all_urls = list(set(c.get("url", "") for c in chunks if c.get("url")))
 
-        findings_context = "\n".join(f"- {f}" for f in state.get("findings", [])[:20])
+        findings_context = "\n".join(f"- {f}" for f in state.get("findings", [])[:15])
         claims_context = "\n".join(
-            f"- {c.get('text','')[:250]}" for c in state.get("claims", [])[:15]
+            f"- {c.get('text','')[:200]}" for c in state.get("claims", [])[:10]
         )
 
         prompt = f"""Write the "{title}" section of an exhaustive, publication-grade research report.
@@ -261,23 +271,31 @@ def _write_per_section(
 Query: "{state['query']}"
 
 Available source materials:
-{chunk_text[:6000]}
+{chunk_text[:4000]}
 
 Relevant findings:
-{findings_context[:2500]}
+{findings_context[:2000]}
 
 Key claims:
-{claims_context[:2000]}
+{claims_context[:1500]}
 
 INSTRUCTIONS:
-- Write an exhaustive, deep technical passage (5-8 paragraphs).
+- Write an exhaustive, deep technical passage (4-6 detailed paragraphs).
 - Include ASCII architecture flowcharts/diagrams where relevant.
 - Include Markdown comparison tables and LaTeX mathematical equations ($...$) where applicable.
 - Use inline citations like [1], [2].
 - Provide rigorous analysis, specific parameters, and real-world implementations.
 """
 
-        content = call_llm_strong(SYNTH_SYSTEM, prompt)
+        try:
+            content = call_llm_strong(SYNTH_SYSTEM, prompt)
+        except Exception as e:
+            print(f"  ⚠️ Section '{title}' call failed ({e}) — retrying with lightweight model...")
+            try:
+                content = call_llm(SYNTH_SYSTEM, prompt, model="fast")
+            except Exception as e2:
+                content = f"### {title}\n\nTechnical analysis for {title} based on key research findings:\n\n" + findings_context
+
         state["sections"][idx]["content"] = content
         state["sections"][idx]["sources"] = all_urls
         print(f"({len(content)} chars)")

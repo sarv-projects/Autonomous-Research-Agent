@@ -24,7 +24,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Dict, List
 
-DEFAULT_TIMEOUT = 60.0
+DEFAULT_TIMEOUT = 180.0
 
 # Per-model pricing in USD per 1M tokens for cost accounting. Tune as needed.
 # (input, output) pairs.
