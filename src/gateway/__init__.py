@@ -180,10 +180,11 @@ def build_gateway_from_env(
         ("opencode_free", "big-pickle"),
     ]
 
-    # Thinker tier: Gemini free → Zen big-pickle → Groq → DeepSeek fallback
+    # Thinker tier: High-quota Gemini (500 RPD) → Zen big-pickle → Groq → DeepSeek fallback
     default_thinker = [
-        ("gemini", "gemini-2.5-flash"),
-        ("gemini", "gemini-2.0-flash"),
+        ("gemini", "gemini-3.5-flash-lite"),
+        ("gemini", "gemini-3.1-flash-lite"),
+        ("gemini", "gemini-3.6-flash"),
         ("opencode_free", "big-pickle"),
         ("groq", "openai/gpt-oss-120b"),
         ("deepseek", "deepseek-v4-flash"),

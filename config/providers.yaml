@@ -53,15 +53,16 @@ providers:
       - claude-sonnet-5
       - claude-haiku-4-5
 
-  # ── Google Gemini ──
+  # ── Google Gemini (AI Studio Dashboard Tiering) ──
   gemini:
     name: "Gemini (Google)"
     base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
     api_key_env: "GEMINI_API_KEY"
     models:
-      - gemini-2.5-flash
-      - gemini-2.0-flash
-      - gemini-1.5-pro
+      - gemini-3.5-flash-lite       # 15 RPM, 500 RPD, 250K TPM (High Quota Primary)
+      - gemini-3.1-flash-lite       # 15 RPM, 500 RPD, 250K TPM (High Quota Backup)
+      - gemini-3.6-flash            # 5 RPM, 20 RPD, 250K TPM
+      - gemini-2.5-flash            # 5 RPM, 20 RPD, 250K TPM
 
   # ── Groq ──
   groq:
@@ -96,16 +97,18 @@ providers:
 # ── Tier definitions (fast / strong / thinker) ──
 tiers:
   fast:
+    - provider: gemini
+      model: gemini-3.5-flash-lite
     - provider: opencode_free
       model: mimo-v2.5-free
     - provider: groq
       model: openai/gpt-oss-20b
     - provider: openai
       model: gpt-4o-mini
-    - provider: openrouter
-      model: cohere/north-mini-code:free
 
   strong:
+    - provider: gemini
+      model: gemini-3.5-flash-lite
     - provider: groq
       model: openai/gpt-oss-120b
     - provider: opencode_free
@@ -115,8 +118,10 @@ tiers:
 
   thinker:
     - provider: gemini
-      model: gemini-2.5-flash
+      model: gemini-3.5-flash-lite     # 500 RPD
     - provider: gemini
-      model: gemini-2.0-flash
+      model: gemini-3.1-flash-lite     # 500 RPD
+    - provider: gemini
+      model: gemini-3.6-flash          # 20 RPD
     - provider: opencode_free
       model: big-pickle
