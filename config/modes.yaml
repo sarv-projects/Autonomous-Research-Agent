@@ -1,0 +1,151 @@
+# Mode Configuration
+# Each mode defines budgets for tokens, cost, time, and tool calls.
+# Quality dials overlay mode budgets.
+
+modes:
+  # ── Chat ──
+  chat:
+    description: "Conversational Q&A"
+    budgets:
+      max_tokens: 16000
+      max_cost_usd: 0.05
+      max_time_s: 120
+      max_tool_calls: 2
+      max_iterations: 0
+    quality_dial: "balanced"
+    vault_rag: true
+    allow_tools: true
+    escalate_to_research: true
+
+  # ── Quick ──
+  quick:
+    description: "Fast brief research"
+    budgets:
+      max_tokens: 32000
+      max_cost_usd: 0.15
+      max_time_s: 300
+      max_tool_calls: 8
+      max_iterations: 2
+    quality_dial: "ultra-fast"
+    vault_rag: true
+    allow_tools: true
+
+  # ── Standard ──
+  standard:
+    description: "Default research"
+    budgets:
+      max_tokens: 100000
+      max_cost_usd: 0.50
+      max_time_s: 600
+      max_tool_calls: 20
+      max_iterations: 6
+    quality_dial: "balanced"
+    vault_rag: true
+    allow_tools: true
+
+  # ── Deep ──
+  deep:
+    description: "Heavy analysis"
+    budgets:
+      max_tokens: 500000
+      max_cost_usd: 2.00
+      max_time_s: 1800
+      max_tool_calls: 50
+      max_iterations: 15
+    quality_dial: "accurate"
+    vault_rag: true
+    allow_tools: true
+
+  # ── Recency ──
+  recency:
+    description: "Last-N-days style research"
+    budgets:
+      max_tokens: 100000
+      max_cost_usd: 0.50
+      max_time_s: 600
+      max_tool_calls: 20
+      max_iterations: 6
+    quality_dial: "balanced"
+    vault_rag: true
+    allow_tools: true
+    recency_bias: true
+
+  # ── Academic ──
+  academic:
+    description: "Papers-first research"
+    budgets:
+      max_tokens: 200000
+      max_cost_usd: 1.00
+      max_time_s: 900
+      max_tool_calls: 30
+      max_iterations: 8
+    quality_dial: "accurate"
+    vault_rag: true
+    allow_tools: true
+    academic_bias: true
+
+  # ── Compare ──
+  compare:
+    description: "A vs B comparison"
+    budgets:
+      max_tokens: 150000
+      max_cost_usd: 0.75
+      max_time_s: 600
+      max_tool_calls: 25
+      max_iterations: 6
+    quality_dial: "balanced"
+    vault_rag: true
+    allow_tools: true
+    structured_output: true
+
+  # ── Ultra-long (24h, needs Temporal) ──
+  ultra-long:
+    description: "24h deep dive with durable execution"
+    budgets:
+      max_tokens: 5000000
+      max_cost_usd: 10.00
+      max_time_s: 86400
+      max_tool_calls: 200
+      max_iterations: 50
+    quality_dial: "comprehensive"
+    vault_rag: true
+    allow_tools: true
+    requires_temporal: true
+
+# ── Quality Dials ──
+quality_dials:
+  ultra-fast:
+    description: "Minimize latency and tool calls"
+    max_tokens_per_call: 4000
+    max_search_results: 5
+    max_extract_pages: 3
+    thinker_enabled: false
+    triangulation_enabled: false
+    factoid_enabled: false
+
+  balanced:
+    description: "Default"
+    max_tokens_per_call: 8000
+    max_search_results: 10
+    max_extract_pages: 5
+    thinker_enabled: false
+    triangulation_enabled: false
+    factoid_enabled: false
+
+  accurate:
+    description: "More retrieval, critique, cite-check"
+    max_tokens_per_call: 16000
+    max_search_results: 20
+    max_extract_pages: 8
+    thinker_enabled: true
+    triangulation_enabled: true
+    factoid_enabled: true
+
+  comprehensive:
+    description: "Highest coverage, deeper gaps"
+    max_tokens_per_call: 32000
+    max_search_results: 30
+    max_extract_pages: 12
+    thinker_enabled: true
+    triangulation_enabled: true
+    factoid_enabled: true

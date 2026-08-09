@@ -1,18 +1,19 @@
 """
-Groq / multi-provider LLM wrapper routed through the resilient gateway.
+Multi-provider LLM wrapper routed through the resilient gateway.
 
 The interface is unchanged (``call_llm`` / ``call_llm_strong``) so the existing
-LangGraph nodes keep working. Under the hood every call now goes through the
-BYOK LLM gateway, gaining:
+LangGraph nodes keep working. Under the hood every call goes through the
+BYOK LLM gateway with:
 
-- multi-provider failover (Groq -> OpenAI -> OpenRouter chain from env)
-- circuit breakers per model endpoint
-- retries with exponential backoff + full jitter
-- per-(tenant, model) rate limiting and concurrency caps
-- cost/token accounting + metrics for the dashboard
+- Multi-provider failover (paid keys → Zen free default)
+- Circuit breakers per model endpoint
+- Retries with exponential backoff + full jitter
+- Per-(tenant, model) rate limiting and concurrency caps
+- Cost/token accounting + metrics for the dashboard
 
-Env vars (see src/gateway/__init__.py for the full list):
-    GROQ_API_KEY / GROQ_API_KEY_2..N / OPENAI_API_KEY... / OPENROUTER_API_KEY...
+Provider priority:
+  1. Paid providers from env (Groq > OpenAI > OpenRouter) when keys present
+  2. OpenCode Zen free (mimo-v2.5-free, always available, no key needed)
 """
 
 import os
@@ -25,8 +26,8 @@ from src.gateway.router import AllRoutesFailed, QuotaExceeded
 load_dotenv()
 
 # Fast model for most tasks, strong model for synthesis.
-DEFAULT_MODEL = "gpt-oss-20b"
-STRONG_MODEL = "gpt-oss-120b"
+DEFAULT_MODEL = "fast"
+STRONG_MODEL = "strong"
 
 _gateway = None
 
@@ -38,12 +39,29 @@ def _get_gateway():
     return _gateway
 
 
-def _tier_for(model: str) -> str:
-    if model == DEFAULT_MODEL:
-        return "fast"
-    if model == STRONG_MODEL:
-        return "strong"
-    return model
+def reset_gateway() -> None:
+    """Reset the gateway singleton (useful for testing)."""
+    global _gateway
+    _gateway = None
+
+
+def gateway_info() -> dict:
+    """Return info about currently available providers and models."""
+    gw = _get_gateway()
+    info = {
+        "fast_routes": len(gw.get_routes("fast")),
+        "strong_routes": len(gw.get_routes("strong")),
+        "routes": [],
+    }
+    for tier in ("fast", "strong"):
+        for route in gw.get_routes(tier):
+            info["routes"].append({
+                "tier": tier,
+                "provider": route.provider.name,
+                "model": route.model,
+                "has_key": bool(getattr(route.provider, "api_keys", [])),
+            })
+    return info
 
 
 def call_llm(
@@ -53,10 +71,11 @@ def call_llm(
     max_retries: int = 3,  # kept for API compatibility; gateway does its own retries
 ) -> str:
     gw = _get_gateway()
-    tier = _tier_for(model)
+    tier = model if model in ("fast", "strong") else DEFAULT_MODEL
     if not gw.get_routes(tier):
-        # If a custom/unknown model tier has no routes, fall back to "fast".
-        tier = "fast"
+        # If the tier has no routes, fall back to "fast".
+        if tier != "fast" and gw.get_routes("fast"):
+            tier = "fast"
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
@@ -73,3 +92,25 @@ def call_llm(
 def call_llm_strong(system_prompt: str, user_prompt: str) -> str:
     """Use the stronger model tier for synthesis."""
     return call_llm(system_prompt, user_prompt, model=STRONG_MODEL)
+
+
+def call_llm_stream(
+    system_prompt: str,
+    user_prompt: str,
+    model: str = DEFAULT_MODEL,
+):
+    """Streaming LLM call — yields text chunks via generator.
+
+    Uses the gateway's streaming transport. Falls back to non-streaming
+    if the provider doesn't support streaming.
+    """
+    gw = _get_gateway()
+    tier = model if model in ("fast", "strong", "thinker") else DEFAULT_MODEL
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    try:
+        yield from gw.complete_stream(messages, model=tier)
+    except (QuotaExceeded, AllRoutesFailed) as e:
+        raise RuntimeError(f"LLM streaming failed: {e}")

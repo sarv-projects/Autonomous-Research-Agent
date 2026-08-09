@@ -53,6 +53,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(snap)
         elif self.path == "/api/events":
             self._serve_sse()
+        elif self.path == "/api/research/progress":
+            self._serve_research_sse()
         elif self.path == "/metrics":
             body = DEFAULT_METRICS.to_prometheus().encode("utf-8")
             self.send_response(200)
@@ -95,6 +97,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 if events:
                     _last_event_ts[0] = max(x.get("ts", 0) for x in events)
                 time.sleep(1.5)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def _serve_research_sse(self) -> None:
+        """Stream research progress to the browser as Server-Sent Events."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+        try:
+            from src.engine.progress import get_progress
+            progress = get_progress()
+            while True:
+                snap = progress.snapshot()
+                payload = f"data: {json.dumps(snap)}\n\n"
+                self.wfile.write(payload.encode("utf-8"))
+                self.wfile.flush()
+                if snap.get("finished"):
+                    # Send final snapshot then close
+                    time.sleep(0.5)
+                    break
+                time.sleep(1.0)
         except (BrokenPipeError, ConnectionResetError):
             pass
 

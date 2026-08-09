@@ -6,7 +6,15 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "groq>=1.5.0",
+    "lancedb>=0.17",
     "langgraph>=1.2.7",
+    "numpy>=1.24",
     "python-dotenv>=1.2.2",
+    "pyyaml>=6.0",
+    "qdrant-client>=1.19.0",
     "tavily-python>=0.7.26",
+    "trafilatura>=2.2.0",
+    "temporalio>=1.8.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
 ]

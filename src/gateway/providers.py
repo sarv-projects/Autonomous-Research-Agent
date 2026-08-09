@@ -40,6 +40,15 @@ PRICING: Dict[str, tuple] = {
     "llama-3.1-8b-instant": (0.05, 0.08),
     "deepseek-v4-flash": (0.14, 0.28),
     "deepseek-v4-pro": (0.435, 0.87),
+    # Free models (cost accounting only; actual cost = 0)
+    "mimo-v2.5-free": (0.0, 0.0),
+    "deepseek-v4-flash-free": (0.0, 0.0),
+    "big-pickle": (0.0, 0.0),
+    "nemotron-3-ultra-free": (0.0, 0.0),
+    "laguna-s-2.1-free": (0.0, 0.0),
+    # Gemini free tier (free input/output on eligible models)
+    "gemini-3.6-flash": (0.0, 0.0),
+    "gemini-2.5-flash": (0.0, 0.0),
     "*default": (0.50, 1.50),
 }
 
@@ -94,20 +103,24 @@ class OpenAICompatibleProvider:
         api_key: str | None = None,
         timeout: float = DEFAULT_TIMEOUT,
     ) -> ProviderResult:
+        """Synchronous completion — returns the full response."""
         key = api_key or (self.api_keys[0] if self.api_keys else "")
         payload: Dict = {"model": model, "messages": messages, "temperature": temperature}
         if max_tokens:
             payload["max_tokens"] = max_tokens
 
         body = json.dumps(payload).encode("utf-8")
+        headers: Dict[str, str] = {
+            "Content-Type": "application/json",
+            "User-Agent": "AutonomousResearchAgent/1.0 (python-urllib)",
+        }
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
         req = urllib.request.Request(
             self._url(),
             data=body,
             method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {key}",
-            },
+            headers=headers,
         )
         start = time.time()
         try:
@@ -143,3 +156,70 @@ class OpenAICompatibleProvider:
             )
         except (KeyError, ValueError, IndexError) as e:
             raise ProviderConnectionError(f"{self.name} bad response: {e}")
+
+    def complete_stream(
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        temperature: float = 0.3,
+        max_tokens: int | None = None,
+        api_key: str | None = None,
+        timeout: float = DEFAULT_TIMEOUT,
+    ):
+        """Streaming completion — yields text chunks via SSE-style generator.
+
+        Yields str chunks as they arrive from the provider. Uses HTTP
+        streaming response with stream=True in the payload.
+        """
+        key = api_key or (self.api_keys[0] if self.api_keys else "")
+        payload: Dict = {
+            "model": model, "messages": messages, "temperature": temperature,
+            "stream": True,
+        }
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+
+        body = json.dumps(payload).encode("utf-8")
+        headers: Dict[str, str] = {
+            "Content-Type": "application/json",
+            "User-Agent": "AutonomousResearchAgent/1.0 (python-urllib)",
+        }
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+        req = urllib.request.Request(
+            self._url(), data=body, method="POST", headers=headers,
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                for line in resp:
+                    line_str = line.decode("utf-8", "ignore").strip()
+                    if not line_str or line_str.startswith(":"):
+                        continue
+                    if line_str == "data: [DONE]":
+                        break
+                    if line_str.startswith("data: "):
+                        try:
+                            chunk = json.loads(line_str[6:])
+                            delta = (
+                                chunk.get("choices", [{}])[0]
+                                .get("delta", {})
+                                .get("content", "")
+                            )
+                            if delta:
+                                yield delta
+                        except (json.JSONDecodeError, KeyError, IndexError):
+                            continue
+        except urllib.error.HTTPError as e:
+            msg = ""
+            try:
+                msg = json.loads(e.read().decode("utf-8", "ignore")).get("error", {}).get("message", str(e))
+            except Exception:
+                msg = str(e)
+            raise ProviderHTTPError(e.code, msg, retriable_status(e.code))
+        except (urllib.error.URLError, socket.timeout, TimeoutError) as e:
+            if isinstance(e, (socket.timeout, TimeoutError)) or (
+                isinstance(e, urllib.error.URLError) and isinstance(e.reason, (socket.timeout, TimeoutError))
+            ):
+                raise ProviderTimeoutError(f"{self.name} timed out: {e}")
+            raise ProviderConnectionError(f"{self.name} connection error: {e}")

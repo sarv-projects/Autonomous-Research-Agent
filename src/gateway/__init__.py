@@ -65,18 +65,28 @@ def _provider(name: str, key_env: str, base_url_env: str, default_base: str) -> 
     return p
 
 
+def _zen_free_provider() -> OpenAICompatibleProvider:
+    """Create the OpenCode Zen free provider (no API key required)."""
+    p = OpenAICompatibleProvider("opencode_free", "https://opencode.ai/zen/v1")
+    p.api_keys = []  # empty = no Authorization header
+    return p
+
+
 def build_gateway_from_env(
     fast_models: Optional[list] = None,
     strong_models: Optional[list] = None,
     clave_circuit_ok: bool = True,
+    use_catalog: bool = True,
 ) -> Gateway:
     """
-    Build a fully wired Gateway from environment variables.
+    Build a fully wired Gateway from environment variables or catalog config.
 
-    Route priority order = order of providers listed. A provider is only
-    registered for a model if it has at least one API key configured, so a
-    single ``GROQ_API_KEY`` keeps working exactly like before — but now with
-    circuit breakers, rate limiting, retries with jitter, cost tracking, etc.
+    Route priority: paid providers (if keys present) → Zen free (always available).
+    A single ``GROQ_API_KEY`` keeps working exactly like before — just now with
+    Zen free as fallback when no paid keys are configured.
+
+    Args:
+        use_catalog: If True, load from config/providers.yaml. If False, use env vars only.
     """
     metrics = DEFAULT_METRICS
     km = KeyManager()
@@ -101,24 +111,91 @@ def build_gateway_from_env(
         retry_cap_s=float(os.getenv("GATEWAY_RETRY_CAP_S", "8")),
     )
 
-    providers = [
+    # Try to load from catalog if enabled
+    if use_catalog:
+        try:
+            from src.providers.catalog import load_catalog
+            catalog = load_catalog()
+            if catalog.providers:
+                # Register providers from catalog
+                catalog_providers = []
+                for provider_name, slot in catalog.providers.items():
+                    prov = OpenAICompatibleProvider(
+                        slot.name,
+                        slot.effective_base_url
+                    )
+                    prov.api_keys = slot._all_keys if hasattr(slot, '_all_keys') else ([slot.api_key] if slot.api_key else [])
+                    catalog_providers.append(prov)
+                    
+                    # Register routes for this provider's models
+                    for model in slot.models:
+                        for tier_name, tier_config in catalog.tiers.items():
+                            for route in tier_config.routes:
+                                if route.provider_name == provider_name and route.model == model:
+                                    route_name = f"{prov.name}/{model}"
+                                    gw.register(Route(provider=prov, model=model, tier=tier_name,
+                                                      priority=route.priority, name=route_name))
+                
+                if catalog_providers:
+                    # Successfully loaded from catalog, use catalog providers
+                    all_providers = catalog_providers + [zen]  # Add Zen as fallback
+                    # Re-register chains with catalog providers
+                    for tier_name, tier_config in catalog.tiers.items():
+                        for route in tier_config.routes:
+                            prov = next((p for p in catalog_providers if p.name == route.provider_name), None)
+                            if prov:
+                                route_name = f"{prov.name}/{route.model}"
+                                gw.register(Route(provider=prov, model=route.model, tier=tier_name,
+                                                  priority=route.priority, name=route_name))
+                    return gw
+        except Exception as e:
+            # Fall back to env-based config if catalog fails
+            pass
+
+    # ── Fallback: Environment-based configuration ──
+    # ── Paid providers (Groq → OpenAI → OpenRouter) ──
+    paid_providers = [
         _provider("groq", "GROQ_API_KEY", "GROQ_BASE_URL", "https://api.groq.com/openai"),
         _provider("openai", "OPENAI_API_KEY", "OPENAI_BASE_URL", "https://api.openai.com"),
         _provider("openrouter", "OPENROUTER_API_KEY", "OPENROUTER_BASE_URL", "https://openrouter.ai/api"),
+        _provider("gemini", "GEMINI_API_KEY", "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai"),
+        _provider("deepseek", "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
     ]
-    providers = [p for p in providers if p is not None]
-    if not providers:
-        return gw
+    paid_providers = [p for p in paid_providers if p is not None]
 
-    default_fast = [("groq", "gpt-oss-20b"), ("openai", "gpt-4o-mini")]
-    default_strong = [("groq", "gpt-oss-120b"), ("openai", "gpt-4o-mini")]
+    # ── Zen free (always available, no key needed) ──
+    zen = _zen_free_provider()
+
+    # Combine: paid first (faster, higher quality when available), Zen free as fallback
+    all_providers = [zen]  # Zen is always available
+
+    default_fast = [
+        ("groq", "openai/gpt-oss-20b"),
+        ("openai", "gpt-4o-mini"),
+        ("opencode_free", "mimo-v2.5-free"),
+    ]
+    default_strong = [
+        ("groq", "openai/gpt-oss-120b"),
+        ("openai", "gpt-4o-mini"),
+        ("opencode_free", "big-pickle"),
+    ]
+
+    # Thinker tier: Gemini free → Zen big-pickle → Groq → DeepSeek fallback
+    default_thinker = [
+        ("gemini", "gemini-3.6-flash"),
+        ("opencode_free", "big-pickle"),
+        ("groq", "openai/gpt-oss-120b"),
+        ("deepseek", "deepseek-v4-flash"),
+        ("opencode_free", "deepseek-v4-flash-free"),
+    ]
 
     fast = fast_models or default_fast
     strong = strong_models or default_strong
+    thinker = default_thinker  # thinker tier always uses this fallback chain
 
     def _register_chain(tier: str, plan: list) -> None:
         for i, (prov_name, model) in enumerate(plan):
-            prov = next((p for p in providers if p.name == prov_name), None)
+            prov = next((p for p in [*paid_providers, zen] if p.name == prov_name), None)
             if prov is None:
                 continue
             route_name = f"{prov.name}/{model}"
@@ -127,4 +204,6 @@ def build_gateway_from_env(
 
     _register_chain("fast", [c for c in default_fast] if not fast else fast)
     _register_chain("strong", [c for c in default_strong] if not strong else strong)
+    _register_chain("thinker", [c for c in thinker])
+
     return gw

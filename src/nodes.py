@@ -6,6 +6,7 @@ import time
 from src.llm import call_llm
 from src.search import parallel_search, extract_content
 from src.state import ResearchState
+from src.rag.pipeline import ingest_documents, retrieve_chunks
 
 MAX_ITERATIONS = 3
 
@@ -106,71 +107,106 @@ def extract_pages(state: ResearchState) -> ResearchState:
     return state
 
 
-def deduplicate_content(state: ResearchState) -> ResearchState:
-    """Remove duplicate or irrelevant content using the LLM."""
-    state["status"] = "Deduplicating and filtering content..."
+def ingest_chunks(state: ResearchState) -> ResearchState:
+    """Chunk, embed, and store extracted pages in the vector database.
+
+    Replaces the old deduplicate_content node with proper RAG ingestion.
+    """
+    state["status"] = "Ingesting content into vector store..."
     print(f"\n🔍 {state['status']}")
 
-    all_texts = []
-    for r in state["search_results"][:8]:
+    # Build pages list from search results + extracted pages
+    pages = []
+    for r in state["search_results"][:12]:
         raw = r.get("raw_content", "") or r.get("content", "")
-        title = r.get("title", "")
         if raw:
-            all_texts.append(f"--- {title} ---\n{raw[:800]}")
+            pages.append({
+                "url": r.get("url", ""),
+                "title": r.get("title", ""),
+                "content": raw,
+                "source_type": "web",
+            })
 
-    for p in state["extracted_pages"][:3]:
-        content = p.get("content", "")[:1000]
+    for p in state["extracted_pages"]:
+        content = p.get("content", "")
         if content:
-            all_texts.append(content)
+            pages.append({
+                "url": p.get("url", ""),
+                "title": p.get("title", "") if hasattr(p, "get") and "title" in p else "",
+                "content": content,
+                "source_type": "web_extracted",
+            })
 
-    if not all_texts:
-        state["status"] = "No content to deduplicate"
+    if not pages:
+        state["status"] = "No content to ingest"
         return state
 
-    combined = "\n\n".join(all_texts)
-    if len(combined) > 25000:
-        combined = combined[:25000]
+    run_id = state.get("run_id", "default_run")
+    ingested = ingest_documents(pages, run_id=run_id)
+    state["chunks_ingested"] = ingested
 
-    prompt = f"""Review the following research content and:
-1. Remove duplicate information
-2. Remove irrelevant content
-3. Keep only valuable, unique information
-4. Preserve source titles and URLs where available
+    # Also keep a text summary for backward compat
+    state["clean_content"] = [p["content"][:500] for p in pages[:5] if p.get("content")]
 
-Content to filter:
-{combined}
+    state["status"] = f"Ingested {ingested} chunks into vector store"
+    print(f"  Chunked & embedded {ingested} chunks from {len(pages)} pages")
+    return state
 
-Return a JSON list of strings, each being a unique, relevant piece of information.
-Example: ["fact 1", "fact 2", "fact 3"]"""
 
-    result = call_llm(
-        "You are a research assistant that removes noise and keeps signal. Return valid JSON.",
-        prompt,
-    )
+def retrieve_for_analysis(state: ResearchState) -> ResearchState:
+    """Retrieve relevant chunks from the vector store for analysis."""
+    state["status"] = "Retrieving relevant chunks from vector store..."
+    print(f"\n🔍 {state['status']}")
 
-    try:
-        cleaned = json.loads(result.strip().removeprefix("```json").removesuffix("```").strip())
-        if not isinstance(cleaned, list):
-            cleaned = [combined[:1000]]
-    except (json.JSONDecodeError, TypeError):
-        cleaned = [combined[:1000]]
+    # Use the current query + latest findings for retrieval
+    query = state["query"]
+    if state["findings"]:
+        query = query + " " + " ".join(state["findings"][-3:])
 
-    state["clean_content"] = cleaned
-    state["status"] = f"Cleaned to {len(cleaned)} unique pieces"
-    print(f"  Reduced to {len(cleaned)} unique pieces of information")
+    results = retrieve_chunks(query, k=10)
+    state["retrieved_chunks"] = results
+
+    if results:
+        retrieved_tokens = sum(len(r.get("text", "").split()) * 1.3 for r in results)
+        # Estimate raw page dump size for comparison
+        raw_estimate = sum(
+            len(p.get("content", "").split()) * 1.3
+            for p in state.get("extracted_pages", [])
+        )
+        raw_estimate += sum(
+            len(r.get("raw_content", "") or r.get("content", "")).split() * 1.3
+            for r in state.get("search_results", [])
+        )
+        reduction = (1 - retrieved_tokens / max(raw_estimate, 1)) * 100
+        print(f"  Retrieved {len(results)} chunks ({retrieved_tokens:.0f} est. tokens)")
+        print(f"  Token reduction vs raw dump: {reduction:.0f}% (was {raw_estimate:.0f} → {retrieved_tokens:.0f})")
+        for r in results[:3]:
+            print(f"    • {r.get('title','')[:50] or r.get('url','')[:50]}")
+    else:
+        print("  ⚠️  No chunks retrieved — using raw content fallback")
+
     return state
 
 
 def analyze_findings(state: ResearchState) -> ResearchState:
-    """Extract key findings from the cleaned content."""
+    """Extract key findings from retrieved RAG chunks (or fall back to raw content)."""
     state["status"] = "Analyzing findings..."
     print(f"\n🔍 {state['status']}")
 
-    content_summary = "\n".join(state["clean_content"])
-    if not content_summary:
-        content_summary = "No content available."
+    # Prefer RAG-retrieved chunks
+    retrieved = state.get("retrieved_chunks", [])
+    if retrieved:
+        content_summary = "\n\n".join(
+            f"[Source: {r.get('title','') or r.get('url','')}]\n{r.get('text','')[:600]}"
+            for r in retrieved[:10]
+        )
+        print(f"  Using {len(retrieved)} RAG-retrieved chunks ({len(content_summary)} chars)")
+    else:
+        # Fallback: use raw content
+        content_summary = "\n".join(state.get("clean_content", []))
+        if not content_summary:
+            content_summary = "No content available."
 
-    # Truncate
     if len(content_summary) > 40000:
         content_summary = content_summary[:40000]
 

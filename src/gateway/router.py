@@ -90,6 +90,72 @@ class Gateway:
         with self._lock:
             return list(self._routes.get(tier, []))
 
+    def complete_stream(
+        self,
+        messages: List[Dict[str, str]],
+        model: str = "default",
+        tenant: Optional[str] = None,
+        virtual_key: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = 0.3,
+    ):
+        """Streaming completion — yields text chunks via generator.
+
+        Uses the first available route in the tier. Falls back through
+        routes on failure, but only the first route is streamed.
+        """
+        routes = self.get_routes(model)
+        if not routes:
+            raise ValueError(f"No routes registered for model/tier: {model}")
+
+        tenant_obj = self._resolve_tenant(virtual_key, tenant)
+        last_error: Optional[Exception] = None
+
+        for route in routes:
+            if not self.circuits.get(route.name).allow_request():
+                last_error = ProviderConnectionError(f"circuit open for {route.name}")
+                continue
+
+            try:
+                keys = []
+                if hasattr(route.provider, "api_keys") and route.provider.api_keys:
+                    keys = route.provider.api_keys
+                api_key = self._pick_key(route.provider, keys)
+
+                if not self.rl.enter_parallel():
+                    raise QuotaExceeded("No concurrency slot")
+                try:
+                    if not self.rl.acquire(tenant_obj.tenant_id, route.model):
+                        raise QuotaExceeded(f"Rate limit: {route.model}")
+
+                    # Yield chunks from streaming provider
+                    full_text = ""
+                    for chunk in route.provider.complete_stream(
+                        messages, model=route.model,
+                        temperature=temperature, max_tokens=max_tokens, api_key=api_key,
+                    ):
+                        full_text += chunk
+                        yield chunk
+
+                    # Record success after full stream
+                    self.circuits.get(route.name).on_success()
+                    self.metrics.log_event(
+                        "success", route=route.name, streamed=True,
+                        chars=len(full_text),
+                    )
+                    return
+                finally:
+                    self.rl.exit_parallel()
+
+            except (ProviderHTTPError, ProviderTimeoutError, ProviderConnectionError) as e:
+                last_error = e
+                if isinstance(e, ProviderHTTPError) and not e.retriable:
+                    continue
+
+        raise AllRoutesFailed(
+            f"All {len(routes)} route(s) failed; last error: {last_error}"
+        ) from last_error
+
     # ---- public entry point ---------------------------------------------
     def complete(
         self,

@@ -86,12 +86,23 @@
 
 <div class="grid2">
   <section class="card">
-    <h3>Live Event Stream</h3>
-    <div class="log" id="log"><div class="empty">waiting for gateway activity…</div></div>
+    <h3>Research Progress</h3>
+    <div id="research-progress"><div class="empty">no active research</div></div>
   </section>
   <section class="card">
     <h3>Uptime &amp; Health</h3>
     <div id="health" class="pulse"><div class="empty">loading…</div></div>
+  </section>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h3>Live Event Stream</h3>
+    <div class="log" id="log"><div class="empty">waiting for gateway activity…</div></div>
+  </section>
+  <section class="card">
+    <h3>Circuit Breakers</h3>
+    <div class="routes" id="circuits"><div class="empty">no routes yet</div></div>
   </section>
 </div>
 
@@ -165,9 +176,43 @@ function sse(){
   es.onmessage = ev => { try{ prependLog(JSON.parse(ev.data)); }catch(_){ } };
   es.onerror = ()=> es.close(); // reconnect via polling
 }
+function renderResearch(s){
+  const el = $('research-progress');
+  if(!s || s.stage==='idle'){
+    el.innerHTML = '<div class="empty">no active research</div>'; return;
+  }
+  const secs = s.sections||[];
+  let secHtml = '';
+  for(const sec of secs){
+    const filled = sec.chars>0 ? '✓' : '·';
+    secHtml += `<div style="padding:4px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between">`+
+      `<span>${filled} ${esc(sec.title)}</span><span class="muted">${sec.chars} ch</span></div>`;
+  }
+  const pct = s.total_sections ? Math.round(s.section_index/s.total_sections*100) : 0;
+  el.innerHTML = `<div style="margin-bottom:10px"><span class="big" style="font-size:24px">${esc(s.stage)}</span>`+
+    `<span class="pulse" style="margin-left:8px;color:var(--amber)">●</span></div>`+
+    `<div style="margin-bottom:8px"><span style="color:var(--muted)">Query:</span> ${esc(s.query||'')}</div>`+
+    `<div style="margin-bottom:8px">`+
+      `<span style="color:var(--muted)">Iter:</span> ${s.iteration}/${s.max_iterations} · `+
+      `<span style="color:var(--muted)">Findings:</span> ${s.findings_count||0} · `+
+      `<span style="color:var(--muted)">Factoids:</span> ${s.factoids_count||0}</div>`+
+    `<div style="margin-bottom:8px">`+
+      `<span style="color:var(--muted)">Section:</span> ${esc(s.current_section||'—')} (${s.section_progress||''})</div>`+
+    `<div style="background:var(--line);height:4px;border-radius:2px;margin:10px 0">`+
+      `<div style="background:var(--accent);height:100%;width:${pct}%;border-radius:2px;transition:width .3s"></div></div>`+
+    `<div style="color:var(--muted);font-size:11px">${esc(s.status||'')} · ${s.elapsed_s}s</div>`+
+    (s.error?`<div style="color:var(--red);margin-top:6px">⚠ ${esc(s.error)}</div>`:'')+
+    (secHtml?`<div style="margin-top:10px"><div style="color:var(--muted);font-size:10px;text-transform:uppercase">Sections</div>${secHtml}</div>`:'');
+}
+function researchSSE(){
+  const es = new EventSource('/api/research/progress');
+  es.onmessage = ev => { try{ renderResearch(JSON.parse(ev.data)); }catch(_){} };
+  es.onerror = () => { setTimeout(researchSSE, 3000); };
+}
 poll();
 setInterval(poll, 3000);
 sse();
+researchSSE();
 </script>
 </body>
 </html>
