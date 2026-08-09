@@ -15,10 +15,10 @@ interface Message {
 }
 
 interface ApprovalRequest {
-  approval_id: str
-  gate_type: str
+  approval_id: string
+  gate_type: string
   data: any
-  status: str
+  status: string
 }
 
 export default function Home() {

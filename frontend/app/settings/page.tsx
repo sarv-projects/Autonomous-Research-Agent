@@ -47,7 +47,7 @@ export default function SettingsPage() {
     e.preventDefault()
     if (!newProvName || !newProvUrl) return
 
-    const modelsList = newProvModels.split(',').map((m) => m.strip ? m.strip() : m.trim()).filter(Boolean)
+    const modelsList = newProvModels.split(',').map((m) => m.trim()).filter(Boolean)
     
     try {
       const res = await fetch('http://localhost:8000/api/providers', {

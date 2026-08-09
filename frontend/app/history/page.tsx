@@ -6,7 +6,7 @@ interface HistoryItem {
   query: string
   search_queries?: string[]
   report_path?: string
-  findings_count?: int
+  findings_count?: number
   timestamp: string
 }
 
