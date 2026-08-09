@@ -4,9 +4,7 @@ Chat Memory — sliding window conversation history with summary compression.
 Manages conversation context for chat mode:
 - Keeps the last N messages in full (sliding window)
 - Compresses older messages into a running summary
-- Integrates with the LLM gateway for summary generation
-
-Uses a simple JSON file for persistence across sessions.
+- Supports session-isolated conversation memories
 """
 
 from __future__ import annotations
@@ -14,7 +12,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Optional
+from typing import Optional, Dict
 
 
 class ChatMemory:
@@ -28,19 +26,22 @@ class ChatMemory:
 
     def __init__(
         self,
+        session_id: str = "default",
         window_size: int = 10,
         max_summary_length: int = 500,
         persist_path: str = "",
     ) -> None:
+        self.session_id = session_id
         self.window_size = window_size
         self.max_summary_length = max_summary_length
         self.messages: list[dict] = []  # [{role, content, timestamp}]
         self.summary: str = ""
 
         if not persist_path:
+            safe_session = "".join(c if c.isalnum() else "_" for c in session_id)
             persist_path = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "..", "..", "data", "chat_memory.json",
+                "..", "..", "data", f"chat_memory_{safe_session}.json",
             )
         self.persist_path = os.path.abspath(persist_path)
         self._load()
@@ -60,53 +61,41 @@ class ChatMemory:
         if len(self.messages) <= self.window_size:
             return
 
-        # Messages to compress: oldest messages beyond the window
         to_compress = self.messages[: -self.window_size]
         self.messages = self.messages[-self.window_size :]
 
-        # Build new summary from old messages
         old_text = "\n".join(
             f"[{m['role']}]: {m['content'][:200]}" for m in to_compress
         )
 
-        # Generate summary using lightweight approach (no LLM call needed)
         new_summary = self._generate_summary(old_text)
         if self.summary:
             self.summary = f"{self.summary}\n{new_summary}"
         else:
             self.summary = new_summary
 
-        # Truncate summary if too long
         if len(self.summary) > self.max_summary_length:
             self.summary = self.summary[-self.max_summary_length:]
 
     def _generate_summary(self, text: str) -> str:
-        """Generate a brief summary of conversation segment (no LLM needed).
-
-        Uses a simple extractive approach: picks key sentences.
-        """
+        """Generate a brief summary of conversation segment."""
         sentences = [s.strip() for s in text.replace("\n", ". ").split(".") if s.strip()]
-        # Pick sentences with key indicators
         key_indicators = ["?", "important", "key", "main", "note", "result"]
         key_sentences = [
             s for s in sentences
             if any(ind in s.lower() for ind in key_indicators)
         ]
         if not key_sentences:
-            key_sentences = sentences[:2]  # fallback: first two sentences
+            key_sentences = sentences[:2]
 
         condensed = " | ".join(s[:80] for s in key_sentences[:3])
         return f"[summary: {condensed}]"
 
     def build_context(self, system_prompt: str = "") -> list[dict]:
-        """Build the full context for the next LLM call.
-
-        Returns a list of message dicts in OpenAI-compatible format.
-        """
+        """Build the full context for the next LLM call."""
         messages: list[dict] = []
 
         if system_prompt:
-            # Inject summary into system prompt if available
             if self.summary:
                 system_prompt = (
                     f"{system_prompt}\n\n"
@@ -114,7 +103,6 @@ class ChatMemory:
                 )
             messages.append({"role": "system", "content": system_prompt})
 
-        # Add recent window
         for m in self.messages:
             messages.append({"role": m["role"], "content": m["content"]})
 
@@ -131,7 +119,7 @@ class ChatMemory:
         os.makedirs(os.path.dirname(self.persist_path), exist_ok=True)
         with open(self.persist_path, "w") as f:
             json.dump({
-                "messages": self.messages[-50:],  # keep last 50
+                "messages": self.messages[-50:],
                 "summary": self.summary,
             }, f, indent=2)
 
@@ -151,21 +139,21 @@ class ChatMemory:
         return len(self.messages)
 
 
-# Module-level singleton for chat mode
-_chat_memory: Optional[ChatMemory] = None
+# Module-level registry for chat memories by session_id
+_chat_memories: Dict[str, ChatMemory] = {}
 
 
-def get_chat_memory() -> ChatMemory:
-    """Get or create the chat memory singleton."""
-    global _chat_memory
-    if _chat_memory is None:
-        _chat_memory = ChatMemory()
-    return _chat_memory
+def get_chat_memory(session_id: str = "default") -> ChatMemory:
+    """Get or create the session chat memory."""
+    global _chat_memories
+    if session_id not in _chat_memories:
+        _chat_memories[session_id] = ChatMemory(session_id=session_id)
+    return _chat_memories[session_id]
 
 
-def reset_chat_memory() -> None:
-    """Reset the chat memory singleton."""
-    global _chat_memory
-    if _chat_memory:
-        _chat_memory.clear()
-    _chat_memory = None
+def reset_chat_memory(session_id: str = "default") -> None:
+    """Reset a chat memory session."""
+    global _chat_memories
+    if session_id in _chat_memories:
+        _chat_memories[session_id].clear()
+        del _chat_memories[session_id]
