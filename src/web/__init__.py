@@ -106,7 +106,7 @@ class ApprovalResponseRequest(BaseModel):
 async def get_status():
     """Health check endpoint displaying system and gateway readiness."""
     info = gateway_info()
-    metrics = DEFAULT_METRICS.summary()
+    metrics = DEFAULT_METRICS.snapshot()
     return {
         "status": "healthy",
         "version": "0.2.0",
@@ -149,9 +149,9 @@ async def chat(request: ChatRequest):
 
         user_prompt = f"Previous Conversation Context:\n{formatted_context}\n\nCurrent Request: {request.message}"
 
-        metrics_before = DEFAULT_METRICS.summary()
+        metrics_before = DEFAULT_METRICS.snapshot()
         response_text = call_llm(SYSTEM_PROMPT, user_prompt, model=request.mode)
-        metrics_after = DEFAULT_METRICS.summary()
+        metrics_after = DEFAULT_METRICS.snapshot()
 
         cost_delta = round(metrics_after.get("cost_usd", 0.0) - metrics_before.get("cost_usd", 0.0), 6)
         tokens_delta = metrics_after.get("tokens", 0) - metrics_before.get("tokens", 0)
@@ -178,10 +178,10 @@ async def research(request: ResearchRequest):
     """Deep multi-agent research endpoint."""
     start = time.time()
     try:
-        metrics_before = DEFAULT_METRICS.summary()
+        metrics_before = DEFAULT_METRICS.snapshot()
         result = run_research(request.query, mode=request.mode)
         elapsed = time.time() - start
-        metrics_after = DEFAULT_METRICS.summary()
+        metrics_after = DEFAULT_METRICS.snapshot()
 
         report = result.get("report", "")
         findings = len(result.get("findings", []))
