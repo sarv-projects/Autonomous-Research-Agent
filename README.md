@@ -2,7 +2,7 @@
 
 # 🌐 Autonomous Research Agent
 
-### *Open-Source Multi-Agent Deep Research Engine powered by LangGraph, Temporal & Resilient LLM Gateway*
+### *Multi-Agent Deep Research Engine *
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
