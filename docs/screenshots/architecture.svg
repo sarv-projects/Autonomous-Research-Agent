@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
   <rect width="960" height="540" fill="#0f172a"/>
-  <text x="48" y="48" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Autonomous Research Agent</text>
+  <text x="48" y="48" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Providence — Deep Research Engine</text>
   <text x="48" y="76" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="13">Multi-agent research · resilient gateway · hybrid RAG</text>
 
   <rect x="48" y="110" width="160" height="70" rx="10" fill="#1e293b" stroke="#3b82f6"/>

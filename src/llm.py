@@ -26,8 +26,19 @@ from src.gateway.router import AllRoutesFailed, QuotaExceeded
 load_dotenv()
 
 # Fast model for most tasks, strong model for synthesis.
+# Tiering (Tier-2 #18, u14app thinking/task split):
+#   thinker  — reasoning nodes (scout, plan refine, contradiction, strategy, adjudication)
+#   task     — extraction/labeling nodes (cheap, high-throughput)
+#   strong   — synthesis
+#   fast     — default fallback
 DEFAULT_MODEL = "fast"
 STRONG_MODEL = "strong"
+TASK_MODEL = "task"
+THINKER_MODEL = "thinker"
+
+# task tier is an alias for the fast tier at the gateway level (no dedicated
+# routes needed) — it exists so node call-sites express intent explicitly.
+_TIER_ALIASES = {"task": "fast"}
 
 _gateway = None
 
@@ -73,7 +84,8 @@ def call_llm(
     max_tokens: int | None = None,
 ) -> str:
     gw = _get_gateway()
-    tier = model if model in ("fast", "strong", "thinker") else DEFAULT_MODEL
+    tier = model if model in ("fast", "strong", "thinker", "task") else DEFAULT_MODEL
+    tier = _TIER_ALIASES.get(tier, tier)
     if not gw.get_routes(tier):
         # If the tier has no routes, fall back to "fast".
         if tier != "fast" and gw.get_routes("fast"):

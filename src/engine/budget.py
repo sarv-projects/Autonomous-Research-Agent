@@ -35,9 +35,45 @@ def check_budgets(state: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def record_tool_calls(state: dict, n: int = 1) -> None:
+def record_tool_calls(state: dict, n: int = 1, kind: str = "") -> None:
     budgets = state.setdefault("budgets", {})
     budgets["tool_calls"] = int(budgets.get("tool_calls") or 0) + n
+    if kind:
+        by_kind = budgets.setdefault("tool_calls_by_kind", {})
+        by_kind[kind] = int(by_kind.get(kind) or 0) + n
+
+
+def budget_status_line(state: dict) -> str:
+    """One-line live budget visibility for agent prompts (BATS pattern).
+
+    Agents condition their planning on remaining resources instead of blindly
+    exhausting them — matching accuracy with ~40% fewer search calls.
+    """
+    budgets = state.get("budgets") or {}
+    if not budgets:
+        return ""
+    parts: list[str] = []
+    calls = int(budgets.get("tool_calls") or 0)
+    max_calls = int(budgets.get("max_tool_calls") or 0)
+    if max_calls:
+        parts.append(f"tool calls {calls}/{max_calls}")
+    by_kind = budgets.get("tool_calls_by_kind") or {}
+    search_n = int(by_kind.get("search") or 0)
+    extract_n = int(by_kind.get("extract") or 0)
+    if search_n or extract_n:
+        parts.append(f"(search {search_n}, extract {extract_n})")
+    started = float(budgets.get("started_at") or 0)
+    max_time = int(budgets.get("max_time_s") or 0)
+    if started and max_time:
+        elapsed = int(time.time() - started)
+        parts.append(f"time {elapsed}/{max_time}s")
+    spent = float(budgets.get("spent_usd") or 0)
+    max_cost = float(budgets.get("max_cost_usd") or 0)
+    if max_cost:
+        parts.append(f"cost ${spent:.3f}/${max_cost:.2f}")
+    if not parts:
+        return ""
+    return "LIVE BUDGET: " + " · ".join(parts)
 
 
 def sync_cost_from_metrics(state: dict) -> None:

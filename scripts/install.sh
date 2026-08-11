@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Autonomous Research Agent — Bash install (Linux/macOS)
+# Providence — Bash install (Linux/macOS)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> Autonomous Research Agent install (Bash)"
+echo "==> Providence install (Bash)"
 echo "    repo: $ROOT"
 
 if ! command -v uv >/dev/null 2>&1; then

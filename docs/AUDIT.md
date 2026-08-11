@@ -35,7 +35,7 @@
 | `doctor` / `eval` commands | ❌ | Spec only |
 | RAG / LanceDB / Qdrant | ❌ | Spec only |
 | Progressive section write + citation ship-gate | ❌ | Single `call_llm` dump for full report |
-| Self-improve vault / traces / strategy | ❌ | Only JSON history `~/.xiarch_memory.json` |
+| Self-improve vault / traces / strategy | ❌ | Only JSON history `~/.providence_memory.json` |
 | MCP / Firecrawl / Exa / Wikipedia | ❌ | Spec only |
 | MinerU / Nougat | ❌ | Spec only (Phase D) |
 | Web product UI | ❌ | Only ops dashboard |

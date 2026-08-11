@@ -1,6 +1,6 @@
 # Documentation index
 
-**Autonomous Research Agent** — multi-agent Deep Research (A4), hybrid RAG, multi-provider gateway.
+**Providence** — deep research engine with verified evidence (A4), hybrid RAG, multi-provider gateway.
 
 ## Start here
 

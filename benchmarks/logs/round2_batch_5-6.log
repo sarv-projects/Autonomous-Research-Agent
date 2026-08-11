@@ -1,0 +1,428 @@
+Running 2 topics [5..6] in mode=standard round=2 -> /home/sarvesh/projects/Autonomous-Research-Agent/benchmarks/logs/round2
+
+======================================================================
+[TOPIC 6] Japan's Yen Carry Trade Unwind & Global Liquidity (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 7 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Model the impact of the Bank of Japan's 2026 interest rate hikes on the global c
+  Query type: depth_first
+  Budgets (depth-first): keep mode defaults (fewer queries, deeper iterations)
+  Outline: ['Executive Summary: 2026 BOJ Rate Hike and the Structural Shift in Global Liquidity', 'Literature Review & Theoretical Foundations', 'Mechanics of the Yen Carry‑Trade Unwind: From Free Funding Leg to Non‑Linear Risk', 'Contagion Vulnerability Analysis: Turkey, Egypt, and Pakistan', 'Spill‑over Effects on US Technology Equities: Margin Compression and Valuation Multiples', 'Quantitative Scenario Modeling & Risk Matrix', 'Methodological Framework (GraphRAG, Self‑RAG, CRAG, RAPTOR, ColBERT, DPR, HyDE)', 'Evaluation Matrix & Failure‑Mode Taxonomy']
+  Initial queries: ['Bank of Japan interest rate hike 2026 carry trade unwind', 'BOJ policy normalization emerging markets contagion Turkey Egypt Pakistan', 'yen funding leg carry trade negative skewness non‑linear risk', 'US tech equities spill‑over from Japanese monetary tightening 2026', 'global yen carry trade exposure magnitude 2025‑2026']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Vault reuse: 5 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 21 raw results via exa
+  Guard: 21 → 21 passed (0 blocked, avg score 6.9)
+    • [8.6] A Three-Variable Benchmark for Post-GFC Covered Interest Par
+    • [8.6] Macroeconomic Message Passing for Anticipating Foreign Excha
+    • [8.6] [2604.09663v1] JFR-rg: A New Macroeconomic Framework for Hig
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9816 raw)
+  Ingested 51 chunks (total: 51)
+
+🔍 [Researcher] Analyzing
+  Retrieved 7 chunks (3680 tokens, 90% vs raw)
+  Findings: 9, Claims: 8, Gaps: 6
+
+🔎 [Critic] Evaluating iteration 1/4
+  🔄 More needed: The research lacks quantitative analysis of BoJ 2026 rate hikes, scenario modeling, contagion risk estimates for the specified emerging markets, and an assessment of US technology equity exposure.
+  Missing facts: 9 | Next queries: ['Bank of Japan 2026 interest rate hike forecast', 'Yen carry trade sensitivity to BoJ rate hikes', 'Emerging market currency risk Turkey Egypt Pakistan BoJ policy', 'US technology equity valuation sensitivity to global liquidity changes', 'Forward rate curves for yen 2026', 'BoJ 2026 rate hike scenario modeling']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['GraphRAG for quantitative modeling of BoJ 2026 rate hikes', 'Self-RAG for contagion risk estimates Turkey Egypt Pakistan', 'CRAG for impact of BoJ policy changes on US tech equities', 'RAPTOR for forward-rate curves yen 2026']...
+  Search modes: {"GraphRAG for quantitative modeling of BoJ 2026 rate hikes": "deep", "Self-RAG for contagion risk estimates Turkey Egypt Pakistan": "wide", "CRAG for impact of BoJ policy changes on US tech equities": "entity_collect", "RAPTOR for forward-rate curves yen 2026": "atom", "ColBERT for funding costs carry trade": "deep", "DPR for capital flow data Turkey Egypt Pakistan 2026": "entity_collect", "HyDE for scenario-based stress-testing framework BoJ rate hikes": "web_structure", "arXiv:quantitative modeling of BoJ 2026 rate hikes": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.9)
+    • [8.6] A Three-Variable Benchmark for Post-GFC Covered Interest Par
+    • [8.6] Macroeconomic Message Passing for Anticipating Foreign Excha
+    • [8.6] [2604.09663v1] JFR-rg: A New Macroeconomic Framework for Hig
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10068 raw)
+  Ingested 79 chunks (total: 130)
+
+🔍 [Researcher] Analyzing
+  Retrieved 9 chunks (4317 tokens, 88% vs raw)
+  Findings: 8, Claims: 5, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 2/4
+  🔄 More needed: Key components of the requested analysis—quantitative BOJ 2026 rate hike modeling, contagion risk to Turkey, Egypt, Pakistan, and spill‑over to US tech equities—are absent from the current findings.
+  Missing facts: 10 | Next queries: ['Bank of Japan 2026 interest rate hike scenario and forward curve projections', 'yen carry trade unwind impact on emerging markets Turkey Egypt Pakistan', 'BOJ rate hike contagion to US technology equities', 'capital flows from Japan to Turkey Egypt Pakistan during tightening', 'scenario analysis of global carry trade unwind following a BOJ hike', 'BOJ 2026 rate hike scenario']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['BOJ 2026 rate hike scenario', 'yen carry trade unwind model', 'impact of BOJ rate hikes on global liquidity', 'Turkey emerging market risk from yen carry trade unwind']...
+  Search modes: {"BOJ 2026 rate hike scenario": "deep", "yen carry trade unwind model": "deep", "impact of BOJ rate hikes on global liquidity": "deep", "Turkey emerging market risk from yen carry trade unwind": "deep", "Egypt risk from BOJ tightening": "deep", "Pakistan exposure to BOJ rate hikes": "deep", "BOJ hike impact on US tech stocks": "deep", "margin compression US tech due to yen carry trade": "deep"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Vault reuse: 7 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 26 raw results via exa
+  Guard: 26 → 26 passed (0 blocked, avg score 6.8)
+    • [8.6] A Three-Variable Benchmark for Post-GFC Covered Interest Par
+    • [8.6] Macroeconomic Message Passing for Anticipating Foreign Excha
+    • [8.6] [2604.09663v1] JFR-rg: A New Macroeconomic Framework for Hig
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 6871 raw)
+  Ingested 43 chunks (total: 173)
+
+🔍 [Researcher] Analyzing
+  Retrieved 5 chunks (2948 tokens, 90% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/4
+  ⚠️  Low evidence base (findings=19, urls=1) — saturation suppressed, continuing research
+  🔄 More needed: Key quantitative analyses and contagion risk estimates are missing.
+  Missing facts: 10 | Next queries: ['Bank of Japan 2026 interest rate hike forecast and policy timeline', 'Projected yen carry‑trade volumes and funding costs for 2026', 'Impact of BoJ rate hikes on emerging market currencies (Turkey, Egypt, Pakistan)', 'US technology equity valuation sensitivity to global liquidity shifts', 'Forward rate curves for yen and emerging market currencies through 2026', 'BoJ 2026 rate hike scenario carry trade impact model']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['BoJ 2026 rate hike scenario carry trade impact model yen forward rates 2026', 'Turkey Egypt Pakistan emerging market currency risk BoJ rate hikes 2026', 'US tech equity valuation sensitivity to global liquidity shifts BoJ policy 2026', 'Forward rate curves yen 2026 emerging market currencies 2026']...
+  Search modes: {"BoJ 2026 rate hike scenario carry trade impact model yen forward rates 2026": "deep", "Turkey Egypt Pakistan emerging market currency risk BoJ rate hikes 2026": "entity_collect", "US tech equity valuation sensitivity to global liquidity shifts BoJ policy 2026": "deep", "Forward rate curves yen 2026 emerging market currencies 2026": "wide", "yen carry trade 2026 BoJ rate hike model site:arxiv.org": "web_structure", "global liquidity US tech equity valuation BoJ policy site:arxiv.org": "web_structure", "emerging market currency risk BoJ 2026 site:arxiv.org": "web_structure", "BoJ 2026 rate hike scenario carry trade impact model": "deep"}
+
+🔍 [Researcher] Iteration 4 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.9)
+    • [8.6] A Three-Variable Benchmark for Post-GFC Covered Interest Par
+    • [8.6] Macroeconomic Message Passing for Anticipating Foreign Excha
+    • [8.6] [2604.09663v1] JFR-rg: A New Macroeconomic Framework for Hig
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9128 raw)
+  Ingested 50 chunks (total: 223)
+
+🔍 [Researcher] Analyzing
+  Retrieved 8 chunks (4011 tokens, 89% vs raw)
+  Findings: 5, Claims: 6, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 4/4
+  ⚠️  Low evidence base (findings=24, urls=1) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (4) | missing_facts=8
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['GraphRAG model for Bank of Japan 2026 interest rate hikes', 'Self-RAG framework for carry trade impact analysis', 'CRAG methodology for quantifying contagion risk', 'RAPTOR algorithm for forward rate curve modeling']...
+  Search modes: {"GraphRAG model for Bank of Japan 2026 interest rate hikes": "atom", "Self-RAG framework for carry trade impact analysis": "deep", "CRAG methodology for quantifying contagion risk": "wide", "RAPTOR algorithm for forward rate curve modeling": "entity_collect", "ColBERT model for US tech equity valuation sensitivity": "web_structure", "DPR framework for global liquidity analysis": "atom", "HyDE model for emerging market currency risk assessment": "deep", "Quantitative analysis of Bank of Japan 2026 interest rate hikes": "wide"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 20/25 · (search 16, extract 0) · time 275/600s · cost $0.005/$0.50)
+  [tool:exa] primary search OK (25 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  Counter-evidence: +34 hits, ingested 42 chunks
+
+⚖️  [Adjudicator] claims: 13 supported, 6 contested, 0 synthetic (of 19)
+  Evidence graph: 19 edges (13 support, 6 contradiction, 0 unsupported)
+  🔬 Atomic verify skipped — tool budget nearly exhausted
+  ⚔️  DRNOISE conflict flags: 1
+  Socratic hop 1: re-search 6 queries
+
+🔍 [Researcher] Budget stop: Tool-call budget exceeded (25 >= 25)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (4312 tokens, 92% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Budget force-complete: Tool-call budget exceeded (25 >= 25)
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['GraphRAG impact on global carry trade', 'Self-RAG contagion risk to emerging markets', 'CRAG effect on US Tech equities', 'RAPTOR modeling interest rate hikes']...
+  Search modes: {"GraphRAG impact on global carry trade": "deep", "Self-RAG contagion risk to emerging markets": "wide", "CRAG effect on US Tech equities": "entity_collect", "RAPTOR modeling interest rate hikes": "atom", "ColBERT analysis of yen carry trade": "deep", "DPR framework for quantifying contagion risk": "deep", "HyDE methodology for evaluating interest rate hikes": "deep", "arXiv:2208.06635v1": "deep"}
+
+⚖️  [Adjudicator] claims: 16 supported, 3 contested, 0 synthetic (of 19)
+  Evidence graph: 19 edges (16 support, 3 contradiction, 0 unsupported)
+  🔬 Atomic verify skipped — tool budget nearly exhausted
+  ⚔️  DRNOISE conflict flags: 1
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Overview', 'Introduction', 'Findings', 'Executive Summary: 2026 BOJ Rate Hike and the Structural Shift in Global Liquidity', 'Literature Review & Theoretical Foundations', 'Mechanics of the Yen Carry‑Trade Unwind: From Free Funding Leg to Non‑Linear Risk', 'Contagion Vulnerability Analysis: Turkey, Egypt, and Pakistan', 'Spill‑over Effects on US Technology Equities: Margin Compression and Valuation Multiples', 'Conclusion', 'Sources']
+
+✍️ [Synthesizer] Writing 10 sections (9 in parallel + 1 sources)
+  [Sources] auto-generated (12 URLs, 0 LLM calls)
+  🚀 Launching 9 parallel section generators...
+  ✅ Section 'Executive Summary: 2026 BOJ Rate Hike and the Structural Shift in Global Liquidity' completed (12632 chars)
+  ✅ Section 'Overview' completed (10026 chars)
+  ✅ Section 'Mechanics of the Yen Carry‑Trade Unwind: From Free Funding Leg to Non‑Linear Risk' completed (14648 chars)
+  ✅ Section 'Literature Review & Theoretical Foundations' completed (22454 chars)
+  ✅ Section 'Introduction' completed (30288 chars)
+  ✅ Section 'Findings' completed (307 chars)
+  ✅ Section 'Conclusion' completed (12075 chars)
+  ✅ Section 'Spill‑over Effects on US Technology Equities: Margin Compression and Valuation Multiples' completed (33023 chars)
+  ✅ Section 'Contagion Vulnerability Analysis: Turkey, Egypt, and Pakistan' completed (30864 chars)
+  🔍 Audit Pass: Section 'Findings' missing citations — appended evidence notes
+  🔍 Self-critique: 5 issues — ['Lack of clear research question and objectives', 'Insufficient literature review and theoretical foundations']
+  Self-critique patched section: Executive Summary: 2026 BOJ Rate Hike and the Structural Shift in Global Liquidity
+  Wrote 9 sections in parallel (166995 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 15/19 supported
+  Unsupported samples: ['Covered‑interest‑parity deviations are examined using daily government‑bond data', 'Causal‑discovery methods (VAR‑LiNGAM, LPCMCI) can uncover latent and instantaneo']
+  Evidence graph: 19 edges (16 support, 3 contradiction/unsupported)
+  Math detected: 294 expressions (254 inline, 40 block)
+  Report: 183680 chars, 12 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Model the impact of the Bank of Japan_s 2026 inter_20260811_145932.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Model the impact of the Bank of Japan_s 2026 inter_20260811_145932.html
+
+✅ [TOPIC 6] done in 505.5s — 188330 chars, 12 sections, 31 citations
+
+======================================================================
+[TOPIC 7] Open-Source Frontier Models (Llama-4 vs GPT-5) (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 8 systems, 6 queries
+
+🧠 [Planner] Analyzing query: Benchmark the real-world capabilities of Meta's Llama-4 (open-source) against Op
+  Query type: depth_first
+  Budgets (depth-first): keep mode defaults (fewer queries, deeper iterations)
+  Outline: ['Introduction to the 2026 AI Landscape: Llama-4 vs GPT-5', 'Agentic Coding and Multi-Modal Reasoning Benchmarks', 'Adversarial Robustness and Red-Teaming Analysis', 'The EU AI Act and Its Impact on Open-Source vs Closed Models', 'Strategic Implications for Enterprise Deployment']
+  Initial queries: ['Meta Llama 4 vs OpenAI GPT-5 2026 comparison', 'EU AI Act open source model compliance 2026', 'Llama 4 multi-modal reasoning robustness GPT-5', 'Llama 4 vs GPT-5 adversarial robustness comparison', 'Impact of the EU AI Act on open-source and proprietary AI models']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Vault reuse: 3 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 23 raw results via exa
+  Guard: 23 → 23 passed (0 blocked, avg score 7.0)
+    • [8.6] Guidelines for providers of general-purpose AI models
+    • [8.6] AgencyBench: Benchmarking the Frontiers of Autonomous Agents
+    • [8.6] OpenRT: An Open-Source Red Teaming Framework for Multimodal 
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9746 raw)
+  Ingested 58 chunks (total: 58)
+
+🔍 [Researcher] Analyzing
+  Retrieved 3 chunks (1244 tokens, 97% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/4
+  🔄 More needed: The research lacks sufficient evidence and findings to support a publication-grade report. Only one low-relevance document snippet about EU AI Act submission procedures was retrieved, and no substantive benchmarks, comparisons, or analyses of Llama-4 or GPT-5 capabilities were found. The expected sections remain largely unaddressed.
+  Missing facts: 6 | Next queries: ['Llama-4 vs GPT-5 agentic coding benchmarks 2026', 'multi-modal reasoning performance Llama-4 GPT-5 comparison', 'adversarial robustness testing Llama-4 GPT-5 red teaming', 'EU AI Act impact open-source vs closed AI models 2026', 'real-world deployment Llama-4 GPT-5 enterprise use cases', 'Llama-4 vs GPT-5 agentic coding benchmarks 2026']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Llama-4 agentic coding benchmarks 2026', 'GPT-5 agentic coding benchmarks 2026', 'Llama-4 multi-modal reasoning performance comparison', 'GPT-5 multi-modal reasoning performance comparison']...
+  Search modes: {"Llama-4 agentic coding benchmarks 2026": "atom", "GPT-5 agentic coding benchmarks 2026": "atom", "Llama-4 multi-modal reasoning performance comparison": "deep", "GPT-5 multi-modal reasoning performance comparison": "deep", "Llama-4 adversarial robustness testing red teaming": "wide", "GPT-5 adversarial robustness testing red teaming": "wide", "EU AI Act open-source AI model compliance requirements": "entity_collect", "EU AI Act closed AI model regulatory obligations": "entity_collect"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Vault reuse: 9 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode atom: 2 queries @ max_results=5
+  [tool:exa] primary search OK (10 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 27 raw results via exa
+  Guard: 27 → 27 passed (0 blocked, avg score 6.8)
+    • [8.6] AgencyBench: Benchmarking the Frontiers of Autonomous Agents
+    • [8.6] An Automated Survey of Generative Artificial Intelligence
+    • [8.2] Evaluating LLM Metrics Through Real-World Capabilities
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10756 raw)
+  Ingested 57 chunks (total: 115)
+
+🔍 [Researcher] Analyzing
+  Retrieved 7 chunks (1996 tokens, 95% vs raw)
+  Findings: 8, Claims: 5, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 2/4
+  🔄 More needed: Research is incomplete due to lack of information about Meta's Llama-4 and OpenAI's GPT-5 models, comparative benchmarking data, and specific regulatory impact of the EU AI Act.
+  Missing facts: 4 | Next queries: ["Search for Meta's Llama-4 capabilities in agentic coding, multi-modal reasoning, and adversarial robustness as of August 2026.", 'Extract comparative benchmarking data between open-source and closed AI models as of August 2026.', "Assess the specific regulatory impact of the EU AI Act on Meta's Llama-4 and OpenAI's GPT-5 models.", "Search for Meta's Llama-4 capabilities in agentic coding, multi-modal reasoning, and adversarial robustness as of August 2026.", "Compare Llama-4's capabilities with GPT-5 in agentic coding, multi-modal reasoning, and adversarial robustness.", 'Extract comparative benchmarking data between open-source and closed AI models as of August 2026.']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Llama-4 agentic coding benchmark', 'Llama-4 multi-modal reasoning benchmark', 'Llama-4 adversarial robustness benchmark', 'GPT-5 agentic coding benchmark']...
+  Search modes: {"Llama-4 agentic coding benchmark": "deep", "Llama-4 multi-modal reasoning benchmark": "deep", "Llama-4 adversarial robustness benchmark": "deep", "GPT-5 agentic coding benchmark": "deep", "GPT-5 multi-modal reasoning benchmark": "deep", "GPT-5 adversarial robustness benchmark": "deep", "EU AI Act impact on Llama-4": "entity_collect", "EU AI Act impact on GPT-5": "entity_collect"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Vault reuse: 8 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (31 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 26 raw results via exa
+  Guard: 26 → 26 passed (0 blocked, avg score 7.0)
+    • [8.6] AgencyBench: Benchmarking the Frontiers of Autonomous Agents
+    • [8.6] EvoCode-Bench: Evaluating Coding Agents in Multi-Turn Iterat
+    • [8.2] Evaluating LLM Metrics Through Real-World Capabilities
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11459 raw)
+  Ingested 61 chunks (total: 176)
+
+🔍 [Researcher] Analyzing
+  Retrieved 7 chunks (1996 tokens, 95% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/4
+  ⚠️  Low evidence base (findings=11, urls=0) — saturation suppressed, continuing research
+  ⛔ LLM critic marked off-topic: The research lacks any substantive information about Meta's Llama-4 or OpenAI's GPT-5 models, their capabilities in agentic coding, multi-modal reasoning, or adversarial robustness. Additionally, there is no comparative benchmarking data between open-source and closed AI models as of August 2026, and the EU AI Act's specific impact on these models is not addressed. The findings are largely off-topic, focusing on general EU AI Act compliance procedures rather than the requested model comparison and benchmarking.
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Llama-4 agentic coding benchmarks 2026', 'GPT-5 adversarial robustness performance 2026', 'Comparative analysis Llama-4 vs GPT-5 open-source closed AI models 2026', 'EU AI Act impact on Llama-4 regulatory compliance 2026']...
+  Search modes: {"Llama-4 agentic coding benchmarks 2026": "deep", "GPT-5 adversarial robustness performance 2026": "wide", "Comparative analysis Llama-4 vs GPT-5 open-source closed AI models 2026": "entity_collect", "EU AI Act impact on Llama-4 regulatory compliance 2026": "web_structure", "Meta Llama-4 multi-modal reasoning capabilities 2026": "atom", "OpenAI GPT-5 benchmarking data 2026": "deep", "arxiv:agentic coding benchmarks 2026": "entity_collect", "arxiv:GPT-5 adversarial robustness 2026": "deep"}
+
+🔍 [Researcher] Iteration 4 — gathering (max_results=8, extract=8)
+  Vault reuse: 8 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 26 raw results via exa
+  Guard: 26 → 26 passed (0 blocked, avg score 7.3)
+    • [9.0] Metis: Learning to Jailbreak LLMs via Self-Evolving Metacogn
+    • [8.6] AgencyBench: Benchmarking the Frontiers of Autonomous Agents
+    • [8.6] EvoCode-Bench: Evaluating Coding Agents in Multi-Turn Iterat
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 8058 raw)
+  Ingested 61 chunks (total: 237)
+
+🔍 [Researcher] Analyzing
+  Retrieved 8 chunks (2133 tokens, 94% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 4/4
+  ⚠️  Low evidence base (findings=12, urls=0) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (4) | missing_facts=4
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Llama-4 agentic coding benchmarks 2026', 'GPT-5 adversarial robustness performance 2026', 'Comparative analysis Llama-4 vs GPT-5 open-source closed AI models 2026', 'EU AI Act impact on Llama-4 regulatory compliance 2026']...
+  Search modes: {"Llama-4 agentic coding benchmarks 2026": "atom", "GPT-5 adversarial robustness performance 2026": "deep", "Comparative analysis Llama-4 vs GPT-5 open-source closed AI models 2026": "wide", "EU AI Act impact on Llama-4 regulatory compliance 2026": "entity_collect", "Meta Llama-4 multi-modal reasoning capabilities 2026": "atom", "OpenAI GPT-5 benchmarking data 2026": "deep", "arxiv:agentic coding benchmarks 2026": "web_structure", "arxiv:GPT-5 adversarial robustness 2026": "web_structure"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 20/25 · (search 16, extract 0) · time 397/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (28 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Counter-evidence: +31 hits, ingested 62 chunks
+
+⚖️  [Adjudicator] claims: 5 supported, 0 contested, 0 synthetic (of 5)
+  Evidence graph: 5 edges (5 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary', 'Introduction to the 2026 AI Landscape: Llama-4 vs GPT-5', 'Agentic Coding Benchmarks: Real-World Workflows with Llama-4 and GPT-5', 'Multi-Modal Reasoning: Comparative Analysis of Llama-4 and GPT-5', 'Adversarial Robustness and Red-Teaming Analysis: Llama-4, GPT-5, and Retrieval Systems (GraphRAG, ColBERT, Self-RAG, CRAG, RAPTOR, DPR)', 'Evaluation Matrix: Benchmarks, Robustness Scores, and System Comparisons', 'Failure Modes and Edge Cases in Agentic and Multi-Modal Deployments', 'The EU AI Act and Its Impact on Open-Source vs Closed Models', 'Regulatory Timeline and Compliance Obligations: GPAI, Systemic Risk, and EU SEND', 'Strategic Implications for Enterprise Deployment', 'Conclusion: Capability, Safety, and Regulation in August 2026', 'Sources: Meta AI 2025 Llama 4 Technical Report, OpenAI 2025 GPT-5 System Card, EU AI Act Guidance Documents', 'Sources']
+
+✍️ [Synthesizer] Writing 13 sections (12 in parallel + 1 sources)
+  [Sources] auto-generated (6 URLs, 0 LLM calls)
+  🚀 Launching 12 parallel section generators...
+  ✅ Section 'Executive Summary' completed (7389 chars)
+  ✅ Section 'Multi-Modal Reasoning: Comparative Analysis of Llama-4 and GPT-5' completed (18271 chars)
+  ✅ Section 'Agentic Coding Benchmarks: Real-World Workflows with Llama-4 and GPT-5' completed (19264 chars)
+  ✅ Section 'Evaluation Matrix: Benchmarks, Robustness Scores, and System Comparisons' completed (17946 chars)
+  ✅ Section 'Introduction to the 2026 AI Landscape: Llama-4 vs GPT-5' completed (8731 chars)
+  ✅ Section 'Adversarial Robustness and Red-Teaming Analysis: Llama-4, GPT-5, and Retrieval Systems (GraphRAG, ColBERT, Self-RAG, CRAG, RAPTOR, DPR)' completed (32067 chars)
+  ✅ Section 'Failure Modes and Edge Cases in Agentic and Multi-Modal Deployments' completed (957 chars)
+  ✅ Section 'Regulatory Timeline and Compliance Obligations: GPAI, Systemic Risk, and EU SEND' completed (11516 chars)
+  ✅ Section 'Strategic Implications for Enterprise Deployment' completed (15075 chars)
+  ✅ Section 'Sources: Meta AI 2025 Llama 4 Technical Report, OpenAI 2025 GPT-5 System Card, EU AI Act Guidance Documents' completed (14742 chars)
+  ✅ Section 'The EU AI Act and Its Impact on Open-Source vs Closed Models' completed (14237 chars)
+  ✅ Section 'Conclusion: Capability, Safety, and Regulation in August 2026' completed (15710 chars)
+  🔍 Self-critique: 7 issues — ["Unsupported claim: 'The frontier AI landscape has bifurcated into two irreconcilable deployment models' - provide evidence for this statement.", 'Missing system: GraphRAG, ColBERT, Self-RAG, CRAG, RAPTOR, DPR - add a brief description and evaluation of these retrieval systems.']
+  Self-critique patched section: Adversarial Robustness and Red-Teaming Analysis: Llama-4, GPT-5, and Retrieval Systems (GraphRAG, ColBERT, Self-RAG, CRAG, RAPTOR, DPR)
+  Wrote 12 sections in parallel (176465 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 5/5 supported
+  Evidence graph: 5 edges (5 support, 0 contradiction/unsupported)
+  Math detected: 196 expressions (153 inline, 43 block)
+  Report: 187115 chars, 15 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Benchmark the real-world capabilities of Meta_s Ll_20260811_150934.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Benchmark the real-world capabilities of Meta_s Ll_20260811_150934.html
+
+✅ [TOPIC 7] done in 601.1s — 192909 chars, 15 sections, 40 citations
+
+BATCH DONE: 2 ok, 0 failed

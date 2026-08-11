@@ -1,0 +1,168 @@
+{
+  "1": {
+    "summary": "NDB authorized capital $100B, initial subscribed $50B (equal $10B per founding member). Cumulative approved loans >$42.9B across ~139 projects by end-2025; 2025 annual approvals 19 projects = $3.17B. Local-currency share ~23-25%, targeting 30% (2022-2026 strategy). Russia: new lending frozen since March 2022 but keeps board seat. Ratings: S&P AA+, Fitch AA (downgraded AA+→AA July 2022, outlook Positive May 2026). NDB: no policy conditionality vs IMF structural adjustment.",
+    "facts": [
+      {"label": "NDB authorized capital", "check": ["100 billion", "$100B", "100,000"]},
+      {"label": "NDB subscribed capital", "check": ["50 billion", "$50B"]},
+      {"label": "Cumulative approvals end-2025", "check": ["42.9", "42,9"]},
+      {"label": "2025 annual approvals", "check": ["3.17", "3,171", "19 project"]},
+      {"label": "Local currency share", "check": ["30%", "23%", "25%"]},
+      {"label": "Russia lending frozen 2022", "check": ["Russia"]},
+      {"label": "Fitch downgrade AA+ to AA 2022", "check": ["AA", "downgrade"]}
+    ]
+  },
+  "2": {
+    "summary": "Ditlevsen & Ditlevsen 2023: collapse central estimate 2057 (CI 2037-2095), ~15% probability over next 100 years. Smolders/van Westen et al. 2025: 59±17% probability of AMOC collapse onset before 2050. Greenland melt ~250-300 Gt/yr (hosing thresholds up to 5,000 Gt/yr). OSNAP salinity ~34.9-35.0 PSU baseline. UK wheat ~7-8 t/ha normal, collapse scenarios -1.0 to -3.0 t/ha or -40% production. IPCC AR6: 'very likely decline, collapse during 21st century unlikely (medium confidence)'.",
+    "facts": [
+      {"label": "Ditlevsen collapse year 2057", "check": ["2057"]},
+      {"label": "Ditlevsen probability", "check": ["15%"]},
+      {"label": "van Westen/Smolders pre-2050 probability", "check": ["59%", "59 ± 17", "59"]},
+      {"label": "Greenland melt flux Gt/yr", "check": ["250", "300", "Gt"]},
+      {"label": "OSNAP salinity PSU", "check": ["34.9", "35.0", "PSU"]},
+      {"label": "UK wheat t/ha", "check": ["7.0", "8.0", "t/ha"]},
+      {"label": "IPCC AR6 'unlikely' collapse", "check": ["unlikely"]}
+    ]
+  },
+  "3": {
+    "summary": "Centrus: ~920 kg HALEU produced, $900M DOE contract July 2026 to scale toward 12,000 kg/yr (12 t). NuScale uprated 77 MWe module. SMR FOAK LCOE ~$100-150+/MWh vs utility solar $40-98/MWh; battery packs $108/kWh 2025 (-8% YoY), ESS $70/kWh. NRC 10 CFR Part 53 finalization ~2027. ONR GDA ongoing for Rolls-Royce SMR.",
+    "facts": [
+      {"label": "Centrus HALEU capacity", "check": ["12,000", "12 t", "920"]},
+      {"label": "Centrus DOE contract", "check": ["900 million", "$900"]},
+      {"label": "NuScale module", "check": ["77"]},
+      {"label": "SMR LCOE", "check": ["100", "150", "MWh"]},
+      {"label": "Solar LCOE", "check": ["40", "98"]},
+      {"label": "Battery pack price", "check": ["108", "$108"]}
+    ]
+  },
+  "4": {
+    "summary": "~46,200 trackable objects; 27,465 in LEO (16,811 payloads, 4,709 fragmentation debris >10cm). Russia Kosmos-2581/2/3 inspector launches Feb 5, 2025; China Shijian-29A/29B Jan 29, 2026 (GEO). WEF: $25.8-42.3B debris cost over decade, $14.2-30.7B anomalies. ADR: ADRAS-J (Astroscale), ClearSpace-1 (~€86M). India Mission Shakti 2019 kinetic.",
+    "facts": [
+      {"label": "Trackable objects", "check": ["46,200", "46000"]},
+      {"label": "LEO debris count", "check": ["27,465"]},
+      {"label": "Kosmos inspector launch", "check": ["2581", "Feb"]},
+      {"label": "Shijian launch", "check": ["Shijian", "29"]},
+      {"label": "WEF cost", "check": ["25.8", "42.3", "billion"]},
+      {"label": "ADR missions", "check": ["Astroscale", "ClearSpace", "ADR"]}
+    ]
+  },
+  "5": {
+    "summary": "H5N1 clade 2.3.4.4b genotype B3.13 in dairy (1,073+ herds). Mutations: PB2-M631L (majority), PB2-E627K, PB2-D701N. R0 avian 0.1-0.3; human-adapted pandemic estimate 1.4-2.2 (up to 2.5). BARDA 4.8M finished doses; EU HERA 665,000 doses (framework to 40M); China ~20M/yr capacity. mRNA booster 14-30 days vs egg-based 60-120 days.",
+    "facts": [
+      {"label": "PB2 mutations", "check": ["M631L", "E627K", "D701N", "PB2"]},
+      {"label": "Dairy herds", "check": ["1,073", "1073"]},
+      {"label": "R0 estimate", "check": ["1.4", "2.2", "2.5", "R0"]},
+      {"label": "BARDA doses", "check": ["4.8"]},
+      {"label": "HERA doses", "check": ["665,000", "665000"]},
+      {"label": "mRNA timeline", "check": ["14", "30"]},
+      {"label": "Egg timeline", "check": ["60", "120"]}
+    ]
+  },
+  "6": {
+    "summary": "BoJ policy rate 1.0% (hike from 0.75% June 2026). JGB taper toward ~JPY 2T/month, pause April 2027. USD/JPY 158-162 mid-2026; Goldman: 162 (3m) / 163 (6m) / 165 (12m). Aug 2024 carry unwind ~$1T; mid-2026 event hundreds of billions. Nikkei-NASDAQ 3m correlation +0.65 to +0.78. Goldman: unwind supports Japan structural rebalancing.",
+    "facts": [
+      {"label": "BoJ rate", "check": ["1.0%", "1.00%", "0.75"]},
+      {"label": "JGB taper", "check": ["2 trillion", "2T", "JPY 2"]},
+      {"label": "USD/JPY", "check": ["158", "162", "163", "165"]},
+      {"label": "Aug 2024 unwind", "check": ["1 trillion", "$1T"]},
+      {"label": "Correlation", "check": ["0.65", "0.78"]}
+    ]
+  },
+  "7": {
+    "summary": "SWE-bench Verified: GPT-5 74.9-80%, Llama-4 52.9-59%. MMLU: GPT-5 ~93.5%, Llama-4 Maverick ~85.5%. MATH-500: GPT-5 95-99.4%. GPT-5 training ~1e26-1e27 FLOPs, $500M-2.5B; Llama-4 Behemoth ~1e25-1e26 FLOPs, hundreds of millions $. EU AI Act: Art 51 systemic-risk presumption >1e25 FLOPs, Art 52 notification, Art 53 baseline, Art 55 systemic-risk obligations.",
+    "facts": [
+      {"label": "GPT-5 SWE-bench", "check": ["74.9", "80"]},
+      {"label": "Llama-4 SWE-bench", "check": ["52.9", "59"]},
+      {"label": "GPT-5 MMLU", "check": ["93.5"]},
+      {"label": "Llama-4 MMLU", "check": ["85.5"]},
+      {"label": "GPT-5 MATH-500", "check": ["95", "99.4"]},
+      {"label": "Training cost", "check": ["500 million", "2.5 billion"]},
+      {"label": "EU AI Act articles", "check": ["51", "55"]}
+    ]
+  },
+  "8": {
+    "summary": "ISA mining code NOT adopted as of 2026 (31st session; ISBA/30/C/CRP.1 in negotiation). 31 exploration contracts total, 17-19 for CCZ nodules. China COMRA holds 5 contracts (most of any member). Plume: 4.5-9 km dispersion; 10,000x sediment concentration; ~5 cm top sediment removed; ~3 cm smothering layer. 56 kg Ni + 7 kg Co per 75 kWh EV. US not ratified UNCLOS (DSHMRA 1980, EO 14285); China full party.",
+    "facts": [
+      {"label": "ISA code not adopted", "check": ["not", "no"]},
+      {"label": "Contracts", "check": ["31", "17", "19"]},
+      {"label": "China contracts", "check": ["5", "COMRA"]},
+      {"label": "Plume radius", "check": ["4.5", "9 km"]},
+      {"label": "Sediment multiplier", "check": ["10,000", "10000"]},
+      {"label": "EV metal demand", "check": ["56", "7 kg"]}
+    ]
+  },
+  "9": {
+    "summary": "Demographia 2026: Sydney median multiple 12.2 (2nd least affordable), Toronto 7.7. UK rates 4.87% (2-yr fix), 4.98% (5-yr fix); Germany 2.85% short-term, 3.38-3.95% long-term. Berlin Mietpreisbremse extended to 2029, cap 10% above Mietspiegel; historic freeze studies ~11% advertised rent drop in restricted segments. YIMBY: zoning deregulation only durable fix; demand subsidies inflationary in supply-constrained markets.",
+    "facts": [
+      {"label": "Sydney multiple", "check": ["12.2"]},
+      {"label": "Toronto multiple", "check": ["7.7"]},
+      {"label": "UK 2-yr rate", "check": ["4.87"]},
+      {"label": "UK 5-yr rate", "check": ["4.98"]},
+      {"label": "Germany long rate", "check": ["3.38", "3.95", "2.85"]},
+      {"label": "Berlin cap", "check": ["10%", "11%"]}
+    ]
+  },
+  "10": {
+    "summary": "CDC: CRE incidence rose from <2 to >3 per 100,000 population (2019 vs 2023-25, +69%); NDM-CRE +460% (0.25 → 1.35 per 100,000). Tebipenem (Utebzi) FDA-approved June 17, 2026 — first oral carbapenem. ICU CRE treatment $22,484-$66,031+ per patient; phage therapy $5,000-15,000+. WHO supports delinked pull incentives / subscription models (PASTEUR Act).",
+    "facts": [
+      {"label": "CDC CRE rate", "check": ["3 per 100,000", "100,000"]},
+      {"label": "NDM surge", "check": ["460%", "1.35", "0.25"]},
+      {"label": "Tebipenem approval", "check": ["Utebzi", "June 17", "tebipenem"]},
+      {"label": "ICU cost", "check": ["22,484", "66,031", "66031"]},
+      {"label": "Phage cost", "check": ["5,000", "15,000"]}
+    ]
+  },
+  "11": {
+    "summary": "FMCSA docket FMCSA-2026-0958 (91 FR 20252, Apr 15, 2026) — Aurora 5-yr exemption from 49 CFR 392.22(b)/393.25(e)/393.95(f); prior waiver expired July 9, 2026. UNECE WP.29 adopted first global ADS regulation June 24, 2026. ATRI 2026: human CPM $2.336 (ex-fuel $1.854); AV pilot $1.89/mi; parity ~2028. Deadhead 15-22% cut by 15-20%. 1 remote-monitor role per 5-10 driving jobs displaced. IIHS July 2026: AVs 68% fewer crashes; weather remains ODD vulnerability.",
+    "facts": [
+      {"label": "FMCSA docket", "check": ["0958", "20252"]},
+      {"label": "UNECE ADS", "check": ["June 24", "WP.29"]},
+      {"label": "Human CPM", "check": ["2.336", "2.34"]},
+      {"label": "AV CPM", "check": ["1.89"]},
+      {"label": "Deadhead", "check": ["15%", "20%", "22%"]},
+      {"label": "IIHS 68%", "check": ["68%"]}
+    ]
+  },
+  "12": {
+    "summary": "6G SEPs pre-standardization; 5G baseline: Huawei 15.39% patent families / 22.94% 3GPP contributions; Samsung 10-15%; Ericsson 10-12% (peak 17.6-20.1%). IMT-2030: framework ITU-R M.2160 June 22, 2023; TPRs Feb 2026 (5/116); eval guidelines June 2026 (5/119); submissions Feb 2027-Oct 2029; final specs June 2029-June 2030. GaN PAE 20-30% vs SiGe 15-25% at sub-THz. DoD: sub-THz unusable for long-range battlefield (attenuation, LOS-only).",
+    "facts": [
+      {"label": "Huawei SEP share", "check": ["15.39", "22.94"]},
+      {"label": "Samsung share", "check": ["10%", "15%"]},
+      {"label": "Ericsson share", "check": ["10%", "12%"]},
+      {"label": "IMT-2030", "check": ["M.2160", "2030", "2027"]},
+      {"label": "GaN PAE", "check": ["20%", "30%"]},
+      {"label": "SiGe PAE", "check": ["15%", "25%"]}
+    ]
+  },
+  "13": {
+    "summary": "Lake Mead 1,040.4 ft (Aug 7, 2026); Lake Powell ~3,521.09 ft (Aug 9, 2026); Powell dead pool 3,490 ft. Lower Basin cuts 2027-28 up to 1.5M acre-feet: Arizona 760K, California 440K, Nevada 50K. Imperial Valley fallowing up to $840/acre-foot. Navajo Nation v. US (June 22, 2023, 5-4): no affirmative treaty duty. Tribes challenge prior appropriation via Winters doctrine.",
+    "facts": [
+      {"label": "Lake Mead elevation", "check": ["1,040.4", "1040"]},
+      {"label": "Lake Powell elevation", "check": ["3,521", "3521"]},
+      {"label": "Arizona cut", "check": ["760,000", "760K"]},
+      {"label": "California cut", "check": ["440,000", "440K"]},
+      {"label": "Nevada cut", "check": ["50,000", "50K"]},
+      {"label": "Fallowing payout", "check": ["840", "acre-foot"]}
+    ]
+  },
+  "14": {
+    "summary": "LTV: Lunar Outpost Pegasus + Venturi Astrolab CLV-1 (May 2026 awards), launch late 2020s; Astrolab FLIP late 2026 via Griffin-1. Artemis cumulative ~$93-102.5B; China space budget $19-20B/yr; ILRS crew-ready mid-2030s. Chang'e 5: 8,200 kg, Nov 23, 2020, 1,731 g samples. Chang'e 6: 8,350 kg, May 3, 2024, 1,935.3 g. ISRU: molten regolith electrolysis up to 96% oxygen extraction; Sabatier for methane. Blue Moon Mk2: 21,350 kg, 3,000 kg payload, demo 2027, crewed 2030.",
+    "facts": [
+      {"label": "LTV teams", "check": ["Lunar Outpost", "Astrolab", "Pegasus"]},
+      {"label": "Artemis budget", "check": ["93", "102.5", "billion"]},
+      {"label": "Chang'e 5", "check": ["8,200", "8200", "1,731"]},
+      {"label": "Chang'e 6", "check": ["8,350", "8350", "1,935"]},
+      {"label": "ISRU electrolysis", "check": ["96%", "electrolysis", "Sabatier"]},
+      {"label": "Blue Moon", "check": ["21,350", "21350"]}
+    ]
+  },
+  "15": {
+    "summary": "Harvard RCT (Kestin, Scientific Reports 2025): AI tutor effect size 0.73-1.30 SD vs active-learning controls. Eedi/Google LearnLM UK trial: AI 66.2% vs 60.7% human-tutored control on novel problems. Engagement 20-30 min/session 3-5x/week (~50-60 hrs/yr). Cost: AI license $15-40/student/yr vs human tutors $35-80/hr (~50-100x cheaper). Cognitive science: learned helplessness, cognitive offloading, metacognition erosion.",
+    "facts": [
+      {"label": "Harvard effect size", "check": ["0.73", "1.30", "SD"]},
+      {"label": "Eedi UK trial", "check": ["66.2", "60.7"]},
+      {"label": "AI license cost", "check": ["15", "40", "student"]},
+      {"label": "Tutor cost", "check": ["35", "80"]},
+      {"label": "Learned helplessness", "check": ["helplessness"]}
+    ]
+  }
+}

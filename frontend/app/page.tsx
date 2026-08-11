@@ -32,7 +32,7 @@ export default function Home() {
     {
       role: 'assistant',
       content:
-        "Hello! I'm your Autonomous Research Agent. I can help with:\n\n- **Chat**: multi-turn conversation with memory (streaming)\n- **Research**: multi-agent cited reports with live progress\n\nHow can I help you today?",
+        "Hello! I'm **Providence**, your deep-research engine. I can help with:\n\n- **Chat**: multi-turn conversation with memory (streaming)\n- **Research**: multi-agent cited reports with live progress\n- **Evidence**: every claim verified against this run's sources\n\nHow can I help you today?",
       timestamp: new Date(),
     },
   ])

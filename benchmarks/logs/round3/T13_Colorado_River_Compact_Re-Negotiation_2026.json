@@ -1,0 +1,103 @@
+{
+  "topic_id": 13,
+  "topic": "Colorado River Compact Re-Negotiation (2026)",
+  "domain": "Water Security",
+  "prompt": "Analyze the 2026 re-negotiation of the Colorado River water usage tiers. Quantify the mandatory cutbacks for California, Arizona, and Nevada, and compare the efficacy of desalination (Mexico) vs agricultural fallowing (Imperial Valley).",
+  "mode": "standard",
+  "autonomy": "L1",
+  "started_at": 1786461794.0538187,
+  "error": null,
+  "finished_at": 1786462385.847397,
+  "duration_s": 591.8,
+  "report_chars": 196778,
+  "sections_count": 12,
+  "findings_count": 33,
+  "claims_count": 17,
+  "evidence_map_sources": 2,
+  "evidence_graph_edges": 17,
+  "iteration": 4,
+  "adjudicated": {
+    "supported": 13,
+    "contested": 4,
+    "synthetic": 0
+  },
+  "atomic_verified": [
+    {
+      "claim": "The Colorado River flows through seven U.S. states and spans approximately 1,400 miles before reaching Mexico.",
+      "atoms": [
+        "The Colorado River flows through seven U.S. states",
+        "spans approximately 1",
+        "400 miles before reaching Mexico."
+      ],
+      "dra_label": "SUPPORTED",
+      "score": 1.0,
+      "evidence_urls": [
+        "https://www.britannica.com/place/Colorado-River-United-States-Mexico",
+        "https://en.wikipedia.org/wiki/Colorado_River",
+        "https://www.usbr.gov/ColoradoRiverBasin/"
+      ]
+    }
+  ],
+  "research_debt": [
+    "...",
+    "..."
+  ],
+  "ship_gate_ok": null,
+  "report_copy": "/home/sarvesh/projects/Autonomous-Research-Agent/benchmarks/reports/round3/T13_Colorado_River_Compact_Re-Negotiation_2026.md",
+  "original_report": "/home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the 2026 re-negotiation of the Colorado Ri_20260811_153305.md",
+  "citation_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33
+  ],
+  "sources_domains": {
+    "www.ibwc.gov": 21,
+    "www.usbr.gov": 17,
+    "arxiv.org": 17,
+    "www.congress.gov": 9,
+    "pubs.usgs.gov": 6,
+    "calmatters.org": 5,
+    "www.pacificresearch.org": 3,
+    "www.aljazeera.com": 3,
+    "deepblue.lib.umich.edu": 2,
+    "link.springer.com": 2,
+    "www.pbs.org": 2,
+    "www.vaildaily.com": 2,
+    "roselawgroupreporter.com": 2,
+    "www.foodmanufacturing.com": 2,
+    "coloradoriverscience.org": 2,
+    "usbr.gov": 2,
+    "watermanagement.ucdavis.edu": 2
+  },
+  "excerpt": "# Research Report: Analyze the 2026 re-negotiation of the Colorado River water usage tiers. Quantify the mandatory cutbacks for California, Arizona, and Nevada, and compare the efficacy of desalination (Mexico) vs agricultural fallowing (Imperial Valley).\n**Date**: 2026-08-11 15:33\n**Sources**: 33 references\n**Iterations**: 4\n**Methodology**: Scout → research loop → devil's advocate → adjudicate → synth\n**Claim–evidence**: 13/17 claims grounded\n**Evidence confidence**: 76% claims supported (13/17)  \n**Note**: ...\n\n> **Report layers:** (1) Inference body below · (2) Evidence Bedrock · (3) Research Debt · (4) Sources. Prefer Bedrock over uncited inference.\n\n## Executive Summary: 2026 Colorado River Guidelines and Lower-Basin Cutbacks\n\n## S.1 Problem Context\n\nThe Colorado River Basin confronts a structural supply–demand deficit of unprecedented magnitude, driven by a 25-year megadrought in which **20 of the past 25 years** have produced below-average inflows into Lake Powell. The Bureau of Reclamation's August 2025 24-Month Study projects a January 1, 2026, Lake Mead elevation of **1,055.88 feet**—a level that triggers the most severe shortage-tier operations contemplated under the existing 2007 Interim Guidelines and the 2019 Drought Contingency Plan (DCP). Absent intervention, Glen Canyon Dam releases would fall below the **7.48 MAF** annual minimum, and Hoover Dam deliveries would be curtailed across the Lower Basin, imposing uncompensated economic losses on agricultural, municipal, and tribal water users in California, Arizona, Nevada, and Mexico.\n\n## S.2 Key Systems and Governance Architecture\n\nThe 2026 allocation framework is defined by three interlocking instruments: (i) the **May 2023 Lower Basin States Agreement**, in which Arizona, California, and Nevada committed to conserve **at least 3.0 MAF** by end of calendar year 2026, with **≥1.5 MAF** delivered by end of 2024 ; (ii) the **Near-Term Colorado River Operations Draft Supplemental Environmental Impact Statement (Draft SEIS)** process, which incorporates the Lower Basin Plan as an action alternative; and (iii) the binational **IBWC Treaty framework**, under which Mexico's Water Reserve can offset U.S. cutbacks via water creation or delivery from the U.S. side. The Imperial Irrigation District (IID)—the single largest Colorado River water rights holder at ~2.5 MAF/yr—has operationalized its share through the **11D 2024–2026 Temporary Colorado River System Water Conservation Project**, committing t"
+}

@@ -6,6 +6,7 @@ from the registry: Firecrawl (primary), Wikipedia (free), Built-in Scraper, Exa.
 """
 
 import json
+import re
 
 from src.llm import call_llm
 from src.tools import execute_searches, extract_pages as tool_extract
@@ -37,6 +38,7 @@ def _progress(stage: str, status: str = "", **kwargs) -> None:
 def researcher_gather(state: ResearchState) -> ResearchState:
     """Search the web and extract page content."""
     from src.engine.budget import (
+        budget_status_line,
         check_budgets,
         force_complete,
         record_tool_calls,
@@ -49,6 +51,13 @@ def researcher_gather(state: ResearchState) -> ResearchState:
     if not ok:
         print(f"\n🔍 [Researcher] Budget stop: {reason}")
         return force_complete(state, reason)
+
+    # ── Fruitless-action gate (Jina node-DeepResearch) ──
+    # If the last search/visit yielded zero new URLs/content, temporarily
+    # disable that action so the loop cannot spin on the same fruitless path.
+    fruitless = dict(state.get("fruitless") or {})
+    search_disabled = bool(fruitless.get("search_disabled"))
+    visit_disabled = bool(fruitless.get("visit_disabled"))
 
     quality = state.get("quality") or {}
     flags = state.get("mode_flags") or {}
@@ -129,9 +138,78 @@ def researcher_gather(state: ResearchState) -> ResearchState:
     available = [t.name for t in registry.list_all()]
     print(f"  Tools available: {available}")
 
-    # Live web search (tool bus)
-    results = execute_searches(queries, max_results=max_results)
-    record_tool_calls(state, n=len(queries))
+    # Live web search (tool bus) — skipped when the fruitless gate fired
+    results: list[dict] = []
+    if search_disabled:
+        print("  🚫 Fruitless gate: live search disabled (previous round added nothing new)")
+        results = list(vault_hits)
+    else:
+        # Search-mode routing (WebSwarm): scale per-query breadth by mode so an
+        # entity-collect query pulls a wide net while an atom query stays tight.
+        modes = state.get("search_modes") or {}
+        buckets: dict[str, list[str]] = {}
+        for q in queries:
+            m = modes.get(q) or modes.get(q.lower()) or "deep"
+            buckets.setdefault(m, []).append(q)
+        for mode, qs in buckets.items():
+            k = max_results
+            if mode == "atom":
+                k = max(3, min(k, 5))
+            elif mode == "wide":
+                k = min(k + 4, 14)
+            elif mode == "entity_collect":
+                k = min(k + 6, 16)
+            elif mode == "web_structure":
+                k = max(4, min(k, 8))
+            print(f"  Mode {mode}: {len(qs)} queries @ max_results={k}")
+            results.extend(execute_searches(qs, max_results=k))
+        record_tool_calls(state, n=len(queries), kind="search")
+
+        # ── Newswire pass (GDELT always + NewsData when keyed) ──
+        # Tier-1 press (FT/Reuters/Caixin…) is the rubric's "source diversity"
+        # category and generic web search rarely surfaces it. GDELT needs no
+        # key and has no quota — always runs; NewsData supplements when the
+        # env key is present. Both are cheap (snippets, no full-page fetch),
+        # so this never blocks the main search chain.
+        #
+        # One hit-per-run guard: GDELT throttles hard under concurrency
+        # (45s cross-process cooldown inside the adapter). Once we already
+        # have newswire hits from an earlier iteration, stop calling — there
+        # is no need to re-fetch the wire every loop, and it keeps concurrent
+        # benchmark processes from 429-storming the free API.
+        news_done = bool(state.get("news_hits"))
+        if not news_done:
+            try:
+                news_hits: list[dict] = []
+                from concurrent.futures import ThreadPoolExecutor
+                from src.tools.adapters.gdelt import gdelt_search
+                from src.tools.adapters.newsdata import newsdata_search
+                news_q = state.get("query", "")[:200]
+                with ThreadPoolExecutor(max_workers=2) as ex:
+                    f_gdelt = ex.submit(gdelt_search, news_q, 8)
+                    f_news = ex.submit(newsdata_search, news_q, 6)
+                    try:
+                        news_hits.extend(f_gdelt.result(timeout=25))
+                    except Exception as e:
+                        print(f"  [gdelt] timed out: {e}")
+                    try:
+                        news_hits.extend(f_news.result(timeout=20))
+                    except Exception as e:
+                        print(f"  [newsdata] timed out: {e}")
+                if news_hits:
+                    state["news_hits"] = news_hits  # once-per-run: stop re-calling
+                    results.extend(news_hits)
+                    print(f"  📰 Newswire: +{len(news_hits)} hits "
+                          f"({sum(1 for r in news_hits if r.get('source') == 'gdelt')} gdelt, "
+                          f"{sum(1 for r in news_hits if r.get('source') == 'newsdata')} newsdata)")
+                    record_tool_calls(state, n=1, kind="search")
+                else:
+                    print("  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry")
+            except Exception as e:
+                print(f"  Newswire pass skipped: {e}")
+        else:
+            print(f"  📰 Newswire: already fetched {len(state.get('news_hits') or [])} hits — skipping")
+
 
     # Deep/academic: one Exa arXiv pass only (skip slow/flaky mineru when Exa works)
     if flags.get("academic_bias") or flags.get("force_arxiv"):
@@ -157,11 +235,20 @@ def researcher_gather(state: ResearchState) -> ResearchState:
             except Exception as e:
                 print(f"  Academic arXiv search skipped: {e}")
 
-    # Hard cap total search hits kept (Exa can dump 100+ across queries)
+    # Hard cap total search hits kept (Exa can dump 100+ across queries).
+    # Newswire hits are exempt: GDELT/NewsData snippets carry a low raw
+    # `score` (0.85) that would lose the sort against Exa's full-text hits
+    # and get culled before the guard even runs — dropping the very source
+    # category the newswire pass exists for. Keep them, cap the rest.
     hard_cap = max(max_results * 2, 20)
     if len(results) > hard_cap:
-        results = sorted(results, key=lambda r: float(r.get("score") or 0), reverse=True)[:hard_cap]
-        print(f"  Capped search pool to top {hard_cap} by score")
+        news, rest = [], []
+        for r in results:
+            (news if r.get("source") in ("gdelt", "newsdata") else rest).append(r)
+        rest = sorted(rest, key=lambda r: float(r.get("score") or 0), reverse=True)
+        results = news + rest[:max(hard_cap - len(news), 0)]
+        print(f"  Capped search pool to {len(results)} "
+              f"(kept {len(news)} newswire hits, top {max(hard_cap - len(news), 0)} by score)")
 
     # Merge vault + live (URL dedup, live wins on conflict for freshness)
     seen_urls: set[str] = set()
@@ -225,6 +312,9 @@ def researcher_gather(state: ResearchState) -> ResearchState:
         if r.get("url") and len(r.get("raw_content") or "") > 800
     }
     need_extract = [r["url"] for r in top if r.get("url") and r["url"] not in already_full]
+    if visit_disabled:
+        print("  🚫 Fruitless gate: extraction disabled (previous extraction added nothing new)")
+        need_extract = []
     extracted = tool_extract(need_extract) if need_extract else []
     for r in top:
         if r.get("url") in already_full:
@@ -234,10 +324,58 @@ def researcher_gather(state: ResearchState) -> ResearchState:
                 "title": r.get("title", ""),
                 "source": r.get("source", "exa"),
             })
-    record_tool_calls(state, n=1 if need_extract else 0)
+    record_tool_calls(state, n=1 if need_extract else 0, kind="extract")
     state["extracted_pages"] = extracted
     print(f"  Content pages: {len(extracted)} ({len(already_full)} from Exa text, "
           f"{len(need_extract)} extracted)")
+
+    # Full-text corpus (Tier-2 #13): pages actually fetched this run become
+    # searchable vault entries — "research once, search web".
+    # (Runs AFTER extraction — `extracted` must be populated first.)
+    if extracted:
+        try:
+            Vault().store_pages(extracted, queries=queries)
+        except Exception:
+            pass
+
+    # ── Fruitless gate bookkeeping ──
+    # Search: did this round surface any URL we haven't already consulted?
+    consulted = set((state.get("research_memory") or {}).get("consulted_sources") or [])
+    new_search_urls = [
+        canonical_url(r.get("url") or "")
+        for r in results
+        if canonical_url(r.get("url") or "") and canonical_url(r.get("url") or "") not in consulted
+    ]
+    if search_disabled:
+        pass  # keep disabled until a round with new content clears it
+    elif new_search_urls:
+        fruitless["search_disabled"] = False
+        fruitless["search_streak"] = 0  # reset so re-disable needs 2 bad rounds again
+    else:
+        streak = int(fruitless.get("search_streak") or 0) + 1
+        fruitless["search_streak"] = streak
+        if streak >= 2:
+            fruitless["search_disabled"] = True
+            print(f"  🚫 Fruitless gate: {streak} rounds with no new URLs — disabling live search")
+
+    new_extract_urls = [
+        canonical_url(p.get("url") or "")
+        for p in extracted
+        if canonical_url(p.get("url") or "") and canonical_url(p.get("url") or "") not in consulted
+    ]
+    if visit_disabled:
+        pass
+    elif new_extract_urls:
+        fruitless["visit_disabled"] = False
+        fruitless["visit_streak"] = 0  # reset so re-disable needs 2 bad rounds again
+    else:
+        vstreak = int(fruitless.get("visit_streak") or 0) + 1
+        fruitless["visit_streak"] = vstreak
+        if vstreak >= 2:
+            fruitless["visit_disabled"] = True
+            print(f"  🚫 Fruitless gate: {vstreak} rounds with no new content — disabling extraction")
+
+    state["fruitless"] = fruitless
     _progress("researching", f"Pages ready: {len(extracted)}",
               pages_scanned=max(pages_scanned, len(extracted)),
               iteration=state["iteration"])
@@ -370,9 +508,13 @@ def researcher_analyze(state: ResearchState) -> ResearchState:
     if len(content_text) > 12000:
         content_text = content_text[:12000]
 
+    from src.engine.budget import budget_status_line
+    budget_line = budget_status_line(state)
+
     prompt = f"""Extract key findings and claims from this research content.
 
 Query: "{state['query']}"
+{budget_line}
 
 Content:
 {content_text}
@@ -383,7 +525,8 @@ Return a JSON object with:
   - "gaps": list of unanswered questions or missing information
   - "confidence": overall confidence: "high", "medium", or "low\""""
 
-    result = call_llm(RESEARCHER_SYSTEM, prompt)
+    # Task-tier (Tier-2 #18): extraction is high-throughput, not deep reasoning
+    result = call_llm(RESEARCHER_SYSTEM, prompt, model="task")
     try:
         analysis = json.loads(result.strip().removeprefix("```json").removesuffix("```").strip())
     except json.JSONDecodeError:
@@ -399,6 +542,34 @@ Return a JSON object with:
         if f not in existing:
             state["findings"].append(f)
             existing.add(f)
+
+    # ── Task-id ledger (langgraph-deep-research) ──
+    # Bind each new finding to the plan section it best serves (mechanical
+    # keyword overlap on section titles). Lets the critic see per-section
+    # coverage and kills cross-section contamination in later steps.
+    section_titles = [str(s.get("title") or "") for s in (state.get("outline") or [])]
+    task_ids = [
+        str(s.get("task_id") or f"T{i+1}")
+        for i, s in enumerate(state.get("outline") or [])
+    ]
+    ledger = list(state.get("task_ledger") or [])
+    for f in findings:
+        fl = f.lower()
+        best, best_score = -1, 0
+        for i, t in enumerate(section_titles):
+            words = re.findall(r"[a-zA-Z]{3,}", t.lower())
+            if not words:
+                continue
+            score = sum(1 for w in words if w in fl)
+            if score > best_score:
+                best_score, best = score, i
+        ledger.append({
+            "finding": str(f)[:300],
+            "task_id": task_ids[best] if best >= 0 else "",
+            "section_title": section_titles[best] if best >= 0 else "",
+            "iteration": int(state.get("iteration") or 0),
+        })
+    state["task_ledger"] = ledger[-400:]
 
     # Store claims with evidence mapping — only URLs actually retrieved this run.
     # LLM-invented evidence IDs (real-looking but never fetched) are dropped here
@@ -424,6 +595,38 @@ Return a JSON object with:
 
     state["claims"] = state.get("claims", []) + claims
     state["gaps"] = gaps
+
+    # ── RE-TRAC structured state (answers / consulted sources / open hypotheses) ──
+    # Persist across iterations so the critic sees explicit gaps and the search
+    # strategy avoids re-searching already-consulted sources.
+    memory = dict(state.get("research_memory") or {})
+    consulted = list(memory.get("consulted_sources") or [])
+    seen_consulted = set(consulted)
+    for c in (state.get("run_corpus") or []):
+        u = canonical_url(c.get("url") or "")
+        if u and u not in seen_consulted:
+            seen_consulted.add(u)
+            consulted.append(u)
+    for r in (state.get("search_results") or []):
+        u = canonical_url(r.get("url") or "")
+        if u and u not in seen_consulted:
+            seen_consulted.add(u)
+            consulted.append(u)
+    memory["consulted_sources"] = consulted[-500:]  # cap size
+
+    answers = list(memory.get("answers") or [])
+    for f in findings[:10]:
+        if f and f not in answers:
+            answers.append(f)
+    memory["answers"] = answers[-40:]
+
+    open_hypotheses = list(memory.get("open_hypotheses") or [])
+    for g in gaps[:10]:
+        if g and g not in open_hypotheses:
+            open_hypotheses.append(g)
+    memory["open_hypotheses"] = open_hypotheses[-30:]
+    state["research_memory"] = memory
+
     state["status"] = f"Extracted {len(findings)} findings, {len(claims)} claims, {len(gaps)} gaps"
     print(f"  Findings: {len(findings)}, Claims: {len(claims)}, Gaps: {len(gaps)}")
     try:

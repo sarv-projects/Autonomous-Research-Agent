@@ -1,4 +1,4 @@
-# Frontend — Autonomous Research Agent
+# Frontend — Providence
 
 Next.js 14 UI for chat + multi-agent Deep Research (A4 backend).
 

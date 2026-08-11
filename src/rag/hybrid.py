@@ -11,6 +11,7 @@ from typing import Optional
 
 from .pipeline import retrieve_chunks as _vector_retrieve
 from .store import VectorStore
+from .rerank import rerank_results, rerank_available
 
 
 def _rrf_score(rank: int, k: int = 60) -> float:
@@ -25,10 +26,17 @@ def hybrid_retrieve(
     embedder=None,
     factoids: Optional[list[dict]] = None,
     run_id: str = "",
+    filters: Optional[dict] = None,
 ) -> list[dict]:
     """Hybrid retrieval: dense vector + sparse keyword + factoid fusion.
 
     When run_id is set, only current-run chunks are returned (isolation).
+
+    filters: Optional metadata filter dict (Tier-2 #19) applied on both the
+    dense (LanceDB .where) and sparse (FTS) streams, e.g. {source_type, acl}.
+
+    When a cross-encoder reranker is available, more candidates are fused
+    (over-fetch) and then reranked down to k for higher top-k precision.
     """
     from .pipeline import _get_or_create_store, _get_or_create_embedder
 
@@ -37,6 +45,10 @@ def hybrid_retrieve(
     if embedder is None:
         embedder = _get_or_create_embedder()
 
+    # Over-fetch when reranking so the final top-k is chosen from a wider pool.
+    use_rerank = rerank_available()
+    fetch_k = k * 5 if use_rerank else k * 2
+
     seen_ids: set[str] = set()
     rrf_scores: dict[str, float] = {}
     merged: dict[str, dict] = {}
@@ -44,7 +56,8 @@ def hybrid_retrieve(
     # ── Dense (vector) stream ──
     try:
         vec_results = _vector_retrieve(
-            query, k=k * 2, store=store, embedder=embedder, run_id=run_id
+            query, k=fetch_k, store=store, embedder=embedder, run_id=run_id,
+            filters=filters,
         )
         for rank, r in enumerate(vec_results):
             rid = r.get("id", "")
@@ -59,7 +72,9 @@ def hybrid_retrieve(
     # ── Sparse (keyword) stream via FTS ──
     if store._fts:
         try:
-            fts_results = store._fts.query(query, k=k * 4 if run_id else k * 2)
+            fts_results = store._fts.query(
+                query, k=fetch_k * 2 if run_id else fetch_k, filters=filters
+            )
             if run_id:
                 fts_results = [r for r in fts_results if r.get("run_id") == run_id]
             for rank, r in enumerate(fts_results):
@@ -114,6 +129,10 @@ def hybrid_retrieve(
         key=lambda r: r.get("score", 0),
         reverse=True,
     )
+
+    # ── Optional cross-encoder rerank (top-k precision boost) ──
+    if use_rerank:
+        return rerank_results(query, sorted_results, k=k)
 
     return sorted_results[:k]
 

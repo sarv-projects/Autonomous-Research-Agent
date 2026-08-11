@@ -70,6 +70,33 @@ class ResearchState(TypedDict):
     research_debt: list
     confidence_note: str
 
+    # --- RE-TRAC structured memory (cross-iteration research state) ---
+    research_memory: dict  # {answers: [...], consulted_sources: [url, ...], open_hypotheses: [...]}
+
+    # --- Structured missing-facts (r1-reasoning-rag) ---
+    missing_facts: list[dict]  # [{fact, sub_topic, suggested_queries: [...]}]
+
+    # --- Evidence graph (Argus) ---
+    evidence_graph: list[dict]  # [{claim_id, claim, evidence_url, relation: support|contradiction|unsupported, score}]
+
+    # --- Atomic verification (DeepVerifier-style, Tier-2 #14) ---
+    atomic_verified: list[dict]  # [{claim, atoms, dra_label: SUPPORTED|REFUTED|AMBIGUOUS|UNVERIFIABLE, score, evidence_urls}]
+
+    # --- Task-id ledger (langgraph-deep-research) ---
+    task_ledger: list[dict]  # [{finding, task_id, section_title, iteration}]
+
+    # --- Search-mode routing (WebSwarm) ---
+    search_modes: dict  # {query: atom|deep|wide|entity_collect|web_structure}
+
+    # --- Newswire pass (GDELT/NewsData once-per-run cache) ---
+    news_hits: list  # tier-1 newswire hits already fetched this run (only set on success, so failures retry)
+
+    # --- Query-type classification (Anthropic) ---
+    query_type: str  # depth_first | breadth_first | straightforward
+
+    # --- Fruitless-action gate (Jina node-DeepResearch) ---
+    fruitless: dict  # {search_disabled, visit_disabled, search_streak, visit_streak}
+
     # --- Synthesizer output ---
     outline: list[dict]         # [{title, order}]
     sections: list[Section]     # progressively written sections
@@ -133,6 +160,27 @@ def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
         "synthetic_claims": [],
         "research_debt": [],
         "confidence_note": "",
+        "research_memory": {
+            "answers": [],
+            "consulted_sources": [],
+            "open_hypotheses": [],
+        },
+        "missing_facts": [],
+        "evidence_graph": [],
+        "atomic_verified": [],
+        "task_ledger": [],
+        "search_modes": {},
+        "news_hits": [],
+        "query_type": "",
+        "fruitless": {
+            "search_disabled": False,
+            "visit_disabled": False,
+            "search_streak": 0,
+            "visit_streak": 0,
+        },
+        # Marginal-value stop bookkeeping (critic) — initialized for consistency
+        "_marginal_prev_claims": 0,
+        "_marginal_prev_urls": 0,
         "outline": [],
         "sections": [],
         "evidence_map": {},

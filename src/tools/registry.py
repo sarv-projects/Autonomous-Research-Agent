@@ -11,6 +11,7 @@ Tools are registered with:
 
 from __future__ import annotations
 
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Optional
 
@@ -81,42 +82,75 @@ class ToolRegistry:
         primary_tools = [t for t in tools if not t.has_capability("always")]
         always_tools = [t for t in tools if t.has_capability("always")]
 
+        # ── Per-call provider fallback chain (extracurricular web-UI) ──
+        # Primary tools are tried ONE AT A TIME in priority order (Exa → Tavily →
+        # Firecrawl → …). A tool that raises (rate limit, timeout) or returns
+        # nothing falls through to the next. "always" tools (Wikipedia) run
+        # CONCURRENTLY on a daemon thread so a slow/timeout primary never delays
+        # the always-on fallback source; their results are merged when the chain
+        # resolves. A rate-limited paid provider therefore never kills a round.
         all_results: list[dict] = []
         seen_urls: set[str] = set()
 
-        # Run primary + always tools in parallel
-        search_tools = primary_tools[:1] + always_tools  # best primary + all "always" tools
-        if not search_tools:
-            search_tools = tools[:1]
+        def _merge(rs: list[dict]) -> None:
+            for r in rs:
+                url = r.get("url", "")
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    all_results.append(r)
 
-        def _search_with(tool: Tool) -> list[dict]:
-            return _parallel_search_with_tool(tool, queries, max_results)
+        # Start the always-tools (Wikipedia) in parallel with the primary chain.
+        always_results: list[dict] = []
+        always_done = threading.Event()
 
-        with ThreadPoolExecutor(max_workers=len(search_tools)) as executor:
-            future_map = {executor.submit(_search_with, t): t for t in search_tools}
-            for future in as_completed(future_map):
-                try:
-                    results = future.result()
-                    for r in results:
-                        url = r.get("url", "")
-                        if url and url not in seen_urls:
-                            seen_urls.add(url)
-                            all_results.append(r)
-                except Exception as e:
-                    tool_name = future_map[future].name
-                    print(f"  [tool:{tool_name}] search failed: {e}")
+        def _run_always() -> None:
+            try:
+                for tool in always_tools:
+                    try:
+                        always_results.extend(_parallel_search_with_tool(tool, queries, max_results))
+                    except Exception as e:
+                        print(f"  [tool:{tool.name}] search failed: {e}")
+            finally:
+                always_done.set()
+
+        threading.Thread(target=_run_always, daemon=True).start()
+
+        for tool in primary_tools:
+            try:
+                results = _parallel_search_with_tool(tool, queries, max_results)
+            except Exception as e:
+                print(f"  [tool:{tool.name}] search failed: {e} — trying next provider")
+                continue
+            if results:
+                _merge(results)
+                print(f"  [tool:{tool.name}] primary search OK ({len(results)} raw results)")
+                break
+            print(f"  [tool:{tool.name}] returned 0 results — trying next provider")
+
+        always_done.wait(timeout=60)
+        _merge(always_results)
 
         all_results.sort(key=lambda x: x.get("score", 0), reverse=True)
         return all_results
 
     def extract(self, urls: list[str]) -> list[dict]:
-        """Extract content from URLs using the first available tool with extract capability."""
-        for tool in self.list_all():
-            if tool.extract_fn and urls:
-                try:
-                    return tool.extract_fn(urls)
-                except Exception:
-                    continue
+        """Extract content from URLs using the best available extract tool.
+
+        Tools are tried in priority order (highest first); the first tool that
+        returns a non-empty result wins. A tool returning [] (e.g. Wikipedia
+        for a non-Wikipedia URL) falls through to the next candidate.
+        """
+        candidates = sorted(
+            (t for t in self.list_all() if t.extract_fn),
+            key=lambda t: -t.priority,
+        )
+        for tool in candidates:
+            try:
+                out = tool.extract_fn(urls)
+                if out:
+                    return out
+            except Exception:
+                continue
         return []
 
 

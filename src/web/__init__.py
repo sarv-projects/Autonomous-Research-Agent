@@ -1,5 +1,5 @@
 """
-Web API server for the Autonomous Research Agent.
+Web API server for Providence.
 
 Provides REST API endpoints for frontend, CLI, and integration tools:
   - GET  /api/status - System health and gateway routes
@@ -35,8 +35,8 @@ from src.engine.temporal.activities import get_pending_approvals, submit_human_a
 
 # Create FastAPI app
 app = FastAPI(
-    title="Autonomous Research Agent API",
-    description="REST API for the Autonomous Research Agent engine",
+    title="Providence API",
+    description="REST API for the Providence deep-research engine",
     version="0.2.0"
 )
 
@@ -844,7 +844,7 @@ async def probe_models_endpoint(body: dict):
 async def root():
     """Root API discovery endpoint."""
     return {
-        "name": "Autonomous Research Agent API",
+        "name": "Providence API",
         "version": "0.2.0",
         "docs": "/docs",
         "endpoints": {
@@ -872,6 +872,6 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting Autonomous Research Agent API server...")
+    print("Starting Providence API server...")
     print("Docs available at http://localhost:8000/docs")
     uvicorn.run(app, host="0.0.0.0", port=8000)

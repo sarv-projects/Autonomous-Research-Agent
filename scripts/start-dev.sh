@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 PORT="${PORT:-8000}"
-echo "==> Autonomous Research Agent — dev stack"
+echo "==> Providence — dev stack"
 echo "    API:      http://localhost:${PORT}/docs"
 echo "    Frontend: http://localhost:3000"
 echo ""

@@ -8,7 +8,7 @@
 
 ## Overview
 
-The Autonomous Research Agent uses a **web-first UI/UX approach** with the dashboard as the primary user interface. The CLI remains a secondary interface for power users and automation.
+Providence uses a **web-first UI/UX approach** with the dashboard as the primary user interface. The CLI remains a secondary interface for power users and automation.
 
 **Design Philosophy:**
 - **Simplicity first** — Clean, intuitive interface; no overwhelming complexity

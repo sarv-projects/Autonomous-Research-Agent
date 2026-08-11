@@ -24,8 +24,8 @@ Product overview: [../README.md](../README.md). Status: [IMPLEMENTATION_STATUS.m
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # if needed
 
-git clone https://github.com/sarv-projects/Autonomous-Research-Agent.git
-cd Autonomous-Research-Agent
+git clone https://github.com/sarv-projects/providence.git
+cd providence
 bash scripts/install.sh
 cp .env.example .env
 # edit .env — add GROQ_API_KEY, EXA_API_KEY, GEMINI_API_KEY for best quality
@@ -47,8 +47,8 @@ bash scripts/start-dev.sh
 
 ```powershell
 # install uv if needed: https://docs.astral.sh/uv/
-git clone https://github.com/sarv-projects/Autonomous-Research-Agent.git
-cd Autonomous-Research-Agent
+git clone https://github.com/sarv-projects/providence.git
+cd providence
 .\scripts\install.ps1
 copy .env.example .env
 # edit .env

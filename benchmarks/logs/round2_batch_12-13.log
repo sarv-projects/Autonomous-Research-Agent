@@ -1,0 +1,322 @@
+Running 2 topics [12..13] in mode=standard round=2 -> /home/sarvesh/projects/Autonomous-Research-Agent/benchmarks/logs/round2
+
+======================================================================
+[TOPIC 13] Colorado River Compact Re-Negotiation (2026) (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 7 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Analyze the 2026 re-negotiation of the Colorado River water usage tiers. Quantif
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['1. Introduction & Historical Context', '2. 2026 Re‑Negotiation Framework and Tiered Allocation Rules', '3. Quantifying Mandatory Cutbacks for CA, AZ, NV', '4. Mexican Seawater Desalination as a Replacement Source', '5. Imperial Valley Agricultural Fallowing', '6. Comparative Efficacy, Scalability & Cost Analysis', '7. Evaluation Matrix, Retrieval Systems & Failure‑Mode Taxonomy', '8. Conclusion & Future Outlook']
+  Initial queries: ['2026 Colorado River lower‑division mandatory cutbacks California Arizona Nevada', 'Mexican desalination plants water output for Colorado River allocations 2026', 'Imperial Valley agricultural fallowing water savings Colorado River 2026', 'Colorado River 2026 allocation tiers lake mead elevation trigger thresholds', 'cost per acre‑foot desalination vs fallowing Colorado River replacement water']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.6)
+    • [8.1] US proposes cuts to Colorado River use for Arizona, Californ
+    • [7.8] Final Draft Environmental Assessment
+    • [7.8] 
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10349 raw)
+  Ingested 56 chunks (total: 56)
+
+🔍 [Researcher] Analyzing
+  Retrieved 11 chunks (5021 tokens, 85% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: Only the framework section (2) has been partially retrieved; all other required sections lack substantive data.
+  Missing facts: 7 | Next queries: ['2026 Colorado River water usage tiers mandatory cutbacks California Arizona Nevada', 'Colorado River 2026 re‑negotiation water allocation tiers', 'Mexican seawater desalination project Colorado River water supply 2026', 'Imperial Valley agricultural fallowing 2026 water savings', 'cost comparison desalination Mexico vs fallowing Imperial Valley', '2026 Colorado River water allocation California cutback volume']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['ColBERT: Colorado River water allocation 2026', 'DPR: Mandatory cutbacks California Arizona Nevada 2026', 'HyDE: Mexican seawater desalination project Colorado River capacity', 'GraphRAG: Imperial Valley agricultural fallowing 2026 water savings']...
+  Search modes: {"ColBERT: Colorado River water allocation 2026": "deep", "DPR: Mandatory cutbacks California Arizona Nevada 2026": "wide", "HyDE: Mexican seawater desalination project Colorado River capacity": "atom", "GraphRAG: Imperial Valley agricultural fallowing 2026 water savings": "entity_collect", "Self-RAG: Cost comparison desalination Mexico vs fallowing Imperial Valley": "web_structure", "CRAG: Efficacy comparison desalination vs fallowing Colorado River": "deep", "RAPTOR: Evaluation matrix Colorado River water options 2026": "wide", "2026 Colorado River water usage tiers mandatory cutbacks California Arizona Nevada": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode atom: 1 queries @ max_results=5
+  [tool:exa] primary search OK (5 raw results)
+  [gdelt] search failed (Expecting value: line 1 column 1 (char 0))
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 19 raw results via exa
+  Guard: 19 → 19 passed (0 blocked, avg score 7.4)
+    • [8.6] A Lagrangian-Informed Long-Term Dispatch Policy for Coupled 
+    • [8.2] The geometric adjudication of water rights in international 
+    • [7.8] [2603.17931v1] Real-time Coordination of Cascaded Hydroelect
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10748 raw)
+  Ingested 59 chunks (total: 115)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5039 tokens, 86% vs raw)
+  Findings: 10, Claims: 4, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Insufficient data to quantify mandatory cutbacks for California, Arizona, and Nevada, and to compare the efficacy of desalination and agricultural fallowing.
+  Missing facts: 8 | Next queries: ['What are the exact mandatory cutback amounts for California, Arizona, and Nevada individually in the 2026 Colorado River Re-negotiation?', "What are the quantitative data on the water savings achieved by Mexico's desalination plant (capacity, cost, reliability)?", 'What are the specific figures on water savings from Imperial Valley fallowing (acre-feet saved, cost per acre-foot)?', 'How is the 50,000 acre-feet of efficiency-based conservation from the OFECP distributed among the Lower Basin states?', 'What are the exact mandatory cutback amounts for California, Arizona, and Nevada individually in the 2026 Colorado River Re-negotiation?', 'How do the mandatory cutbacks affect the water allocation for each state?']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['2026 Colorado River interim guidelines mandatory cutback amounts California Arizona Nevada', 'Lake Mead shortage trigger 2026 water allocation reductions Lower Basin states', 'Mexico desalination plant Baja California capacity cost acre-feet water supply', 'Imperial Valley fallowing program acre-feet saved cost per acre-foot']...
+  Search modes: {"2026 Colorado River interim guidelines mandatory cutback amounts California Arizona Nevada": "entity_collect", "Lake Mead shortage trigger 2026 water allocation reductions Lower Basin states": "deep", "Mexico desalination plant Baja California capacity cost acre-feet water supply": "entity_collect", "Imperial Valley fallowing program acre-feet saved cost per acre-foot": "entity_collect", "OFECP efficiency-based conservation 50000 acre-feet distribution Lower Basin": "entity_collect", "Colorado River 2026 renegotiation comparative efficacy desalination vs fallowing": "wide", "Colorado River water management optimization site:arxiv.org": "web_structure", "agricultural water conservation economic analysis site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode entity_collect: 2 queries @ max_results=14
+  [tool:exa] primary search OK (28 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.2)
+    • [7.8] 2026 Operations Plan for Colorado River Reservoirs
+    • [7.8] Management of the Colorado River: Water Allocations, Drought
+    • [7.6] 2007 Interim Guidelines| Bureau of Reclamation
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9626 raw)
+  Ingested 47 chunks (total: 162)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5863 tokens, 81% vs raw)
+  Findings: 10, Claims: 7, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 3/3
+  ⚠️  Low evidence base (findings=22, urls=1) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (3) | missing_facts=7
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['2026 Colorado River cutback volumes California Arizona Nevada', 'Mexico desalination project capacity cost 2026', 'Imperial Valley fallowing water savings 2026', 'desalination vs fallowing water efficiency comparison']...
+  Search modes: {"2026 Colorado River cutback volumes California Arizona Nevada": "atom", "Mexico desalination project capacity cost 2026": "deep", "Imperial Valley fallowing water savings 2026": "deep", "desalination vs fallowing water efficiency comparison": "wide", "OFECP conservation allocation Lower Basin 2026": "entity_collect", "Colorado River water allocation 2026 arXiv": "deep", "desalination water efficiency arXiv": "deep", "Lower Basin 2026 water allocation reductions per state": "deep"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 15/30 · (search 12, extract 0) · time 247/600s · cost $0.003/$0.50)
+  [tool:exa] primary search OK (22 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Counter-evidence: +29 hits, ingested 40 chunks
+
+⚖️  [Adjudicator] claims: 11 supported, 0 contested, 0 synthetic (of 11)
+  Evidence graph: 11 edges (11 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Overview', 'Introduction', 'Findings', '1. Introduction & Historical Context', '2. 2026 Re‑Negotiation Framework and Tiered Allocation Rules', '3. Quantifying Mandatory Cutbacks for CA, AZ, NV', '4. Mexican Seawater Desalination as a Replacement Source', '5. Imperial Valley Agricultural Fallowing', 'Conclusion', 'Sources']
+
+✍️ [Synthesizer] Writing 10 sections (9 in parallel + 1 sources)
+  [Sources] auto-generated (17 URLs, 0 LLM calls)
+  🚀 Launching 9 parallel section generators...
+  ✅ Section 'Introduction' completed (11831 chars)
+  ✅ Section 'Overview' completed (11007 chars)
+  ✅ Section '1. Introduction & Historical Context' completed (30304 chars)
+  ✅ Section '2. 2026 Re‑Negotiation Framework and Tiered Allocation Rules' completed (1892 chars)
+  ✅ Section '3. Quantifying Mandatory Cutbacks for CA, AZ, NV' completed (29319 chars)
+  ✅ Section 'Findings' completed (10014 chars)
+  ✅ Section '4. Mexican Seawater Desalination as a Replacement Source' completed (12265 chars)
+  ✅ Section '5. Imperial Valley Agricultural Fallowing' completed (33834 chars)
+  ✅ Section 'Conclusion' completed (9357 chars)
+  🔍 Self-critique: 10 issues — ["Unsupported claim: 'The Colorado River Basin is in the 27th year of an historic drought.' The source only mentions 'the 27th year of drought' without specifying 'historic'.", 'Missing system: The draft does not mention the role of Mexico in the Colorado River water usage tiers.']
+  Self-critique patched section: 3. Quantifying Mandatory Cutbacks for CA, AZ, NV
+  Wrote 9 sections in parallel (150853 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 11/11 supported
+  Evidence graph: 11 edges (11 support, 0 contradiction/unsupported)
+  Math detected: 197 expressions (152 inline, 45 block)
+  Report: 169033 chars, 12 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the 2026 re-negotiation of the Colorado Ri_20260811_145847.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the 2026 re-negotiation of the Colorado Ri_20260811_145847.html
+
+✅ [TOPIC 13] done in 460.1s — 175538 chars, 12 sections, 37 citations
+
+======================================================================
+[TOPIC 14] Lunar Permanent Infrastructure (Artemis vs ILRS) (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 4 systems, 5 queries
+
+🧠 [Planner] Analyzing query: Compare the 2026 architectural design and funding status of NASA's Artemis Base 
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Executive Summary of 2026 Lunar Base Shifts', 'Artemis Base Camp: Architectural Design and Funding Status', 'International Lunar Research Station (ILRS): Design and Funding Overview', 'Comparative Analysis of Water Ice ISRU Strategies', 'Strategic and Geopolitical Implications', 'Evaluation Matrix and Failure-Mode Taxonomy']
+  Initial queries: ['NASA Moon Base architecture users guide 2026 ISRU water ice mining', 'China Russia International Lunar Research Station ILRS water ice ISRU 2026', "What are the core 2026 architectural designs and surface elements of NASA's Artemis Base Camp compared to the ILRS?", 'What is the current funding and budgetary status of both lunar base programs as of 2026?', 'How do the respective ISRU plans for prospecting, extracting, and processing lunar polar water ice differ between Artemis Base Camp and the ILRS?']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Vault reuse: 2 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (29 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 22 raw results via exa
+  Guard: 22 → 22 passed (0 blocked, avg score 7.5)
+    • [8.8] Moon Base
+    • [8.6] NASA Unveils Initiatives to Achieve America's National ...
+    • [8.6] Moon to Mars Architecture - Architecture Definition Document
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10877 raw)
+  Ingested 84 chunks (total: 84)
+
+🔍 [Researcher] Analyzing
+  Retrieved 2 chunks (796 tokens, 98% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: The research lacks direct evidence and specific details about the 2026 architectural designs, funding status, and ISRU water ice mining strategies for both NASA's Artemis Base Camp and the China-Russia ILRS. The provided findings are too general and do not address the core comparative aspects of the query.
+  Missing facts: 7 | Next queries: ['NASA Artemis Base Camp 2026 architectural design and funding status', 'China Russia ILRS 2026 design and funding overview', 'In-situ resource utilization ISRU water ice mining strategies Artemis Base Camp vs ILRS', 'NASA Artemis Base Camp 2026 architectural design', 'Artemis Base Camp infrastructure and layout 2026', 'NASA Artemis Base Camp 2026 funding status']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['NASA Artemis Base Camp 2026 architectural design', 'Artemis Base Camp infrastructure and layout 2026', 'NASA Artemis Base Camp 2026 funding status', 'Artemis program budget allocation 2026']...
+  Search modes: {"NASA Artemis Base Camp 2026 architectural design": "deep", "Artemis Base Camp infrastructure and layout 2026": "deep", "NASA Artemis Base Camp 2026 funding status": "deep", "Artemis program budget allocation 2026": "deep", "China Russia ILRS 2026 design specifications": "deep", "ILRS funding and development status 2026": "deep", "Artemis Base Camp ISRU water ice mining technology": "deep", "ILRS water ice extraction methods and technology": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (28 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.5)
+    • [8.8] Moon Base User's Guide
+    • [8.6] Emerging trends in Cislunar Space for Lunar Science Explorat
+    • [8.6] Venting and Outgassing Simulations of Pressurized Lunar Modu
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11013 raw)
+  Ingested 55 chunks (total: 139)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (4986 tokens, 87% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: The research lacks sufficient evidence-backed findings to support a publication-grade report. No evidence URLs are provided, and the findings are largely abstract or tangential to the specific 2026 architectural design, funding status, and ISRU water ice mining comparison between Artemis Base Camp and ILRS. Key sections such as funding status, detailed ISRU strategies, and a comparative evaluation matrix remain underdeveloped or missing.
+  Missing facts: 6 | Next queries: ['Artemis Base Camp 2026 architectural design and funding status NASA', 'China Russia ILRS 2026 design and funding overview', 'In-situ resource utilization water ice mining strategies Artemis vs ILRS', 'Artemis Base Camp 2026 architectural design NASA', 'NASA Artemis Base Camp layout and modules 2026', 'Artemis Base Camp 2026 funding status NASA budget']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Artemis Base Camp 2026 architectural design NASA', 'NASA Artemis Base Camp layout and modules 2026', 'Artemis Base Camp 2026 funding status NASA budget', 'NASA Artemis program budget 2026 appropriation']...
+  Search modes: {"Artemis Base Camp 2026 architectural design NASA": "deep", "NASA Artemis Base Camp layout and modules 2026": "deep", "Artemis Base Camp 2026 funding status NASA budget": "deep", "NASA Artemis program budget 2026 appropriation": "deep", "ILRS 2026 design and funding China Russia": "deep", "International Lunar Research Station architecture and budget 2026": "deep", "Artemis Base Camp ISRU water ice mining technology 2026": "deep", "ILRS ISRU water extraction methods Moon poles": "deep"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (28 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.7)
+    • [8.8] Moon Base User's Guide
+    • [8.8] NATIONAL AERONAUTICS AND SPACE ADMINISTRATION FY 2026 SPENDI
+    • [8.6] Emerging trends in Cislunar Space for Lunar Science Explorat
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11289 raw)
+  Ingested 57 chunks (total: 196)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (4620 tokens, 88% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/3
+  ⚠️  Low evidence base (findings=4, urls=0) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (3) | missing_facts=5
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Artemis Base Camp architectural components timeline 2026 site:nasa.gov', 'Artemis Base Camp lunar surface elements 2026', 'China Russia ILRS funding status 2026', 'ILRS international lunar research station budget and partners']...
+  Search modes: {"Artemis Base Camp architectural components timeline 2026 site:nasa.gov": "atom", "Artemis Base Camp lunar surface elements 2026": "deep", "China Russia ILRS funding status 2026": "wide", "ILRS international lunar research station budget and partners": "entity_collect", "Artemis Base Camp ISRU water ice mining technology": "web_structure", "ILRS in-situ resource utilization lunar water extraction": "web_structure", "Artemis Base Camp ISRU water ice mining strategy comparison": "wide", "ILRS ISRU water extraction methods Moon poles": "atom"}
+
+⚔️  [Devil's Advocate] 3 counter-queries (LIVE BUDGET: tool calls 15/30 · (search 12, extract 0) · time 356/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (14 raw results)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  [gdelt] search failed (HTTP Error 429: Too Many Requests)
+  Counter-evidence: +16 hits, ingested 58 chunks
+
+⚖️  [Adjudicator] claims: 0 supported, 0 contested, 0 synthetic (of 0)
+  Evidence graph: 0 edges (0 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Overview', 'Introduction', 'Findings', 'Executive Summary of 2026 Lunar Base Shifts', 'Artemis Base Camp: Architectural Design and Funding Status', 'International Lunar Research Station (ILRS): Design and Funding Overview', 'Comparative Analysis of Water Ice ISRU Strategies', 'Strategic and Geopolitical Implications', 'Conclusion', 'Sources']
+
+✍️ [Synthesizer] Writing 10 sections (9 in parallel + 1 sources)
+  [Sources] auto-generated (7 URLs, 0 LLM calls)
+  🚀 Launching 9 parallel section generators...
+  ✅ Section 'Executive Summary of 2026 Lunar Base Shifts' completed (8371 chars)
+  ✅ Section 'Introduction' completed (11153 chars)
+  ✅ Section 'Overview' completed (11469 chars)
+  ✅ Section 'Artemis Base Camp: Architectural Design and Funding Status' completed (20921 chars)
+  ✅ Section 'Findings' completed (12207 chars)
+  ✅ Section 'International Lunar Research Station (ILRS): Design and Funding Overview' completed (7823 chars)
+  ✅ Section 'Comparative Analysis of Water Ice ISRU Strategies' completed (948 chars)
+  ✅ Section 'Strategic and Geopolitical Implications' completed (7834 chars)
+  ✅ Section 'Conclusion' completed (13118 chars)
+  🔍 Self-critique: 6 issues — ["Unsupported claim: 'the year 2026 constitutes a critical inflection point in humanity's return to the lunar surface' without providing concrete evidence.", "Missing system: detailed information about the Commercial Lunar Payload Services (CLPS) framework and its role in NASA's Moon Base Program."]
+  Self-critique patched section: Executive Summary of 2026 Lunar Base Shifts
+  Wrote 9 sections in parallel (94528 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Math detected: 116 expressions (102 inline, 14 block)
+  Report: 104696 chars, 12 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Compare the 2026 architectural design and funding _20260811_150823.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Compare the 2026 architectural design and funding _20260811_150823.html
+
+✅ [TOPIC 14] done in 576.2s — 111792 chars, 12 sections, 33 citations
+
+BATCH DONE: 2 ok, 0 failed

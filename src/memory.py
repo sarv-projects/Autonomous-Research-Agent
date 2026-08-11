@@ -4,7 +4,7 @@ import json
 import os
 import time
 
-MEMORY_FILE = os.path.expanduser("~/.xiarch_memory.json")
+MEMORY_FILE = os.path.expanduser("~/.providence_memory.json")
 
 
 def _load() -> list[dict]:

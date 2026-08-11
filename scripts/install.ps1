@@ -1,10 +1,10 @@
-# Autonomous Research Agent — PowerShell install (Windows)
+# Providence — PowerShell install (Windows)
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $Root
 
-Write-Host "==> Autonomous Research Agent install (PowerShell)"
+Write-Host "==> Providence install (PowerShell)"
 Write-Host "    repo: $Root"
 
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {

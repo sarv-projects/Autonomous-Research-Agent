@@ -77,8 +77,16 @@ class VectorStore:
         text: str = "",
         embedding: Optional[list[float]] = None,
         k: int = 10,
+        filters: Optional[dict] = None,
     ) -> list[dict]:
         """Hybrid query: vector similarity (if embedding available) + keyword fallback.
+
+        Args:
+            text: Query string for the sparse (FTS) stream.
+            embedding: Optional dense vector.
+            k: Max results.
+            filters: Optional metadata filter dict, e.g. {source_type, run_id, url}.
+                     Applied via backend where-clauses (Tier-2 #19).
 
         Returns the best results from the primary backend.
         """
@@ -95,11 +103,11 @@ class VectorStore:
             if len(embedding) < self.vector_dim:
                 embedding = embedding + [0.0] * (self.vector_dim - len(embedding))
             embedding = embedding[:self.vector_dim]
-            results = self._lancedb.query(embedding, k=k)
+            results = self._lancedb.query(embedding, k=k, filters=filters)
 
         # Always blend FTS keyword results (hybrid) when text is available
         if self._fts and text:
-            fts_results = self._fts.query(text, k=k)
+            fts_results = self._fts.query(text, k=k, filters=filters)
             seen = {r["id"] for r in results}
             for r in fts_results:
                 if r["id"] not in seen:

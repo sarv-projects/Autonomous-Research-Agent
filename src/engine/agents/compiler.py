@@ -294,6 +294,23 @@ def _build_bedrock_section(state: ResearchState) -> dict:
             if eid and not _is_fake_url(str(eid)):
                 lines.append(f"   - evidence: {eid}")
             lines.append("")
+        # Compact evidence-graph view (Argus): claims ↔ sources with relation
+        graph = state.get("evidence_graph") or []
+        if graph:
+            lines.append("## Evidence graph (claims ↔ sources)\n")
+            lines.append("| Claim | Relation | Evidence |")
+            lines.append("|-------|----------|----------|")
+            rel_label = {
+                "support": "✅ support",
+                "contradiction": "⚠️ contradiction",
+                "unsupported": "🧪 unsupported",
+            }
+            for e in graph[:12]:
+                claim = str(e.get("claim") or "")[:90].replace("|", "/")
+                rel = rel_label.get(e.get("relation"), str(e.get("relation")))
+                ev = str(e.get("evidence_url") or "—")[:60]
+                lines.append(f"| {claim} | {rel} | {ev} |")
+            lines.append("")
     else:
         # Fallback path (no adjudicator run): only surface evidence URLs that
         # were actually retrieved this run — never raw LLM-provided IDs.
@@ -411,6 +428,17 @@ def _validate_ship_gate(state: ResearchState) -> tuple[bool, list[str]]:
                 f"e.g. {samples[:2]}"
             )
 
+    # Evidence-graph gate (Argus): a meaningful graph with ZERO supported edges
+    # means every claim is unsupported/contradicted — nothing should ship.
+    graph = state.get("evidence_graph") or []
+    if len(graph) >= 5 and not state.get("abort_synthesis"):
+        support_edges = sum(1 for e in graph if e.get("relation") == "support")
+        if support_edges == 0:
+            issues.append(
+                f"Evidence graph: no supported edges "
+                f"({len(graph)} claims all unsupported/contradicted)"
+            )
+
     return len(issues) == 0, issues
 
 
@@ -509,6 +537,11 @@ def compiler(state: ResearchState) -> ResearchState:
         print(f"  Claim–evidence (CoVe): {supported}/{total} supported")
         if unsup:
             print(f"  Unsupported samples: {unsup[:2]}")
+    graph = state.get("evidence_graph") or []
+    if graph:
+        g_sup = sum(1 for e in graph if e.get("relation") == "support")
+        print(f"  Evidence graph: {len(graph)} edges ({g_sup} support, "
+              f"{len(graph) - g_sup} contradiction/unsupported)")
 
     sections = state.get("sections", [])
     conf = ""

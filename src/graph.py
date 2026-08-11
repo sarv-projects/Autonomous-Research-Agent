@@ -306,7 +306,7 @@ def run_research(
     _reset_thinker()
     _reset_triangulator()
     if not dial.thinker_enabled:
-        pass
+        _disable_thinker()
     if not dial.triangulation_enabled:
         _disable_triangulator()
 

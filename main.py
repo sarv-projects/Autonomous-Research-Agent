@@ -1,6 +1,6 @@
 """
-Autonomous Research Agent
-=========================
+Providence — Deep Research Engine
+==================================
 Multi-agent research: Planner · Researcher · Critic · Synthesizer · Compiler
 Gateway + RAG + progressive section output + citation ship-gate
 
@@ -331,7 +331,7 @@ def run_eval(suite: str = "all") -> None:
 
 
 def print_usage() -> None:
-    print("Autonomous Research Agent")
+    print("Providence — Deep Research Engine")
     print()
     print("Commands:")
     print('  uv run python main.py research "topic" [--mode MODE]')

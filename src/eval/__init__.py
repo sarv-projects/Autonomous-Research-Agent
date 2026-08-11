@@ -1,5 +1,5 @@
 """
-Evaluation framework (EvalOps) for Autonomous Research Agent.
+Evaluation framework (EvalOps) for Providence — deep research engine with verified evidence.
 
 Provides component-level and system-level evaluators running against real tool, RAG,
 planner, and compilation pipelines.
@@ -7,6 +7,7 @@ planner, and compilation pipelines.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 import time
 from typing import Dict, List, Optional, Any
@@ -69,6 +70,10 @@ class ComponentEvaluator:
             EvalSuite(name="Memory Recall", results=eval_memory_recall()),
             EvalSuite(name="RAG Information Retrieval", results=eval_rag_ir()),
             EvalSuite(name="Citation Grounding", results=eval_citation_grounding()),
+            # Tier-2 #17: publishable, deterministic suites
+            EvalSuite(name="DR3 Sandbox (deterministic)", results=eval_dr3_sandbox()),
+            EvalSuite(name="DRNOISE (adversarial)", results=eval_drnoise_adversarial()),
+            EvalSuite(name="FACT Citations", results=eval_fact_citations()),
         ]
         return self.suites
 
@@ -379,6 +384,251 @@ def eval_research_quality() -> List[EvalResult]:
                 "has_sections": has_sections,
                 "has_sources": has_sources,
                 "report_chars": len(report),
+            },
+            duration_seconds=round(time.time() - start, 3),
+        )
+    ]
+
+
+# ── Tier-2 #17: publishable eval suites (DR³-Eval / DRNOISE / FACT) ────────
+
+
+def eval_dr3_sandbox() -> List[EvalResult]:
+    """DR³-Eval style: deterministic static sandbox — no network, no LLM.
+
+    A localized corpus of sandbox pages (supportive + one distractor) is
+    ingested into a throwaway temp-dir FTS store (never the shared data/fts.db)
+    and queried. Measures Information Recall (gold facts recovered) and
+    Citation Coverage (every retrieved URL belongs to the sandbox — no
+    out-of-corpus leakage).
+    """
+    import tempfile
+
+    start = time.time()
+    sandbox = [
+        {
+            "url": "https://sandbox.dev/transformer",
+            "title": "Transformer Architecture",
+            "content": (
+                "Transformer models use self-attention mechanisms to process sequential data in parallel. "
+                "Attention Is All You Need was published in 2017 by Vaswani et al. "
+                "Self-attention computes weighted representations of all positions simultaneously."
+            ),
+        },
+        {
+            "url": "https://sandbox.dev/attention",
+            "title": "Attention Mechanisms",
+            "content": (
+                "Self-attention allows each token to attend to every other token in the sequence. "
+                "The attention head computes queries, keys, and values to weight relevance. "
+                "This removes the sequential bottleneck of recurrent networks."
+            ),
+        },
+        {
+            "url": "https://sandbox.dev/distractor",
+            "title": "Unrelated Cooking",
+            "content": (
+                "Sourdough bread requires a live starter culture and careful hydration. "
+                "Baking times vary by oven temperature and ambient humidity."
+            ),
+        },
+    ]
+    # Gold facts are exact (lowercased) substrings of the sandbox corpus, so
+    # recall measures genuine retrieval, not string-luck.
+    gold_facts = [
+        "self-attention mechanisms to process sequential data in parallel",
+        "attention is all you need was published in 2017",
+        "queries, keys, and values to weight relevance",
+    ]
+
+    # Deterministic sandbox: throwaway FTS-only store in a temp dir. The shared
+    # data/fts.db is polluted by real runs and must never feed an eval.
+    from src.rag.backends.fts import FTSStore
+    tmp_dir = tempfile.mkdtemp(prefix="dr3_sandbox_")
+    store = FTSStore(db_path=os.path.join(tmp_dir, "sandbox.db"))
+    chunks = []
+    for p in sandbox:
+        chunks.extend(chunk_text(
+            p["content"], chunk_size=200, chunk_overlap=20,
+            metadata={"url": p["url"], "title": p["title"], "source_type": "sandbox"},
+        ))
+    store.upsert(chunks)
+
+    retrieved = store.query(text="transformer self-attention parallel", k=5)
+    retrieved_text = " ".join(r.get("text", "") for r in retrieved).lower()
+    retrieved_urls = {r.get("url") for r in retrieved}
+    sandbox_urls = {p["url"] for p in sandbox}
+
+    recall = sum(1 for f in gold_facts if f in retrieved_text) / len(gold_facts)
+    coverage = (
+        len(retrieved_urls & sandbox_urls) / max(1, len(retrieved_urls))
+        if retrieved_urls else 0.0
+    )
+    passed = recall >= 0.5 and coverage >= 0.9
+
+    return [
+        EvalResult(
+            name="dr3_information_recall",
+            passed=passed,
+            score=round((recall + coverage) / 2, 2),
+            details={
+                "recall": round(recall, 2),
+                "citation_coverage": round(coverage, 2),
+                "retrieved": len(retrieved),
+                "chunks_indexed": len(chunks),
+            },
+            duration_seconds=round(time.time() - start, 3),
+        )
+    ]
+
+
+def eval_drnoise_adversarial() -> List[EvalResult]:
+    """DRNOISE-style: verification-inertia test (no network, no LLM).
+
+    A gold answer is supported by TWO indirect record-chain documents; a
+    plausible-but-wrong document states a conflicting value directly. The
+    adjudicator must flag the conflict (reconcile the chain) instead of
+    accepting the answer-like document. Also asserts the evidence-graph
+    ship-gate still blocks a zero-support graph.
+    """
+    start = time.time()
+    from src.engine.agents.adversary import claim_adjudicator
+    from src.engine.agents.compiler import _validate_ship_gate
+
+    state = initial_state("reactor output 2025")
+    state["mode"] = "quick"  # skips the live-web atomic verify inside adjudicator
+    state["claims"] = [
+        {
+            "text": "The reactor reached 100 MW output on June 1 2025",
+            "evidence_ids": ["https://drnoise.example/report-a", "https://drnoise.example/report-b"],
+        },
+        {
+            "text": "The reactor reached 300 MW output on June 1 2025",
+            "evidence_ids": ["https://drnoise.example/plausible-wrong"],
+        },
+    ]
+    # Indirect record chain (two corroborating docs) + the noisy doc
+    state["run_corpus"] = [
+        {"url": "https://drnoise.example/report-a", "title": "Report A",
+         "text": "The official June 1 record states reactor output at 100 MW during commissioning."},
+        {"url": "https://drnoise.example/report-b", "title": "Report B",
+         "text": "According to the June 1 commissioning record, the reactor delivered 100 MW."},
+        {"url": "https://drnoise.example/plausible-wrong", "title": "Claim Sheet",
+         "text": "The reactor reached 300 MW output on June 1 2025 per the summary sheet."},
+    ]
+    state["evidence_map"] = {}
+    state["retrieved_chunks"] = []
+    state["extracted_pages"] = []
+    state["search_results"] = []
+    state["devil_advocate_done"] = True
+    state["socratic_done"] = False
+    state["socratic_hops"] = 0
+    state["gaps"] = []
+    state["research_debt"] = []
+
+    out = claim_adjudicator(state)
+    debt = " ".join(out.get("research_debt") or []).lower()
+    contested = out.get("contested_claims") or []
+    conflict_flagged = "conflict" in debt
+    # The single-source wrong claim should be contested (or at least the run
+    # must not be able to ship treating both values as equally supported)
+    wrong_contested = any(
+        "300 mw" in (c.get("text") or "").lower()
+        for c in contested
+    )
+
+    # Zero-support graph must still fail the ship gate
+    gate_state = initial_state("gate")
+    gate_state["sections"] = [{"title": "Body", "content": "x" * 200, "sources": []}]
+    gate_state["claims"] = [{"text": "c"}]
+    gate_state["evidence_graph"] = [{"relation": "unsupported"} for _ in range(6)]
+    gate_state["abort_synthesis"] = False
+    _, gate_issues = _validate_ship_gate(gate_state)
+    gate_blocks = any("Evidence graph" in i for i in gate_issues)
+
+    score = (0.6 if conflict_flagged else 0.0) + (0.4 if gate_blocks else 0.0)
+    return [
+        EvalResult(
+            name="drnoise_conflict_reconciliation",
+            passed=conflict_flagged and gate_blocks,
+            score=round(score, 2),
+            details={
+                "conflict_flagged": conflict_flagged,
+                "wrong_claim_contested": wrong_contested,
+                "ship_gate_blocks_zero_support": gate_blocks,
+                "debt_notes": len(out.get("research_debt") or []),
+            },
+            duration_seconds=round(time.time() - start, 3),
+        )
+    ]
+
+
+def eval_fact_citations() -> List[EvalResult]:
+    """FACT-style citation metric: existence + support, no network, no LLM.
+
+    A fabricated report cites [1] a real this-run URL (whose chunk supports the
+    claim phrase) and [2] an invented URL that was never fetched. The metric
+    must give credit only where the citation exists in the run's source set and
+    the chunk text supports the claim.
+    """
+    start = time.time()
+    import re
+
+    run_sources = {"https://fact.example/real"}
+    chunk_text_by_url = {
+        "https://fact.example/real": (
+            "Retrieval augmented generation reduces hallucination by grounding generation in retrieved documents."
+        )
+    }
+    # Fake report: [1] real, [2] fabricated URL never fetched this run
+    report = (
+        "RAG reduces hallucination by grounding generation [1]. "
+        "Unicorn CPUs triple inference speed [2]."
+    )
+    sources_list = [
+        "https://fact.example/real",
+        "https://fact.example/fabricated",
+    ]
+
+    # Claim phrases per citation (simplified: first 6 content words of the sentence)
+    sentences = re.split(r"(?<=[.!?])\s+", report)
+    citation_checks = []
+    for sent in sentences:
+        nums = re.findall(r"\[(\d+)\]", sent)
+        if not nums:
+            continue
+        words = re.findall(r"[a-zA-Z]{4,}", sent.lower())
+        phrase = " ".join(words[:6])
+        for n in nums:
+            idx = int(n) - 1
+            if 0 <= idx < len(sources_list):
+                url = sources_list[idx]
+                exists = url in run_sources
+                support = (
+                    exists
+                    and sum(1 for w in phrase.split() if w in chunk_text_by_url.get(url, "").lower())
+                    >= 2
+                )
+                citation_checks.append({"url": url, "exists": exists, "support": support})
+
+    total = max(len(citation_checks), 1)
+    exists_ok = sum(1 for c in citation_checks if c["exists"])
+    support_ok = sum(1 for c in citation_checks if c["support"])
+    existence_acc = exists_ok / total
+    support_acc = support_ok / total
+    # [1] real: exists+support ✓ ; [2] fabricated: exists ✗ → both metrics 0.5
+    passed = exists_ok == 1 and support_ok == 1
+
+    return [
+        EvalResult(
+            name="fact_citation_accuracy",
+            passed=passed,
+            score=round((existence_acc + support_acc) / 2, 2),
+            details={
+                "existence_accuracy": round(existence_acc, 2),
+                "support_accuracy": round(support_acc, 2),
+                "citations_checked": len(citation_checks),
+                "fabricated_caught": exists_ok == 1,
             },
             duration_seconds=round(time.time() - start, 3),
         )

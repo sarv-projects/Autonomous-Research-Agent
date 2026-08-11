@@ -61,6 +61,22 @@ def _register_nougat() -> None:
         priority=20,
     )
 
+# ── LlamaParse / Docling (layout-aware PDF → Markdown; preferred PDF parser) ──
+def _register_llamaparse() -> None:
+    from .llamaparse import llamaparse_extract, llamaparse_search
+    caps = {"extract", "pdf", "documents", "academic"}
+    if os.getenv("LLAMA_CLOUD_API_KEY"):
+        caps.add("paid")
+    else:
+        caps.add("free")
+    register_tool(
+        name="llamaparse",
+        capabilities=caps,
+        search_fn=llamaparse_search,
+        extract_fn=llamaparse_extract,
+        priority=25,
+    )
+
 # ── Firecrawl (Primary Web Search & Crawling — Cloud or Self-Hosted Docker) ──
 def _register_firecrawl() -> None:
     from .firecrawl import firecrawl_search, firecrawl_extract, _is_self_hosted
@@ -106,12 +122,39 @@ def _register_exa() -> None:
         priority=200,  # above Firecrawl/Tavily — primary research search
     )
 
+# ── GDELT (ALWAYS — zero-key real-time global newswire) ────────────────
+def _register_gdelt() -> None:
+    from .gdelt import gdelt_search, gdelt_extract
+    register_tool(
+        name="gdelt",
+        capabilities={"news", "web_search", "free", "always", "real_time"},
+        search_fn=gdelt_search,
+        extract_fn=gdelt_extract,
+        priority=12,
+    )
+
+# ── NewsData.io (optional keyed newswire supplement — free tier is commercial-OK) ──
+def _register_newsdata() -> None:
+    from .newsdata import newsdata_search, newsdata_extract
+    if not os.getenv("NEWSDATA_API_KEY"):
+        return
+    register_tool(
+        name="newsdata",
+        capabilities={"news", "web_search", "paid"},
+        search_fn=newsdata_search,
+        extract_fn=newsdata_extract,
+        priority=106,
+    )
+
 
 # Auto-register tools
 _register_wikipedia()
 _register_builtin()
 _register_mineru()
 _register_nougat()
+_register_llamaparse()
 _register_firecrawl()
 _register_tavily()
 _register_exa()
+_register_gdelt()
+_register_newsdata()

@@ -123,6 +123,196 @@ def _claim_support(
     return "synthetic", score, verified_eids
 
 
+# ── Tier-2 #14: DeepVerifier-style atomic verification ────────────────────
+# Decompose contested/synthetic claims into atomic statements, run a FRESH web
+# check against the world (not just this run's corpus), and label each with the
+# DRA taxonomy: SUPPORTED / REFUTED / AMBIGUOUS / UNVERIFIABLE.
+
+_DRA_LABELS = ("SUPPORTED", "REFUTED", "AMBIGUOUS", "UNVERIFIABLE")
+_NEGATION_HINTS = (
+    "does not", "do not", "is not", "are not", "not true", "false",
+    "incorrect", "wrong", "refute", "refutes", "debunk", "debunks",
+    "no evidence", "contradict", "contradicts", "misleading", "myth",
+    "unsubstantiated", "lacks support", "fails to",
+)
+
+
+def _decompose_atoms(claim_text: str) -> list[str]:
+    """Split a claim into 1-3 atomic statements on conjunctions/punctuation."""
+    import re
+    parts = re.split(r"(?:;|,|\band\b|\bbut\b|\bwhereas\b|\bhowever\b)", claim_text)
+    atoms = [p.strip() for p in parts if len(p.strip().split()) >= 2][:3]
+    return atoms or [claim_text.strip()]
+
+
+def _flag_value_conflicts(state: ResearchState) -> list[str]:
+    """DRNOISE-style conflict detection (Tier-2 #14/#17).
+
+    Two claims about the same subject (shared topic words) that carry different
+    numeric values are flagged as a contradiction — the "verification inertia"
+    failure mode where an agent stops at the plausible-but-wrong answer-like
+    document instead of reconciling the evidence chain. Marks the weaker claim
+    contested and records a research-debt note.
+    """
+    import re as _re
+    claims = list(state.get("claims") or [])
+    if len(claims) < 2:
+        return []
+
+    def _subject(c: dict) -> tuple:
+        words = _re.findall(r"[a-zA-Z]{4,}", (c.get("text") or "").lower())
+        return tuple(sorted(words[:4]))
+
+    def _values(c: dict) -> list[str]:
+        return _re.findall(r"\b\d+(?:\.\d+)?\s*(?:%|MW|GHz|GB|TB|GB/s|million|billion)?\b", (c.get("text") or ""))
+
+    flagged: list[str] = []
+    groups: dict[tuple, list[int]] = {}
+    for i, c in enumerate(claims):
+        subj = _subject(c)
+        if subj:
+            groups.setdefault(subj, []).append(i)
+
+    for subj, idxs in groups.items():
+        if len(idxs) < 2:
+            continue
+        value_map: dict[str, list[int]] = {}
+        for i in idxs:
+            for v in _values(claims[i]):
+                value_map.setdefault(v, []).append(i)
+        if len(value_map) < 2:
+            continue  # same value across claims — no conflict
+        # Conflicting numeric claims on the same subject → flag both
+        note = (
+            "Value conflict between claims on the same subject "
+            f"({', '.join(sorted(value_map.keys())[:4])}): reconcile against primary sources"
+        )
+        flagged.append(note)
+        for i in idxs:
+            row = state.get("adjudicated_claims") or []
+            if i < len(row) and row[i].get("status") == "supported":
+                row[i]["status"] = "contested"
+                row[i]["score"] = min(float(row[i].get("score") or 0.5), 0.5)
+                state.setdefault("contested_claims", []).append(row[i])
+    if flagged:
+        debt = list(state.get("research_debt") or [])
+        for n in flagged:
+            debt.append(f"DRNOISE conflict: {n}")
+        state["research_debt"] = debt[:20]
+        print(f"  ⚔️  DRNOISE conflict flags: {len(flagged)}")
+    return flagged
+
+
+def _word_hits(words: list[str], evidence_text: str) -> int:
+    """Count claim words present in evidence, with light stemming so
+    "reduce" matches "reduces"/"reduced"/"reducing" (better recall)."""
+    hits = 0
+    for w in words[:12]:
+        if w in evidence_text:
+            hits += 1
+            continue
+        stem = re.sub(r"(?:es|ed|ing|s)$", "", w)
+        if len(stem) >= 4 and stem in evidence_text:
+            hits += 1
+    return hits
+
+
+def _dra_label(atom: str, evidence_text: str) -> tuple[str, float]:
+    """Label an atom against fresh evidence: SUPPORTED / REFUTED / AMBIGUOUS."""
+    words = re.findall(r"[a-zA-Z]{4,}", atom.lower())
+    if not words:
+        return "UNVERIFIABLE", 0.0
+    hits = _word_hits(words, evidence_text)
+    ratio = hits / max(len(words[:12]), 1)
+    has_negation = any(h in evidence_text for h in _NEGATION_HINTS)
+    if ratio >= 0.5:
+        if has_negation:
+            return "REFUTED", ratio
+        return "SUPPORTED", ratio
+    if ratio >= 0.2:
+        return "AMBIGUOUS", ratio
+    return "UNVERIFIABLE", ratio
+
+
+def atomic_verify_claims(state: ResearchState, max_claims: int = 4) -> None:
+    """Fresh-web verification of the weakest claims (bounded, best-effort).
+
+    Only runs when there are contested/synthetic claims, the mode is research-
+    grade (deep/academic/standard/ultra-long), and the tool budget has headroom.
+    Writes state["atomic_verified"] and feeds REFUTED/AMBIGUOUS into research debt.
+    """
+    candidates = list(state.get("contested_claims") or []) + list(
+        state.get("synthetic_claims") or []
+    )
+    if not candidates:
+        return
+    if (state.get("mode") or "") not in ("deep", "academic", "ultra-long", "standard"):
+        return
+    budgets = state.get("budgets") or {}
+    max_tools = int(budgets.get("max_tool_calls") or 0)
+    used = int(budgets.get("tool_calls") or 0)
+    if max_tools and used >= int(max_tools * 0.8):
+        print("  🔬 Atomic verify skipped — tool budget nearly exhausted")
+        return
+
+    from src.tools import execute_searches
+    from src.engine.budget import record_tool_calls
+
+    verified: list[dict] = []
+    print(f"\n🔬 [Atomic Verifier] fresh-web check on {min(len(candidates), max_claims)} weak claims")
+    for row in candidates[:max_claims]:
+        claim = (row.get("text") or "")[:200]
+        if not claim:
+            continue
+        atoms = _decompose_atoms(claim)
+        query = " ".join(atoms[:2])[:120]
+        try:
+            results = execute_searches([query], max_results=3)
+            record_tool_calls(state, n=1, kind="search")
+        except Exception as e:
+            print(f"  🔬 verify search failed: {e}")
+            continue
+        evidence_text = " ".join(
+            (r.get("content") or r.get("raw_content") or "") for r in results
+        ).lower()[:6000]
+        evidence_urls = [r.get("url") for r in results if r.get("url")][:3]
+        labels = [_dra_label(a, evidence_text) for a in atoms]
+        # Aggregate: any REFUTED → REFUTED; else SUPPORTED only if all supported
+        if any(l == "REFUTED" for l, _ in labels):
+            dra = "REFUTED"
+        elif all(l == "SUPPORTED" for l, _ in labels) and labels:
+            dra = "SUPPORTED"
+        elif any(l == "SUPPORTED" for l, _ in labels):
+            dra = "AMBIGUOUS"
+        else:
+            dra = "UNVERIFIABLE"
+        score = round(sum(s for _, s in labels) / max(len(labels), 1), 3)
+        verified.append({
+            "claim": claim,
+            "atoms": atoms,
+            "dra_label": dra,
+            "score": score,
+            "evidence_urls": evidence_urls,
+        })
+        print(f"  🔬 {dra}: {claim[:70]}")
+
+    state["atomic_verified"] = verified
+    # Feed labels into research debt
+    debt = list(state.get("research_debt") or [])
+    for v in verified:
+        if v["dra_label"] == "REFUTED":
+            debt.append(f"Atomic verify REFUTED: {v['claim'][:160]}")
+        elif v["dra_label"] == "AMBIGUOUS":
+            debt.append(f"Atomic verify ambiguous — needs stronger sources: {v['claim'][:140]}")
+    seen_d = set()
+    clean = []
+    for d in debt:
+        if d not in seen_d:
+            seen_d.add(d)
+            clean.append(d)
+    state["research_debt"] = clean[:20]
+
+
 @register("devil_advocate_gather")
 def devil_advocate_gather(state: ResearchState) -> ResearchState:
     """One-shot negative-evidence search: limits, failures, retractions, critiques."""
@@ -131,7 +321,7 @@ def devil_advocate_gather(state: ResearchState) -> ResearchState:
 
     from src.tools import execute_searches
     from src.rag.pipeline import ingest_documents
-    from src.engine.budget import record_tool_calls, sync_cost_from_metrics
+    from src.engine.budget import budget_status_line, record_tool_calls, sync_cost_from_metrics
 
     query = state.get("query") or ""
     claims = state.get("claims") or []
@@ -150,9 +340,11 @@ def devil_advocate_gather(state: ResearchState) -> ResearchState:
             counter_queries.append(f"{ct[:80]} criticism OR limitation")
 
     counter_queries = counter_queries[:5]
+    budget_line = budget_status_line(state)
     state["status"] = "Devil's advocate: searching counter-evidence..."
     _progress("adversary", state["status"])
-    print(f"\n⚔️  [Devil's Advocate] {len(counter_queries)} counter-queries")
+    print(f"\n⚔️  [Devil's Advocate] {len(counter_queries)} counter-queries "
+          f"({budget_line})")
     try:
         from src.engine.progress import get_progress
         get_progress().think("next", f"Counter-search: {counter_queries[0][:100]}")
@@ -160,7 +352,7 @@ def devil_advocate_gather(state: ResearchState) -> ResearchState:
         pass
 
     results = execute_searches(counter_queries, max_results=6)
-    record_tool_calls(state, n=len(counter_queries))
+    record_tool_calls(state, n=len(counter_queries), kind="search")
     # Cap and tag
     seen = {r.get("url") for r in (state.get("search_results") or []) if r.get("url")}
     new_hits = []
@@ -253,8 +445,9 @@ def claim_adjudicator(state: ResearchState) -> ResearchState:
     contested = []
     synthetic = []
     supported_n = 0
+    evidence_graph: list[dict] = []
 
-    for c in claims:
+    for idx, c in enumerate(claims):
         text = c.get("text") or ""
         eids = c.get("evidence_ids") or []
         status, score, verified_eids = _claim_support(text, corpus, eids, known_urls, url_text)
@@ -271,15 +464,37 @@ def claim_adjudicator(state: ResearchState) -> ResearchState:
             contested.append(row)
         else:
             synthetic.append(row)
+        # Evidence graph (Argus): claim → evidence edges with relation label.
+        # One edge PER verified evidence URL (multi-evidence claims are honest);
+        # a claim with no verified evidence gets a single unsupported leaf edge.
+        relation = (
+            "support"
+            if status == "supported"
+            else ("contradiction" if status == "contested" else "unsupported")
+        )
+        for eid in (verified_eids[:5] or [""]):
+            evidence_graph.append({
+                "claim_id": f"C{idx + 1}",
+                "claim": text[:200],
+                "evidence_url": eid,
+                "relation": relation,
+                "score": round(score, 3),
+            })
 
     state["adjudicated_claims"] = adjudicated
     state["contested_claims"] = contested
     state["synthetic_claims"] = synthetic
+    state["evidence_graph"] = evidence_graph
     total = max(len(adjudicated), 1)
     print(
         f"\n⚖️  [Adjudicator] claims: {supported_n} supported, "
         f"{len(contested)} contested, {len(synthetic)} synthetic "
         f"(of {len(adjudicated)})"
+    )
+    print(
+        f"  Evidence graph: {len(evidence_graph)} edges "
+        f"({supported_n} support, {len(contested)} contradiction, "
+        f"{len(synthetic)} unsupported)"
     )
 
     # Research debt seeds
@@ -302,6 +517,12 @@ def claim_adjudicator(state: ResearchState) -> ResearchState:
             seen_d.add(d)
             clean_debt.append(d)
     state["research_debt"] = clean_debt[:20]
+
+    # Tier-2 #14: fresh-web atomic verification of the weakest claims (bounded)
+    atomic_verify_claims(state, max_claims=4)
+
+    # DRNOISE-style value-conflict detection (reconcile evidence chains)
+    _flag_value_conflicts(state)
 
     hops = int(state.get("socratic_hops") or 0)
     max_hops = 1  # Ultra-lite: one Socratic tree expansion
@@ -349,7 +570,7 @@ def claim_adjudicator(state: ResearchState) -> ResearchState:
                     f"Debt notes:\n" + "\n".join(f"- {d}" for d in clean_debt[:12]) + "\n"
                     'Return JSON: {"research_debt": ["...", "..."], "confidence_note": "..."}\n'
                     "Max 6 debt bullets; actionable experiments/data still needed.",
-                    model="fast",
+                    model="thinker",  # Tier-2 #18: debt synthesis is reasoning
                     max_tokens=600,
                 )
                 cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()

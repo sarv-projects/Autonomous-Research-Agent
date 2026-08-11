@@ -8,8 +8,23 @@ since we want to avoid heavy tokenizer dependencies.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Optional
+
+
+def _doc_scope(base_meta: dict) -> str:
+    """Short stable id-scope derived from base metadata (url when present).
+
+    Chunk ids are per-document counters (chunk_0, chunk_1, …). Two documents
+    upserted together would otherwise collide on chunk_0 — INSERT OR REPLACE
+    would silently drop one. Scoping ids by the source URL keeps them unique
+    across documents while staying stable for idempotent re-ingest.
+    """
+    url = str(base_meta.get("url") or "")
+    if not url:
+        return ""
+    return hashlib.sha1(url.encode()).hexdigest()[:8]
 
 
 @dataclass
@@ -18,7 +33,87 @@ class Chunk:
     id: str                       # unique chunk id
     text: str                     # the chunk text
     embedding: Optional[list[float]] = None  # vector embedding (populated by Embedder)
-    metadata: dict = field(default_factory=dict)  # run_id, url, title, source_type, chunk_index
+    metadata: dict = field(default_factory=dict)  # run_id, url, title, source_type, chunk_index, parent_id, parent_text
+
+
+def _split_parent_sections(text: str) -> list[str]:
+    """Split text into parent sections on blank-line / markdown-header boundaries.
+
+    A parent is a logical block (paragraph cluster or a heading-led section).
+    A bare heading line attaches to the block that follows it, so
+    "## Section\n\n<body>" is ONE parent. Children retrieve small, the parent
+    is fed large — the parent-child pattern.
+    """
+    import re
+    if "\n\n" not in text and not re.search(r"\n#{1,6}\s+", text):
+        return [text.strip()] if text.strip() else []
+
+    parts = re.split(r"\n\n+", text)
+    parents: list[str] = []
+    buffer = ""
+    for p in parts:
+        p = p.strip()
+        if not p:
+            continue
+        is_heading_only = (
+            re.match(r"^#{1,6}\s+.+$", p)
+            and len(p.splitlines()) <= 2
+            and not re.search(r"\n\S{60,}", p)
+        )
+        if is_heading_only and buffer:
+            parents.append(buffer)
+            buffer = p
+        elif buffer:
+            buffer += "\n\n" + p
+        else:
+            buffer = p
+    if buffer:
+        parents.append(buffer)
+    return parents
+
+
+def chunk_children_with_parents(
+    text: str,
+    chunk_size: int = 600,
+    chunk_overlap: int = 60,
+    metadata: Optional[dict] = None,
+) -> list[Chunk]:
+    """Parent-child chunking: retrieve small, feed large.
+
+    Splits the document into parent sections (structure-aware), chunks each
+    parent into small children, and tags every child with parent_id + a
+    truncated parent_text. Downstream retrieval can use the child for scoring
+    and the parent for context — the standard production-RAG pattern.
+
+    Returns:
+        List of child Chunks, each with metadata.parent_id / parent_text.
+    """
+    if not text or not text.strip():
+        return []
+    base_meta = dict(metadata or {})
+    scope = _doc_scope(base_meta)
+    parents = _split_parent_sections(text)
+    out: list[Chunk] = []
+    child_index = 0
+    for pi, parent in enumerate(parents):
+        # Parent ids must also be doc-scoped (P0 in doc A ≠ P0 in doc B)
+        parent_id = f"P{scope}{pi}" if scope else f"P{pi}"
+        parent_text = parent[:6000]
+        kids = chunk_text(parent, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        if not kids:
+            # Parent smaller than one chunk — emit it directly as its own child
+            kids = [Chunk(
+                id=f"child_{scope}_{child_index}" if scope else f"child_{child_index}",
+                text=parent,
+                metadata={**base_meta, "chunk_index": child_index},
+            )]
+        for k in kids:
+            k.id = f"child_{scope}_{child_index}" if scope else f"child_{child_index}"
+            k.metadata = {**base_meta, "chunk_index": child_index,
+                          "parent_id": parent_id, "parent_text": parent_text}
+            child_index += 1
+            out.append(k)
+    return out
 
 
 def _estimate_tokens(text: str) -> int:
@@ -64,6 +159,10 @@ def chunk_text(
     current_chunk: list[str] = []
     current_tokens = 0
     base_meta = dict(metadata or {})
+    scope = _doc_scope(base_meta)
+
+    def _kid_id(idx: int) -> str:
+        return f"chunk_{scope}_{idx}" if scope else f"chunk_{idx}"
 
     for sent in sentences:
         sent_tokens = _estimate_tokens(sent)
@@ -72,7 +171,7 @@ def chunk_text(
             # Finalize current chunk
             chunk_text_val = " ".join(current_chunk)
             chunks.append(Chunk(
-                id=f"chunk_{len(chunks)}",
+                id=_kid_id(len(chunks)),
                 text=chunk_text_val,
                 metadata={**base_meta, "chunk_index": len(chunks)},
             ))
@@ -95,7 +194,7 @@ def chunk_text(
     if current_chunk:
         chunk_text_val = " ".join(current_chunk)
         chunks.append(Chunk(
-            id=f"chunk_{len(chunks)}",
+            id=_kid_id(len(chunks)),
             text=chunk_text_val,
             metadata={**base_meta, "chunk_index": len(chunks)},
         ))

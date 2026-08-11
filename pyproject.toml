@@ -1,7 +1,7 @@
 [project]
-name = "xiarch-assessment"
-version = "0.2.0"
-description = "Autonomous Research Agent — chat + deep research, RAG, multi-provider gateway"
+name = "providence"
+version = "0.3.0"
+description = "Providence — deep research engine with verified evidence, RAG, and multi-provider gateway"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

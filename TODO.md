@@ -1,6 +1,6 @@
 # Implementation TODO
 
-**End-to-end task list for Autonomous Research Agent**  
+**End-to-end task list for Providence**  
 **Based on ROADMAP.md phases A-L**  
 **Last updated:** 2026-08-08
 

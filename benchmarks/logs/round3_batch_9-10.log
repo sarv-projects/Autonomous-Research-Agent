@@ -1,0 +1,308 @@
+Running 2 topics [9..10] in mode=standard round=3 -> /home/sarvesh/projects/Autonomous-Research-Agent/benchmarks/logs/round3
+
+======================================================================
+[TOPIC 10] Anti-Microbial Resistance (AMR) in G7 Hospitals (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 7 systems, 6 queries
+
+🧠 [Planner] Analyzing query: Track the global spread of carbapenem-resistant Enterobacteriaceae (CRE) in 2026
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Global Epidemiological Spread of CRE in 2026', 'Carbapenemase Distribution and Regional Trends', 'Clinical Mortality Rates: New Beta‑Lactamase Inhibitors vs. Phage Therapy', 'Economic Evaluation: Treatment Costs of Antibiotics vs. Phage Therapy', 'Surveillance & Retrieval Architectures for Real‑Time CRE Tracking', 'Evaluation Matrix for Comparative Study', 'Failure‑Mode Taxonomy and Mitigation Strategies']
+  Initial queries: ['global CRE spread 2026 surveillance data', 'tebipenem mortality CRE infections 2026 clinical outcomes', 'phage therapy cost effectiveness CRE 2026', 'carbapenemase gene distribution 2026 by region', 'GraphRAG antimicrobial resistance tracking 2026']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Vault reuse: 4 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 24 raw results via exa
+  Guard: 24 → 24 passed (0 blocked, avg score 6.7)
+    • [8.6] Tracking Carbapenem-Resistant Pathogens in Hospital Wastewat
+    • [8.6] , Vicky Merhej
+    • [8.4] Carbapenem-resistant Enterobacterales – third update, 3 Febr
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9696 raw)
+  Ingested 52 chunks (total: 52)
+
+🔍 [Researcher] Analyzing
+  Retrieved 7 chunks (2974 tokens, 91% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: Insufficient evidence and findings to support a publication-grade report. Missing sections and evidence URLs.
+  Missing facts: 7 | Next queries: ['Search for recent studies on the global spread of CRE in 2026, including mortality rates and treatment costs.', 'Extract data on the distribution and regional trends of carbapenemases in 2026.', 'Investigate the economic evaluation of treatment costs for antibiotics versus phage therapy alternatives.', 'Search for WHO reports on CRE spread in 2026', 'Extract data from CDC surveillance reports on CRE in 2026', 'Investigate peer-reviewed studies on global CRE trends in 2026']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['WHO GLASS report 2026 carbapenem-resistant Enterobacteriaceae global antimicrobial resistance surveillance', 'tebipenem-ciltazemab beta-lactamase inhibitor mortality cost-effectiveness CRE infection 2025 2026 clinical trial', 'phage therapy compassionate use CRE bloodstream infection mortality cost comparison systematic review 2026', 'OXA-48 NDM KPC carbapenemase distribution regional trends 2026 Europe Asia Africa molecular epidemiology']...
+  Search modes: {"WHO GLASS report 2026 carbapenem-resistant Enterobacteriaceae global antimicrobial resistance surveillance": "atom", "tebipenem-ciltazemab beta-lactamase inhibitor mortality cost-effectiveness CRE infection 2025 2026 clinical trial": "deep", "phage therapy compassionate use CRE bloodstream infection mortality cost comparison systematic review 2026": "deep", "OXA-48 NDM KPC carbapenemase distribution regional trends 2026 Europe Asia Africa molecular epidemiology": "entity_collect", "real-time CRE genomic surveillance GraphRAG Self-RAG ColBERT DPR HyDE CRAG RAPTOR retrieval architecture 2026": "web_structure", "CRE treatment failure modes phage resistance beta-lactamase inhibitor escape mitigation strategies 2026": "atom", "carbapenem-resistant Enterobacteriaceae global spread 2026 site:arxiv.org": "web_structure", "phage therapy versus beta-lactamase inhibitors CRE cost-effectiveness site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode atom: 1 queries @ max_results=5
+  [tool:exa] primary search OK (5 raw results)
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.2)
+    • [8.6] Tracking Carbapenem-Resistant Pathogens in Hospital Wastewat
+    • [8.6] , Vicky Merhej
+    • [8.6] From Individual-Based Models to Macroscopic Dynamics of Anti
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 8054 raw)
+  Ingested 51 chunks (total: 103)
+
+🔍 [Researcher] Analyzing
+  Retrieved 11 chunks (5040 tokens, 84% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Insufficient evidence and findings to support a publication-grade report
+  Missing facts: 7 | Next queries: ['Search for recent studies on the global spread of carbapenem-resistant Enterobacteriaceae (CRE) in 2026', 'Extract data on mortality rates and treatment costs of new beta-lactamase inhibitors (e.g., tebipenem) versus phage therapy alternatives', 'Investigate the effectiveness of phage therapy in treating CRE infections', 'Search for reports from the World Health Organization (WHO) or the Centers for Disease Control and Prevention (CDC) on the global spread of CRE in 2026', 'Search for clinical trials or studies on the effectiveness of tebipenem in treating CRE infections', 'Extract data on treatment costs from reputable sources']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Search for GraphRAG architecture for real-time CRE tracking', 'Evaluate the effectiveness of Self-RAG in reducing CRE mortality rates', 'Compare the performance of ColBERT and DPR in extracting CRE treatment costs', 'Investigate the impact of HyDE on CRE surveillance and retrieval architectures']...
+  Search modes: {"Search for GraphRAG architecture for real-time CRE tracking": "atom", "Evaluate the effectiveness of Self-RAG in reducing CRE mortality rates": "deep", "Compare the performance of ColBERT and DPR in extracting CRE treatment costs": "wide", "Investigate the impact of HyDE on CRE surveillance and retrieval architectures": "entity_collect", "Analyze the failure-mode taxonomy and mitigation strategies of CRAG for CRE": "web_structure", "Assess the performance of RAPTOR in tracking CRE infections in real-time": "atom", "Search for recent studies on the global spread of carbapenem-resistant Enterobacteriaceae (CRE) in 2026": "deep", "Extract data on mortality rates and treatment costs of new beta-lactamase inhibitors (e.g., tebipenem) versus phage therapy alternatives": "wide"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode atom: 1 queries @ max_results=5
+  [tool:exa] primary search OK (5 raw results)
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  [gdelt] HTTP 429
+  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.0)
+    • [8.6] Tracking Carbapenem-Resistant Pathogens in Hospital Wastewat
+    • [8.6] , Vicky Merhej
+    • [8.6] From Individual-Based Models to Macroscopic Dynamics of Anti
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10515 raw)
+  Ingested 82 chunks (total: 185)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5619 tokens, 84% vs raw)
+  Findings: 8, Claims: 8, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 3/3
+  ⚠️  Low evidence base (findings=11, urls=1) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (3) | missing_facts=4
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Global CRE spread projections 2026 WHO ECDC surveillance data', 'Tebipenem vs phage therapy mortality rates CRE infections cost analysis', 'New beta-lactamase inhibitors efficacy availability CRE 2025 2026', 'EU CRE management plans implementation effectiveness ECDC report']...
+  Search modes: {"Global CRE spread projections 2026 WHO ECDC surveillance data": "wide", "Tebipenem vs phage therapy mortality rates CRE infections cost analysis": "deep", "New beta-lactamase inhibitors efficacy availability CRE 2025 2026": "entity_collect", "EU CRE management plans implementation effectiveness ECDC report": "deep", "Wastewater surveillance CRE tracking AMR monitoring programs": "web_structure", "CRE treatment costs antibiotics versus phage therapy economic evaluation": "deep", "carbapenem-resistant Enterobacteriaceae global spread modeling 2026 site:arxiv.org": "web_structure", "phage therapy versus beta-lactamase inhibitors CRE mortality cost analysis site:arxiv.org": "web_structure"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 15/30 · (search 12, extract 0) · time 265/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (23 raw results)
+  Counter-evidence: +29 hits, ingested 58 chunks
+
+⚖️  [Adjudicator] claims: 8 supported, 0 contested, 0 synthetic (of 8)
+  Evidence graph: 8 edges (8 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Overview', 'Introduction', 'Findings', 'Global Epidemiological Spread of CRE in 2026', 'Carbapenemase Distribution and Regional Trends', 'Clinical Mortality Rates: New Beta‑Lactamase Inhibitors vs. Phage Therapy', 'Economic Evaluation: Treatment Costs of Antibiotics vs. Phage Therapy', 'Surveillance & Retrieval Architectures for Real‑Time CRE Tracking', 'Conclusion', 'Sources']
+
+✍️ [Synthesizer] Writing 10 sections (9 in parallel + 1 sources)
+  [Sources] auto-generated (10 URLs, 0 LLM calls)
+  🚀 Launching 9 parallel section generators...
+  ✅ Section 'Introduction' completed (14509 chars)
+  ✅ Section 'Clinical Mortality Rates: New Beta‑Lactamase Inhibitors vs. Phage Therapy' completed (13791 chars)
+  ✅ Section 'Global Epidemiological Spread of CRE in 2026' completed (15339 chars)
+  ✅ Section 'Findings' completed (749 chars)
+  ✅ Section 'Overview' completed (669 chars)
+  ✅ Section 'Carbapenemase Distribution and Regional Trends' completed (575 chars)
+  ✅ Section 'Surveillance & Retrieval Architectures for Real‑Time CRE Tracking' completed (8852 chars)
+  ✅ Section 'Economic Evaluation: Treatment Costs of Antibiotics vs. Phage Therapy' completed (10050 chars)
+  ✅ Section 'Conclusion' completed (34235 chars)
+  🔍 Audit Pass: Section 'Carbapenemase Distribution and Regional Trends' missing citations — appended evidence notes
+  🔍 Self-critique: 6 issues — ["The draft claims that carbapenem-resistant Enterobacteriaceae (CRE) pose a high to very high public health risk in the EU/EEA due to increasing incidence, but the provided evidence only mentions a 'significant increase' in carbapenem-resistant *Klebsiella pneumoniae* bloodstream infections.", 'The draft states that antibiotic resistance contributed to around 4.95 million global deaths in 2019, but this figure is not supported by the provided evidence, which only mentions the estimated 1.27 million deaths directly attributed to AMR.']
+  Self-critique patched section: Global Epidemiological Spread of CRE in 2026
+  Wrote 9 sections in parallel (99860 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 8/8 supported
+  Evidence graph: 8 edges (8 support, 0 contradiction/unsupported)
+  Math detected: 144 expressions (114 inline, 30 block)
+  Report: 114948 chars, 12 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Track the global spread of carbapenem-resistant En_20260811_153111.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Track the global spread of carbapenem-resistant En_20260811_153111.html
+
+✅ [TOPIC 10] done in 477.7s — 121370 chars, 12 sections, 34 citations
+
+======================================================================
+[TOPIC 11] Autonomous Trucking Deregulation (US & EU) (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 4 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Analyze the 2026 legislative breakthroughs allowing Level-4 autonomous trucks on
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Introduction to 2026 Level-4 AV Legislation', 'US Framework: The BUILD America 250 Act and FHWA Dynamics', 'EU Framework: UNECE Regulations and Implementing Regulation (EU) 2026/481', 'Comparative Analysis of Adoption Rates', 'Insurance Liability Frameworks in US vs. EU', 'Job Displacement and Labor Market Impact Metrics', 'Conclusion and Future Outlook']
+  Initial queries: ['Comparative analysis of liability frameworks for Level-4 autonomous trucks in US and EU', 'Adoption rates of autonomous commercial vehicles under BUILD America 250 Act and UNECE regulations', 'Job displacement metrics for Level-4 autonomous trucks in US and EU']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (32 raw results)
+  [gdelt] HTTP 429
+  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.4)
+    • [8.6] Integrating Legal and Logical Specifications in Perception, 
+    • [8.2] Rationale Behind Human-Led Autonomous Truck Platooning
+    • [8.2] [2603.13296v1] Rationale Behind Human-Led Autonomous Truck P
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 7993 raw)
+  Ingested 57 chunks (total: 57)
+
+🔍 [Researcher] Analyzing
+  Retrieved 4 chunks (1894 tokens, 94% vs raw)
+  Findings: 10, Claims: 5, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: Key data for the US side (FHWA legislation, adoption rates, insurance liability, job displacement metrics) are missing, preventing a balanced comparative analysis.
+  Missing facts: 6 | Next queries: ['2026 FHWA Level‑4 autonomous truck legislation', '2026 adoption rate of Level‑4 autonomous trucks interstate US', '2026 insurance liability framework for autonomous trucks US', '2026 job displacement estimates for truck drivers US', '2026 UNECE Level‑4 autonomous truck adoption statistics EU', '2026 FHWA Level‑4 autonomous truck legislation']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['FHWA Level 4 autonomous truck legislation 2026', 'UNECE Level 4 autonomous truck adoption statistics 2026', 'EU insurance liability framework for autonomous trucks 2026', 'FHWA insurance liability framework for autonomous trucks 2026']...
+  Search modes: {"FHWA Level 4 autonomous truck legislation 2026": "atom", "UNECE Level 4 autonomous truck adoption statistics 2026": "deep", "EU insurance liability framework for autonomous trucks 2026": "entity_collect", "FHWA insurance liability framework for autonomous trucks 2026": "wide", "FHWA job displacement estimates for truck drivers 2026": "web_structure", "EU job displacement estimates for truck drivers 2026": "deep", "arXiv: Level 4 autonomous trucks 2026": "deep", "arXiv: Autonomous trucking insurance liability 2026": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode atom: 1 queries @ max_results=5
+  [tool:exa] primary search OK (5 raw results)
+  [gdelt] HTTP 429
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  📰 Newswire: no hits this round (cooldown/rate-limit) — will retry
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.7)
+    • [8.6] Integrating Legal and Logical Specifications in Perception, 
+    • [8.6] [2606.06396v1] Risk Assessment of Autonomous Driving: Integr
+    • [8.6] Arxiv Preprint Version - 08122024 - Recommendations for over
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9111 raw)
+  Ingested 68 chunks (total: 125)
+
+🔍 [Researcher] Analyzing
+  Retrieved 5 chunks (2465 tokens, 93% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Insufficient evidence-backed findings and missing key information on US legislative text, quantitative adoption rates, insurance liability frameworks, and job displacement metrics.
+  Missing facts: 6 | Next queries: ['Search for specific FHWA legislative text or policy details on Level-4 autonomous trucks in the United States.', 'Extract quantitative adoption rates (e.g., number of Level-4 trucks deployed, mileage covered) for both the US and EU.', 'Investigate detailed US insurance liability framework for autonomous trucks, including any federal or state mandates.', 'Find empirical job displacement statistics (e.g., projected driver job losses, timeline) for the US and EU.', 'Search for specific FHWA legislative text or policy details on Level-4 autonomous trucks in the United States.', "Investigate BUILD America 250 Act's impact on autonomous truck deployment."]
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['FHWA BUILD America 250 Act Level-4 autonomous truck legislative text 2026', 'UNECE Automated Driving Systems Global Technical Regulation heavy truck Level-4 adoption rates', 'US insurance liability framework autonomous trucks federal state mandates 2026', 'EU job displacement Level-4 autonomous trucks truck driver employment statistics 2026']...
+  Search modes: {"FHWA BUILD America 250 Act Level-4 autonomous truck legislative text 2026": "entity_collect", "UNECE Automated Driving Systems Global Technical Regulation heavy truck Level-4 adoption rates": "deep", "US insurance liability framework autonomous trucks federal state mandates 2026": "deep", "EU job displacement Level-4 autonomous trucks truck driver employment statistics 2026": "deep", "FHWA Interstate Autonomous Logistics Network deployment metrics mileage covered": "entity_collect", "EU Implementing Regulation 2026/481 autonomous truck liability insurance requirements": "entity_collect", "autonomous truck regulation liability framework comparative analysis site:arxiv.org": "web_structure", "Level-4 autonomous vehicle adoption rate economic impact job displacement site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa', 'gdelt']
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  📰 Newswire: +1 hits (1 gdelt, 0 newsdata)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 21 raw results via exa
+  Guard: 21 → 21 passed (0 blocked, avg score 6.7)
+    • [8.6] Integrating Legal and Logical Specifications in Perception, 
+    • [8.6] [2606.06396v1] Risk Assessment of Autonomous Driving: Integr
+    • [8.2] Rationale Behind Human-Led Autonomous Truck Platooning
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9313 raw)
+  Ingested 66 chunks (total: 191)
+
+🔍 [Researcher] Analyzing
+  Retrieved 6 chunks (3034 tokens, 91% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/3
+  ⚠️  Low evidence base (findings=13, urls=0) — saturation suppressed, continuing research
+  ✅ Complete: Reached max iterations (3) | missing_facts=6
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['FHWA BUILD America 250 Act Level-4 autonomous truck legislative text 2026', 'UNECE Automated Driving Systems Global Technical Regulation heavy truck Level-4 adoption rates', 'US insurance liability framework autonomous trucks federal state mandates 2026', 'EU job displacement Level-4 autonomous trucks truck driver employment statistics 2026']...
+  Search modes: {"FHWA BUILD America 250 Act Level-4 autonomous truck legislative text 2026": "entity_collect", "UNECE Automated Driving Systems Global Technical Regulation heavy truck Level-4 adoption rates": "deep", "US insurance liability framework autonomous trucks federal state mandates 2026": "deep", "EU job displacement Level-4 autonomous trucks truck driver employment statistics 2026": "deep", "FHWA Interstate Autonomous Logistics Network deployment metrics mileage covered": "entity_collect", "EU Implementing Regulation 2026/481 autonomous truck liability insurance requirements": "entity_collect", "autonomous truck regulation liability framework comparative analysis site:arxiv.org": "web_structure", "Level-4 autonomous vehicle adoption rate economic impact job displacement site:arxiv.org": "web_structure"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 16/30 · (search 13, extract 0) · time 238/600s · cost $0.002/$0.50)
+  [tool:exa] primary search OK (21 raw results)
+  Counter-evidence: +22 hits, ingested 36 chunks
+
+⚖️  [Adjudicator] claims: 5 supported, 0 contested, 0 synthetic (of 5)
+  Evidence graph: 5 edges (5 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary: The 2026 Regulatory Watershed for Level-4 Autonomous Trucking', 'Introduction: Legislative Breakthroughs and the Interstate Highway Autonomy Mandate', 'US Framework: The BUILD America 250 Act, FHWA Interstate Autonomous Logistics Network, and the Shift from Patchwork Oversight to Federal Preemption', 'EU Framework: UNECE ALKS Amendment, Automated Driving Systems (ADS) Global Technical Regulation, and Implementing Regulation (EU) 2026/481', 'Comparative Analysis of Adoption Rates: US FHWA Interstate Deployment vs. EU UNECE-Type-Approval Trajectories', 'Insurance Liability Frameworks: Roussou–Kontaxi–Ziakopoulos–Yannis (2026) Comparative Analysis vs. Sidley Austin (2026) BUILD America 250 Act Liability Architecture', 'Job Displacement and Labor Market Impact Metrics: Owner-Operator Exposure, Workforce Transition Costs, and EU Social Clause Countermeasures', 'Evaluation Matrix: Weighted Multi-Criteria Comparative Assessment of the US and EU Level-4 Truck Regulatory Systems', 'Failure Modes and Knowledge Gaps: Data Absence, Retrospective Safety Validation Deficits, and Cross-Jurisdictional Liability Conflicts', 'Conclusion and Future Outlook: Toward 2027–2030 Interstate Autonomy Harmonization', 'Sources and Referenced Research Corpus', 'Sources']
+
+✍️ [Synthesizer] Writing 12 sections (11 in parallel + 1 sources)
+  [Sources] auto-generated (6 URLs, 0 LLM calls)
+  🚀 Launching 11 parallel section generators...
+  ✅ Section 'Introduction: Legislative Breakthroughs and the Interstate Highway Autonomy Mandate' completed (10927 chars)
+  ✅ Section 'Insurance Liability Frameworks: Roussou–Kontaxi–Ziakopoulos–Yannis (2026) Comparative Analysis vs. Sidley Austin (2026) BUILD America 250 Act Liability Architecture' completed (16512 chars)
+  ✅ Section 'Executive Summary: The 2026 Regulatory Watershed for Level-4 Autonomous Trucking' completed (8663 chars)
+  ✅ Section 'US Framework: The BUILD America 250 Act, FHWA Interstate Autonomous Logistics Network, and the Shift from Patchwork Oversight to Federal Preemption' completed (16006 chars)
+  ✅ Section 'EU Framework: UNECE ALKS Amendment, Automated Driving Systems (ADS) Global Technical Regulation, and Implementing Regulation (EU) 2026/481' completed (12992 chars)
+  ✅ Section 'Comparative Analysis of Adoption Rates: US FHWA Interstate Deployment vs. EU UNECE-Type-Approval Trajectories' completed (13445 chars)
+  ✅ Section 'Job Displacement and Labor Market Impact Metrics: Owner-Operator Exposure, Workforce Transition Costs, and EU Social Clause Countermeasures' completed (10490 chars)
+  ✅ Section 'Evaluation Matrix: Weighted Multi-Criteria Comparative Assessment of the US and EU Level-4 Truck Regulatory Systems' completed (14009 chars)
+  ✅ Section 'Conclusion and Future Outlook: Toward 2027–2030 Interstate Autonomy Harmonization' completed (10032 chars)
+  ✅ Section 'Failure Modes and Knowledge Gaps: Data Absence, Retrospective Safety Validation Deficits, and Cross-Jurisdictional Liability Conflicts' completed (20033 chars)
+  ✅ Section 'Sources and Referenced Research Corpus' completed (18300 chars)
+  🔍 Self-critique: 6 issues — ["Unsupported claim: 'The 2026 legislative breakthroughs allowing Level-4 autonomous trucks on interstate highways' - provide evidence for this claim.", "Missing system: 'FHWA Interstate Autonomous Logistics Network' - explain its role and functionality."]
+  Self-critique patched section: Comparative Analysis of Adoption Rates: US FHWA Interstate Deployment vs. EU UNECE-Type-Approval Trajectories
+  Wrote 11 sections in parallel (151789 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 5/5 supported
+  Evidence graph: 5 edges (5 support, 0 contradiction/unsupported)
+  Math detected: 283 expressions (251 inline, 32 block)
+  Report: 163360 chars, 14 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the 2026 legislative breakthroughs allowin_20260811_153840.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the 2026 legislative breakthroughs allowin_20260811_153840.html
+
+✅ [TOPIC 11] done in 448.5s — 169228 chars, 14 sections, 34 citations
+
+BATCH DONE: 2 ok, 0 failed

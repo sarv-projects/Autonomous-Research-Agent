@@ -54,12 +54,43 @@ LOW_REPUTATION_DOMAINS = frozenset({
     "scribd.com", "slideshare.net",  # document hosts, not authoritative
 })
 
-# Content-farm patterns in domains
+# Content-farm patterns in domains.
+# Note: no bare `news` pattern — legitimate newswire domains (news.com.au,
+# news.sky.com, …) are whitelisted via NEWSWIRE_DOMAINS below, which is
+# checked BEFORE these patterns, so a `news` regex here would be dead weight
+# at best and a false-positive risk at worst.
 CONTENT_FARM_PATTERNS = [
     r"best\d*", r"top\d*", r"review(s|er)?", r"howto", r"guide(s)?",
     r"tutorial(s)?", r"learn", r"tips", r"tricks?", r"hack(s|ing)?",
-    r"free-?online", r"download", r"\bblog\b", r"\bnews\b",
+    r"free-?online", r"download", r"\bblog\b",
 ]
+
+# Known tier-1 newswire domains (financial + general press). These must never
+# be treated as content farms — they are the rubric's "tier-1 newswire" source
+# category (FT, Reuters, Caixin …) and score high-reputation.
+NEWSWIRE_DOMAINS = frozenset({
+    "reuters.com", "bloomberg.com", "ft.com", "wsj.com", "cnbc.com",
+    "apnews.com", "afp.com", "bbc.com", "bbc.co.uk", "theguardian.com",
+    "economist.com", "nikkei.com", "caixin.com", "scmp.com",
+    "ftchinese.com", "finance.yahoo.com", "marketwatch.com",
+    "businessinsider.com", "thenextweb.com", "techcrunch.com",
+    "axios.com", "politico.com", "theverge.com", "arstechnica.com",
+    "news.com.au", "smh.com.au", "theage.com.au", "afr.com",
+    "timesofindia.indiatimes.com", "indianexpress.com", "thehindu.com",
+    "livemint.com", "business-standard.com",
+    "economictimes.indiatimes.com", "cnbctv18.com", "moneycontrol.com",
+    "xinhuanet.com", "chinadaily.com.cn",
+    "globaltimes.cn", "people.com.cn", "cgtn.com", "asahi.com",
+    "japantimes.co.jp", "koreaherald.com", "straitstimes.com",
+    "channelnewsasia.com", "dailysabah.com", "hurriyetdailynews.com",
+    "aljazeera.com", "dw.com", "france24.com", "rfi.fr",
+    "lemonde.fr", "elpais.com", "spiegel.de", "zeit.de", "faz.net",
+    "folha.uol.com.br", "oglobo.globo.com", "estadao.com.br",
+    "nation.africa", "businessdailyafrica.com", "premiumtimesng.com",
+    "punchng.com", "theeastafrican.co.ke", "venturesafrica.com",
+    "moneyweb.co.za", "businesslive.co.za", "firstpost.com",
+    "ndtv.com", "zeenews.india.com", "gulfnews.com", "khaleejtimes.com",
+})
 
 
 def _extract_domain(url: str) -> str:
@@ -111,6 +142,11 @@ def domain_reputation_score(domain: str) -> float:
         domain.endswith("." + hd) for hd in HIGH_REPUTATION_DOMAINS
     ):
         return 9.5
+
+    if domain in NEWSWIRE_DOMAINS or any(
+        domain.endswith("." + nd) for nd in NEWSWIRE_DOMAINS
+    ):
+        return 8.5
 
     if domain in LOW_REPUTATION_DOMAINS or any(
         domain.endswith("." + ld) for ld in LOW_REPUTATION_DOMAINS

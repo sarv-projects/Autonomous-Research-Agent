@@ -1,0 +1,812 @@
+Running 5 topics [0..4] in mode=standard
+
+======================================================================
+[TOPIC 1] BRICS+ New Development Bank vs IMF/World Bank (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 4 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Analyze the current (2026) lending capacity, conditionality frameworks, and curr
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Executive Summary: The 2026 Landscape of Multilateral Lending', 'Lending Capacity & Capital Adequacy: NDB vs. World Bank and IMF', 'Conditionality Frameworks: Sovereignty Hedge vs. Washington Consensus', 'Currency Settlement Mechanisms & Local‑Currency Financing Realities', 'Decoupling Assessment: Evolutionary Adaptation vs. Revolutionary De‑Dollarization', 'Comparative Institutional Analysis: NDB, IMF, World Bank, and AIIB', 'Conclusion & Strategic Implications for Global South Debt']
+  Initial queries: ['2026 NDB lending capacity', 'NDB local currency financing 2026', 'NDB conditionality framework vs IMF', 'AIIB vs NDB local currency settlement', 'NDB decoupling dollar hegemony 2026']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Vault reuse: 8 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (31 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 25 raw results via exa
+  Guard: 25 → 25 passed (0 blocked, avg score 6.8)
+    • [8.6] Private Credit Markets Theory, Evidence, and Emerging Fronti
+    • [8.6] Settlement Infrastructure, Inside Money Elasticity, and the 
+    • [8.6] Regenerative Bonds: Formal Debt, Mutual-Aid, and Local Settl
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11338 raw)
+  Ingested 52 chunks (total: 52)
+
+🔍 [Researcher] Analyzing
+  Retrieved 6 chunks (3530 tokens, 91% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  ⛔ LLM critic marked off-topic: The current research contains only a brief, unrelated excerpt about stablecoins and lacks any substantive information on the NDB’s lending capacity, conditionality frameworks, currency settlement mechanisms, or comparative analysis with the IMF and World Bank.
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['BRICS+ New Development Bank (NDB) lending capacity 2026', 'NDB conditionality framework 2026', 'NDB currency settlement mechanisms 2026', 'IMF lending capacity 2026']...
+  Search modes: {"BRICS+ New Development Bank (NDB) lending capacity 2026": "deep", "NDB conditionality framework 2026": "wide", "NDB currency settlement mechanisms 2026": "entity_collect", "IMF lending capacity 2026": "atom", "World Bank lending capacity 2026": "atom", "AIIB lending capacity 2026": "atom", "NDB decoupling global south debt from dollar hegemony 2026": "deep", "NDB credit rating 2026": "web_structure"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Vault reuse: 3 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 22 raw results via exa
+  Guard: 22 → 22 passed (0 blocked, avg score 7.0)
+    • [8.6] Private Credit Markets Theory, Evidence, and Emerging Fronti
+    • [8.6] Settlement Infrastructure, Inside Money Elasticity, and the 
+    • [8.6] Regenerative Bonds: Formal Debt, Mutual-Aid, and Local Settl
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11251 raw)
+  Ingested 55 chunks (total: 107)
+
+🔍 [Researcher] Analyzing
+  Retrieved 8 chunks (4155 tokens, 89% vs raw)
+  Findings: 8, Claims: 0, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Inadequate coverage of the expected sections and lack of evidence-backed findings on the NDB's lending capacity, conditionality frameworks, and currency settlement mechanisms.
+  Missing facts: 5 | Next queries: ["Analyze the NDB's current lending capacity, including total volume, sectoral allocation, and growth trajectory.", "Examine the NDB's conditionality frameworks, including governance, environmental, social, and financial conditions.", "Investigate the NDB's currency settlement mechanisms, including preferred settlement currencies, use of local currencies, and digital settlement platforms.", "What is the total volume of the NDB's lending capacity in 2026?", "How is the NDB's lending capacity allocated across different sectors?", "What is the growth trajectory of the NDB's lending capacity over the past few years?"]
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['NDB New Development Bank 2026 total lending capacity authorized capital subscribed capital', 'NDB sectoral allocation of loans 2026 infrastructure renewable energy social sectors', 'NDB conditionality framework governance environmental social safeguards vs IMF World Bank', 'NDB currency settlement mechanisms local currency lending BRICS Pay rupee yuan bond issuance']...
+  Search modes: {"NDB New Development Bank 2026 total lending capacity authorized capital subscribed capital": "entity_collect", "NDB sectoral allocation of loans 2026 infrastructure renewable energy social sectors": "deep", "NDB conditionality framework governance environmental social safeguards vs IMF World Bank": "deep", "NDB currency settlement mechanisms local currency lending BRICS Pay rupee yuan bond issuance": "deep", "IMF World Bank lending terms interest rates conditionality 2026 comparison with NDB": "wide", "NDB local currency financing decoupling Global South debt from dollar hegemony 2026": "deep", "New Development Bank BRICS international finance dollar hegemony decoupling site:arxiv.org": "web_structure", "IMF World Bank conditionality governance versus NDB BRICS alternatives site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Vault reuse: 2 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 22 raw results via exa
+  Guard: 22 → 22 passed (0 blocked, avg score 6.5)
+    • [8.6] Private Credit Markets Theory, Evidence, and Emerging Fronti
+    • [8.6] Settlement Infrastructure, Inside Money Elasticity, and the 
+    • [8.2] Credit Capacity and the Propagation of Funding Shocks: Evide
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11703 raw)
+  Ingested 47 chunks (total: 154)
+
+🔍 [Researcher] Analyzing
+  Retrieved 8 chunks (4187 tokens, 90% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/3
+  ⛔ LLM critic marked off-topic: The research findings are heavily contaminated with off-topic content related to stablecoins, CBDCs, and private credit markets, which are unrelated to the core query about the NDB's lending capacity, conditionality frameworks, and currency settlement mechanisms in 2026. Critical data on the NDB's actual lending metrics, comparative analysis with the IMF and World Bank, and evidence of de-dollarization efforts are entirely absent.
+  ✅ Sources on-topic — completing with gathered evidence (LLM findings-only flag overridden)
+
+⚔️  [Devil's Advocate] 3 counter-queries (LIVE BUDGET: tool calls 15/30 · (search 12, extract 0) · time 147/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (15 raw results)
+  Counter-evidence: +15 hits, ingested 61 chunks
+
+⚖️  [Adjudicator] claims: 0 supported, 0 contested, 0 synthetic (of 0)
+  Evidence graph: 0 edges (0 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary: The 2026 Landscape of Multilateral Lending', 'Introduction: BRICS+ NDB, IMF, and World Bank in a Multipolar Debt Order', 'Lending Capacity & Capital Adequacy: NDB vs. World Bank and IMF', 'Conditionality Frameworks: Sovereignty Hedge vs. Washington Consensus — Evidence from the NDB Independent Evaluation Office and Country Systems (UCS)', 'Currency Settlement Mechanisms & Local-Currency Financing Realities — CBDCs, Project Pontes, Project Appia, and the Limits of De-Dollarization', 'Decoupling Assessment: Evolutionary Adaptation vs. Revolutionary De-Dollarization — Hofman & Srinivas (2022) and East Asia Forum (2026)', 'Comparative Institutional Analysis: NDB, IMF, World Bank, and AIIB — Indonesia’s $1 Billion Sovereignty Hedge as a Case Study (Witt et al., 2026)', 'Evaluation Matrix: Lending Capacity, Conditionality Frameworks, and Currency Settlement Across NDB, IMF, World Bank, and AIIB', 'Failure Modes and Devil’s Advocate Evidence: Conditionality Effectiveness, Prudential Regulation, and Settlement Risk', 'Conclusion & Strategic Implications for Global South Debt and Dollar Hegemony', 'Sources and References', 'Sources']
+
+✍️ [Synthesizer] Writing 12 sections (11 in parallel + 1 sources)
+  [Sources] auto-generated (4 URLs, 0 LLM calls)
+  🚀 Launching 11 parallel section generators...
+  ✅ Section 'Executive Summary: The 2026 Landscape of Multilateral Lending' completed (11654 chars)
+  ✅ Section 'Conditionality Frameworks: Sovereignty Hedge vs. Washington Consensus — Evidence from the NDB Independent Evaluation Office and Country Systems (UCS)' completed (7428 chars)
+  ✅ Section 'Introduction: BRICS+ NDB, IMF, and World Bank in a Multipolar Debt Order' completed (6195 chars)
+  ✅ Section 'Decoupling Assessment: Evolutionary Adaptation vs. Revolutionary De-Dollarization — Hofman & Srinivas (2022) and East Asia Forum (2026)' completed (29033 chars)
+  ✅ Section 'Lending Capacity & Capital Adequacy: NDB vs. World Bank and IMF' completed (33508 chars)
+  ✅ Section 'Currency Settlement Mechanisms & Local-Currency Financing Realities — CBDCs, Project Pontes, Project Appia, and the Limits of De-Dollarization' completed (35086 chars)
+  ✅ Section 'Sources and References' completed (15665 chars)
+  ✅ Section 'Evaluation Matrix: Lending Capacity, Conditionality Frameworks, and Currency Settlement Across NDB, IMF, World Bank, and AIIB' completed (13165 chars)
+  ✅ Section 'Conclusion & Strategic Implications for Global South Debt and Dollar Hegemony' completed (21073 chars)
+  ✅ Section 'Comparative Institutional Analysis: NDB, IMF, World Bank, and AIIB — Indonesia’s $1 Billion Sovereignty Hedge as a Case Study (Witt et al., 2026)' completed (18584 chars)
+  ✅ Section 'Failure Modes and Devil’s Advocate Evidence: Conditionality Effectiveness, Prudential Regulation, and Settlement Risk' completed (32007 chars)
+  Self-critique skipped (parse/LLM failure)
+  Wrote 11 sections in parallel (223398 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Math detected: 452 expressions (397 inline, 55 block)
+  Report: 239557 chars, 14 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the current _2026_ lending capacity_ condi_20260811_093100.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the current _2026_ lending capacity_ condi_20260811_093100.html
+
+✅ [TOPIC 1] done in 425.3s — 244750 chars, 14 sections, 35 citations
+
+======================================================================
+[TOPIC 2] AMOC Collapse Probability (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 4 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Synthesize the latest oceanographic data (2025-2026) regarding the Atlantic Meri
+  Query type: depth_first
+  Budgets (depth-first): keep mode defaults (fewer queries, deeper iterations)
+  Outline: ['Executive Summary of 2025‑2026 AMOC State', 'Statistical Probability and Risk Assessment Before 2050', 'Reconciling Observational Constraints with Complex Climate Models', 'Regional Temperature Differential Modeling (Northern Europe, US East Coast, Sahel)', 'Conclusion and Key Uncertainties']
+  Initial queries: ['AMOC 2025 RAPID‑MOCHA latest data 2026', 'AMOC collapse probability before 2050 2025 2026', 'CESM AMOC 2025 2026 model output', 'Regional temperature projections due to AMOC weakening Northern Europe 2025', 'Sahel temperature change AMOC scenarios 2025']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (31 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.7)
+    • [7.8] Probability Estimates of a 21st Century AMOC Collapse
+    • [7.6] Data Download
+    • [7.6] MOCHA Data
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9725 raw)
+  Ingested 57 chunks (total: 57)
+
+🔍 [Researcher] Analyzing
+  Retrieved 5 chunks (2011 tokens, 94% vs raw)
+  Findings: 8, Claims: 8, Gaps: 6
+
+🔎 [Critic] Evaluating iteration 1/4
+  🔄 More needed: Key quantitative outputs requested (collapse probability before 2050 and regional temperature differentials) are not present in the current evidence set.
+  Missing facts: 5 | Next queries: ['AMOC collapse probability 2025–2050 2025 2026', 'Projected temperature differential Northern Europe US East Coast Sahel 2050 AMOC collapse', 'Latest RAPID-MOCHA-WBTS observations 2025 2026', 'Climate model ensembles 2025 AMOC sensitivity 2050', 'Early warning signals AMOC critical slowdown 2025', 'AMOC collapse probability 2025–2050']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['AMOC collapse probability 2025-2050', 'Temperature impact Sahel AMOC collapse 2050', 'Northern Europe temperature change AMOC collapse 2050', 'US East Coast temperature shift AMOC collapse 2050']...
+  Search modes: {"AMOC collapse probability 2025-2050": "deep", "Temperature impact Sahel AMOC collapse 2050": "deep", "Northern Europe temperature change AMOC collapse 2050": "deep", "US East Coast temperature shift AMOC collapse 2050": "deep", "RAPID-MOCHA-WBTS 2025-2026 data release": "entity_collect", "AMOC observations 2025-2026": "entity_collect", "2025-2026 AMOC reanalysis": "entity_collect", "Community Earth System Model (CESM) AMOC sensitivity 2025-2050": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (27 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.1)
+    • [8.6] Density and sea level changes weaken the Atlantic Overturnin
+    • [8.2] SODA4: a mesoscale ocean/sea ice reanalysis 1980-2024
+    • [8.2] Tropical response to ocean circulation slowdown raises futur
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 12629 raw)
+  Ingested 61 chunks (total: 118)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5764 tokens, 87% vs raw)
+  Findings: 7, Claims: 7, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 2/4
+  🔄 More needed: Missing explicit statistical probability of an AMOC collapse before 2050 and specific temperature differential projections for Northern Europe, the US East Coast, and the Sahel region.
+  Missing facts: 3 | Next queries: ['Search for recent (2025–2026) observational data or reanalysis updates on the Atlantic Meridional Overturning Circulation (AMOC).', 'Extract explicit statistical probability of an AMOC collapse before 2050 from climate models or reanalysis data.', 'Model specific temperature differentials for Northern Europe, the US East Coast, and the Sahel region based on climate model projections and sensitivity analyses.', 'Search for climate models that project AMOC collapse probability before 2050.', 'Extract probability estimates from reanalysis data for AMOC collapse before 2050.', 'Analyze sensitivity of AMOC collapse probability to different climate scenarios.']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['Search for explicit statistical probability of an AMOC collapse before 2050 in CMIP6 models.', 'Extract temperature differential projections for Northern Europe, the US East Coast, and the Sahel region from OSNAP data.', 'Analyze sensitivity of AMOC collapse probability to different climate scenarios in Community Earth System Model (CESM).', 'Model specific temperature differentials for Northern Europe, the US East Coast, and the Sahel region based on RAPID-MOCHA-WBTS array data.']...
+  Search modes: {"Search for explicit statistical probability of an AMOC collapse before 2050 in CMIP6 models.": "deep", "Extract temperature differential projections for Northern Europe, the US East Coast, and the Sahel region from OSNAP data.": "wide", "Analyze sensitivity of AMOC collapse probability to different climate scenarios in Community Earth System Model (CESM).": "entity_collect", "Model specific temperature differentials for Northern Europe, the US East Coast, and the Sahel region based on RAPID-MOCHA-WBTS array data.": "atom", "Search for recent (2025-2026) observational data or reanalysis updates on the Atlantic Meridional Overturning Circulation (AMOC) in the OSNAP dataset.": "web_structure", "Extract probability estimates from reanalysis data for AMOC collapse before 2050 in the SAMBA dataset.": "deep", "arXiv:2508.17462": "deep", "arXiv:2407.04740": "deep"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.9)
+    • [8.6] Density and sea level changes weaken the Atlantic Overturnin
+    • [8.2] SODA4: a mesoscale ocean/sea ice reanalysis 1980-2024
+    • [7.8] Probability Estimates of a 21st Century AMOC Collapse
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 12825 raw)
+  Ingested 58 chunks (total: 176)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5823 tokens, 86% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 3/4
+  🔄 More needed: The research lacks explicit statistical probability estimates for an AMOC collapse before 2050 and does not provide quantitative temperature differential projections for Northern Europe, the US East Coast, and the Sahel region. Additionally, recent 2025–2026 observational data or reanalysis updates are missing, and model specifications for probability estimates are absent.
+  Missing facts: 4 | Next queries: ['statistical probability of AMOC collapse before 2050 recent studies', 'regional temperature impacts of AMOC weakening Northern Europe US East Coast Sahel', 'AMOC observational data 2025 2026 RAPID OSNAP reanalysis', 'probability of AMOC collapse before 2050 IPCC AR7', 'statistical likelihood of AMOC tipping point 2050', 'AMOC weakening temperature impacts Northern Europe US East Coast Sahel']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['CESM AMOC collapse probability 2050 2025 2026', 'CMIP6 AMOC tipping point 2050 probability', 'RAPID-MOCHA 2025 2026 AMOC observations update', 'OSNAP 2025 AMOC heat transport weakening']...
+  Search modes: {"CESM AMOC collapse probability 2050 2025 2026": "entity_collect", "CMIP6 AMOC tipping point 2050 probability": "entity_collect", "RAPID-MOCHA 2025 2026 AMOC observations update": "wide", "OSNAP 2025 AMOC heat transport weakening": "wide", "IPCC AR7 AMOC collapse probability 2050": "atom", "AMOC collapse probability 2050 arXiv": "deep", "AMOC temperature impact Northern Europe US East Coast Sahel arXiv": "deep", "probability of AMOC collapse before 2050 IPCC AR7": "deep"}
+
+🔍 [Researcher] Iteration 4 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode entity_collect: 2 queries @ max_results=14
+  [tool:exa] primary search OK (24 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode deep: 1 queries @ max_results=8
+  [tool:exa] primary search OK (8 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 21 raw results via exa
+  Guard: 21 → 21 passed (0 blocked, avg score 6.7)
+    • [7.8] Substantial Risk of 21st Century AMOC Tipping even under Mod
+    • [7.8] Probability Estimates of a 21st Century AMOC Collapse
+    • [7.8] Atlantic overturning collapses in global warming projections
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10682 raw)
+  Ingested 55 chunks (total: 231)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5389 tokens, 87% vs raw)
+  Findings: 8, Claims: 7, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 4/4
+  ✅ Complete: Reached max iterations (4) | missing_facts=4
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['CESM AMOC collapse probability 2050 2025 2026', 'RAPID-MOCHA 2025 2026 AMOC observations update', 'AMOC temperature impact Northern Europe US East Coast Sahel arXiv', 'IPCC AR7 AMOC collapse probability 2050']...
+  Search modes: {"CESM AMOC collapse probability 2050 2025 2026": "deep", "RAPID-MOCHA 2025 2026 AMOC observations update": "atom", "AMOC temperature impact Northern Europe US East Coast Sahel arXiv": "atom", "IPCC AR7 AMOC collapse probability 2050": "wide", "OSNAP 2025 AMOC heat transport weakening": "entity_collect", "AMOC temperature impact Northern Europe US East Coast Sahel site:arxiv.org": "web_structure", "AMOC collapse probability 2050 site:arxiv.org": "web_structure", "Extract explicit statistical probability estimates of an AMOC collapse before 2050 from reanalysis data or climate models.": "entity_collect"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 20/25 · (search 16, extract 0) · time 115/600s · cost $0.003/$0.50)
+  [tool:exa] primary search OK (24 raw results)
+  Counter-evidence: +26 hits, ingested 61 chunks
+
+⚖️  [Adjudicator] claims: 21 supported, 1 contested, 0 synthetic (of 22)
+  Evidence graph: 22 edges (21 support, 1 contradiction, 0 unsupported)
+  🔬 Atomic verify skipped — tool budget nearly exhausted
+  Socratic hop 1: re-search 3 queries
+
+🔍 [Researcher] Budget stop: Tool-call budget exceeded (25 >= 25)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (6878 tokens, 88% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Budget force-complete: Tool-call budget exceeded (25 >= 25)
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['CESM AMOC weakening since 1950', 'CMIP6 AMOC collapse probability 2025-2050', 'RAPID-MOCHA-WBTS AMOC observations 2025-2026', 'OSNAP AMOC temperature differential projections']...
+  Search modes: {"CESM AMOC weakening since 1950": "deep", "CMIP6 AMOC collapse probability 2025-2050": "deep", "RAPID-MOCHA-WBTS AMOC observations 2025-2026": "wide", "OSNAP AMOC temperature differential projections": "entity_collect", "Early Warning Signals (EWS) AMOC critical slowdown": "web_structure", "Historical AMOC reconstructions using sea-surface temperature (SST) fingerprints": "atom", "arXiv:2407.19909 AMOC collapse probability": "deep", "arXiv:2407.19909 AMOC temperature differential projections": "deep"}
+
+⚖️  [Adjudicator] claims: 21 supported, 1 contested, 0 synthetic (of 22)
+  Evidence graph: 22 edges (21 support, 1 contradiction, 0 unsupported)
+  🔬 Atomic verify skipped — tool budget nearly exhausted
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary of the 2025–2026 AMOC State', 'Introduction: The AMOC as a Tipping Element and the 2025–2026 Observational Context', 'Observational Infrastructure and Data Streams: RAPID-MOCHA, OSNAP, SAMBA, and SODA4', 'Statistical Probability of an AMOC Collapse Before 2050: Rare-Event Metrics, Early Warning Signals, and Threshold Estimates', 'Reconciling Observational Constraints with Complex Climate Models: CMIP6, CESM, and the Role of Overturning Depth', 'Modeling Regional Temperature Differentials: Northern Europe, the US East Coast, and the Sahel', 'Evaluation Matrix: Synthesis of Observations, Reanalyses, and Model Projections', 'Failure Modes and Key Uncertainties in Collapse Probabilities and Regional Projections', 'Conclusion: State of Knowledge, Knowledge Gaps, and Recommended Monitoring Priorities', 'Sources and References', 'Sources']
+
+✍️ [Synthesizer] Writing 11 sections (10 in parallel + 1 sources)
+  [Sources] auto-generated (28 URLs, 0 LLM calls)
+  🚀 Launching 10 parallel section generators...
+  ✅ Section 'Executive Summary of the 2025–2026 AMOC State' completed (10579 chars)
+  ✅ Section 'Introduction: The AMOC as a Tipping Element and the 2025–2026 Observational Context' completed (15081 chars)
+  ✅ Section 'Modeling Regional Temperature Differentials: Northern Europe, the US East Coast, and the Sahel' completed (10085 chars)
+  ✅ Section 'Reconciling Observational Constraints with Complex Climate Models: CMIP6, CESM, and the Role of Overturning Depth' completed (8519 chars)
+  ✅ Section 'Statistical Probability of an AMOC Collapse Before 2050: Rare-Event Metrics, Early Warning Signals, and Threshold Estimates' completed (30444 chars)
+  ✅ Section 'Sources and References' completed (514 chars)
+  ✅ Section 'Evaluation Matrix: Synthesis of Observations, Reanalyses, and Model Projections' completed (6373 chars)
+  ✅ Section 'Observational Infrastructure and Data Streams: RAPID-MOCHA, OSNAP, SAMBA, and SODA4' completed (10679 chars)
+  ✅ Section 'Conclusion: State of Knowledge, Knowledge Gaps, and Recommended Monitoring Priorities' completed (1399 chars)
+  ✅ Section 'Failure Modes and Key Uncertainties in Collapse Probabilities and Regional Projections' completed (33362 chars)
+  🔍 Audit Pass: Section 'Sources and References' missing citations — appended evidence notes
+  🔍 Self-critique: 8 issues — ['The draft assumes a tipping point for the AMOC collapse, but the literature suggests that the situation is more complex and nuanced.', "The section on 'Statistical Probability of an AMOC Collapse Before 2050' relies heavily on a single source (Source 1) and does not adequately address the counterarguments presented in Source 2."]
+  Self-critique patched section: Statistical Probability of an AMOC Collapse Before 2050: Rare-Event Metrics, Early Warning Signals, and Threshold Estimates
+  Wrote 10 sections in parallel (127887 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 21/22 supported
+  Unsupported samples: ['The AMOC strength has decreased from 2004 to 2014 and recovered thereafter, as m']
+  Evidence graph: 22 edges (21 support, 1 contradiction/unsupported)
+  Math detected: 230 expressions (193 inline, 37 block)
+  Report: 143730 chars, 13 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Synthesize the latest oceanographic data _2025-202_20260811_093803.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Synthesize the latest oceanographic data _2025-202_20260811_093803.html
+
+✅ [TOPIC 2] done in 423.4s — 149231 chars, 13 sections, 35 citations
+
+======================================================================
+[TOPIC 3] Global Uranium Enrichment & SMR Viability (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 4 systems, 8 queries
+
+🧠 [Planner] Analyzing query: Map the global supply chain for High-Assay Low-Enriched Uranium (HALEU) in 2026.
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Executive Summary', 'Global HALEU Supply Chain Mapping (2026)', 'Operational Readiness of SMRs: US, UK, and China', 'Fuel Availability Bottlenecks and Mitigation Strategies', 'Economic Comparison: SMR LCOE vs. Solar + Storage', 'Strategic Conclusion and Outlook']
+  Initial queries: ['High Assay Low Enriched Uranium HALEU supply chain 2026', 'NEA Small Modular Reactor Dashboard Second Edition SMR operational readiness', 'US UK China SMR fuel availability HALEU LCOE vs solar storage', 'Landscape of US Domestic Advanced Nuclear Energy Supply Chain 2026', 'What is the current state of the global HALEU supply chain infrastructure, production capacity, and geopolitical bottlenecks in 2026?']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (28 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.1)
+    • [7.6] HALEU Availability Program
+    • [7.6] HALEU Enrichment Services | Department of Energy
+    • [7.6] U.S. Secures Largest-Ever HALEU Shipment to Power American N
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 8216 raw)
+  Ingested 44 chunks (total: 44)
+
+🔍 [Researcher] Analyzing
+  Retrieved 5 chunks (2110 tokens, 93% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: The research has only gathered a high-level overview from the NEA SMR Dashboard, which does not provide the detailed, publication-grade evidence required for mapping the global HALEU supply chain in 2026, comparing SMR operational readiness across the US, UK, and China, or analyzing LCOE vs. solar+storage. No specific data on HALEU producers, enrichment capacity, SMR fuel sourcing, or cost benchmarks has been collected. Evidence URLs are zero, and findings are insufficient to populate the expected report sections.
+  Missing facts: 6 | Next queries: ['global HALEU supply chain 2026 uranium enrichment capacity Russia China US Europe', 'Small Modular Reactor fuel availability HALEU US UK China 2026', 'Levelized Cost of Energy SMR vs solar plus storage 2026 cost comparison', 'global HALEU supply chain 2026 uranium enrichment capacity Russia China US Europe', 'HALEU production capacity 2026 uranium enrichment countries', 'uranium enrichment facilities HALEU global map 2026']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['World Nuclear Association HALEU Database production capacity 2026', 'NEA SMR Dashboard licensing status US UK China 2026', 'Clean Air Task Force Advanced Nuclear Supply Chains fuel availability HALEU US UK China 2026', 'Landscape of U.S. Domestic Advanced Nuclear Energy Supply Chain HALEU production capacity 2026']...
+  Search modes: {"World Nuclear Association HALEU Database production capacity 2026": "deep", "NEA SMR Dashboard licensing status US UK China 2026": "wide", "Clean Air Task Force Advanced Nuclear Supply Chains fuel availability HALEU US UK China 2026": "entity_collect", "Landscape of U.S. Domestic Advanced Nuclear Energy Supply Chain HALEU production capacity 2026": "atom", "Levelized Cost of Energy SMR vs solar plus storage 2026 cost comparison benchmark": "deep", "HALEU enrichment facilities global map 2026": "web_structure", "arXiv:2203.10345v2 - Global HALEU Supply Chain Mapping and SMR Operational Readiness": "deep", "global HALEU supply chain 2026 uranium enrichment capacity Russia China US Europe": "deep"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.8)
+    • [8.6] Inverse Critical Experiment Design via Gradient Optimization
+    • [8.2] Deciphering the global production network from cross-border 
+    • [7.8] On the practicalities of producing a nuclear weapon using hi
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 12165 raw)
+  Ingested 48 chunks (total: 92)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5784 tokens, 85% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Insufficient coverage of expected sections and lack of evidence URLs
+  Missing facts: 4 | Next queries: ['Map the global supply chain for High-Assay Low-Enriched Uranium (HALEU) in 2026, focusing on key players, transportation routes, and storage facilities.', 'Compare the fuel availability and Levelized Cost of Energy (LCOE) of Small Modular Reactors (SMRs) in the US, UK, and China, including a detailed breakdown of costs and revenue streams.', 'Assess the current regulatory frameworks and policies supporting the deployment of SMRs in the US, UK, and China, highlighting any potential barriers or opportunities.', 'Review the licensing and regulatory frameworks for SMRs in the US, UK, and China.', 'Assess the siting and land acquisition processes for SMRs in the US, UK, and China.', 'Evaluate the financing models and investment opportunities for SMRs in the US, UK, and China.']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['HALEU supply chain 2026 key players transportation routes storage facilities', 'US SMR fuel availability HALEU readiness licensing status', 'UK SMR LCOE vs solar+storage cost comparison 2026', 'China SMR operational readiness fuel supply chain financing']...
+  Search modes: {"HALEU supply chain 2026 key players transportation routes storage facilities": "wide", "US SMR fuel availability HALEU readiness licensing status": "deep", "UK SMR LCOE vs solar+storage cost comparison 2026": "deep", "China SMR operational readiness fuel supply chain financing": "deep", "NEA SMR Dashboard licensing siting financing supply chain metrics": "entity_collect", "Clean Air Task Force HALEU advanced nuclear supply chain analysis": "entity_collect", "HALEU supply chain nuclear fuel cycle site:arxiv.org": "web_structure", "SMR LCOE economic analysis small modular reactors site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 21 raw results via exa
+  Guard: 21 → 21 passed (0 blocked, avg score 6.9)
+    • [8.6] Inverse Critical Experiment Design via Gradient Optimization
+    • [8.2] Deciphering the global production network from cross-border 
+    • [7.8] On the practicalities of producing a nuclear weapon using hi
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11050 raw)
+  Ingested 51 chunks (total: 143)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5412 tokens, 84% vs raw)
+  Findings: 10, Claims: 6, Gaps: 5
+
+🔎 [Critic] Evaluating iteration 3/3
+  ✅ Complete: Reached max iterations (3) | missing_facts=5
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['HALEU supply chain 2026 key players transportation routes storage facilities', 'US SMR fuel availability HALEU readiness licensing status 2026', 'UK SMR LCOE vs solar+storage cost comparison 2026', 'China SMR operational readiness fuel supply chain financing 2026']...
+  Search modes: {"HALEU supply chain 2026 key players transportation routes storage facilities": "wide", "US SMR fuel availability HALEU readiness licensing status 2026": "deep", "UK SMR LCOE vs solar+storage cost comparison 2026": "deep", "China SMR operational readiness fuel supply chain financing 2026": "deep", "NEA SMR Dashboard licensing siting financing supply chain metrics": "entity_collect", "Clean Air Task Force HALEU advanced nuclear supply chain analysis": "atom", "HALEU supply chain nuclear fuel cycle site:arxiv.org": "web_structure", "SMR LCOE economic analysis small modular reactors site:arxiv.org": "web_structure"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 15/30 · (search 12, extract 0) · time 191/600s · cost $0.000/$0.50)
+  [tool:exa] primary search OK (25 raw results)
+  Counter-evidence: +23 hits, ingested 45 chunks
+
+⚖️  [Adjudicator] claims: 6 supported, 0 contested, 0 synthetic (of 6)
+  Evidence graph: 6 edges (6 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary', 'Introduction: Nuclear Renaissance, HALEU Dependence, and the SMR Imperative', 'Global HALEU Supply Chain Mapping (2026): World Nuclear Association HALEU Database, U.S.–Japan Shipment, and Domestic Enrichment Gaps', 'Operational Readiness of SMRs: US, UK, and China — NEA SMR Dashboard, Clean Air Task Force Advanced Nuclear Supply Chains, and Nuclear Scaling 2026 Landscape', 'Fuel Availability Bottlenecks and Mitigation Strategies: Enrichment Capacity, HALEU Fabrication, and Diversion-Risk Monitoring', 'Economic Comparison: SMR LCOE vs. Solar + Storage — EIA AEO2025, NEA SMR Dashboard, and Nuclear Scaling 2026 Cost Curves', 'Evaluation Matrix: Jurisdictional Readiness, Fuel Supply Security, and LCOE Competitiveness', 'Failure Modes and Risk Pathways: Supply Concentration, Licensing Delays, Cost Escalation, and Nonproliferation Threats', 'Strategic Conclusion and Outlook: Policy Levers for HALEU and SMR Deployment to 2030 and Beyond', 'Sources and References: OECD-NEA 2025 SMR Dashboard, CATF 2025 Supply Chains, Nuclear Scaling 2026, World Nuclear Association, EIA AEO2025, and Springer BMC Environmental Science 2025', 'Sources']
+
+✍️ [Synthesizer] Writing 11 sections (10 in parallel + 1 sources)
+  [Sources] auto-generated (13 URLs, 0 LLM calls)
+  🚀 Launching 10 parallel section generators...
+  ✅ Section 'Executive Summary' completed (6849 chars)
+  ✅ Section 'Fuel Availability Bottlenecks and Mitigation Strategies: Enrichment Capacity, HALEU Fabrication, and Diversion-Risk Monitoring' completed (26560 chars)
+  ✅ Section 'Evaluation Matrix: Jurisdictional Readiness, Fuel Supply Security, and LCOE Competitiveness' completed (4080 chars)
+  ✅ Section 'Operational Readiness of SMRs: US, UK, and China — NEA SMR Dashboard, Clean Air Task Force Advanced Nuclear Supply Chains, and Nuclear Scaling 2026 Landscape' completed (17209 chars)
+  ✅ Section 'Economic Comparison: SMR LCOE vs. Solar + Storage — EIA AEO2025, NEA SMR Dashboard, and Nuclear Scaling 2026 Cost Curves' completed (15810 chars)
+  ✅ Section 'Global HALEU Supply Chain Mapping (2026): World Nuclear Association HALEU Database, U.S.–Japan Shipment, and Domestic Enrichment Gaps' completed (17568 chars)
+  ✅ Section 'Introduction: Nuclear Renaissance, HALEU Dependence, and the SMR Imperative' completed (8489 chars)
+  ✅ Section 'Sources and References: OECD-NEA 2025 SMR Dashboard, CATF 2025 Supply Chains, Nuclear Scaling 2026, World Nuclear Association, EIA AEO2025, and Springer BMC Environmental Science 2025' completed (16379 chars)
+  ✅ Section 'Strategic Conclusion and Outlook: Policy Levers for HALEU and SMR Deployment to 2030 and Beyond' completed (28134 chars)
+  ✅ Section 'Failure Modes and Risk Pathways: Supply Concentration, Licensing Delays, Cost Escalation, and Nonproliferation Threats' completed (7433 chars)
+  🔍 Self-critique: 7 issues — ["Unsupported claim: 'The global deployment of Small Modular Reactors (SMRs) in 2026 is gated less by reactor design maturity than by a single, fragile input: High-Assay Low-Enriched Uranium (HALEU, enrichment 5–20% U-235)' without citing a specific source.", 'Missing system: The draft mentions the enrichment & conversion cascade but does not provide a detailed explanation of the other systems that define the 2026 landscape.']
+  Self-critique patched section: Fuel Availability Bottlenecks and Mitigation Strategies: Enrichment Capacity, HALEU Fabrication, and Diversion-Risk Monitoring
+  Wrote 10 sections in parallel (149114 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 6/6 supported
+  Evidence graph: 6 edges (6 support, 0 contradiction/unsupported)
+  Math detected: 286 expressions (249 inline, 37 block)
+  Report: 164196 chars, 13 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Map the global supply chain for High-Assay Low-Enr_20260811_094502.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Map the global supply chain for High-Assay Low-Enr_20260811_094502.html
+
+✅ [TOPIC 3] done in 418.4s — 170686 chars, 13 sections, 36 citations
+
+======================================================================
+[TOPIC 4] ASAT Capabilities & Orbital Debris Cascade (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 7 systems, 7 queries
+
+🧠 [Planner] Analyzing query: Assess the current (2026) anti-satellite (ASAT) capabilities of the US, China, R
+  Query type: depth_first
+  Budgets (depth-first): keep mode defaults (fewer queries, deeper iterations)
+  Outline: ['Introduction and Temporal Scope (2026)', 'State-by-State ASAT Capability Assessment (US, China, Russia, India)', 'Current Low Earth Orbit Debris Environment and Density Metrics', 'Kessler Syndrome Risk Modeling over the Next Decade', 'Policy and Mitigation Implications']
+  Initial queries: ['Secure World Foundation 2026 Global Counterspace Capabilities Report', 'ESA Space Environment Report 2025 2026 space debris density LEO', 'anti-satellite capabilities US China Russia India 2026', 'Kessler Syndrome risk assessment LEO 2026 to 2036', 'current state of LEO orbital debris density according to recent reports']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 4 queries @ max_results=8
+  [tool:exa] primary search OK (30 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.3)
+    • [8.6] The Outer Space Treaty Won’t Save Us From Ourselves
+    • [7.8] A Taxonomy of Space Infrastructures Attacks and Defenses
+    • [7.4] A System-Level Taxonomy and Longitudinal Analysis
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 12493 raw)
+  Ingested 50 chunks (total: 50)
+
+🔍 [Researcher] Analyzing
+  Retrieved 6 chunks (2951 tokens, 93% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/4
+  🔄 More needed: Insufficient evidence and incomplete sections
+  Missing facts: 4 | Next queries: ['Search for recent (2026) ASAT tests and capabilities of the US, China, Russia, and India', 'Extract current orbital debris density metrics and Kessler Syndrome risk models', 'Investigate the impact of megaconstellations on the risk of Kessler Syndrome', 'Search for recent (2026) ASAT tests and capabilities of the US, China, Russia, and India', 'Extract current ASAT technology and development trends', 'Extract current orbital debris density metrics and Kessler Syndrome risk models']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['US 2026 direct-ascent and co-orbital ASAT capabilities X-37B', 'China 2026 ASAT development dual-use co-orbital anti-satellite', 'Russia 2026 Nudol co-orbital ASAT system operational status', 'India 2026 ASAT Mission Shakti follow-up programs DRDO']...
+  Search modes: {"US 2026 direct-ascent and co-orbital ASAT capabilities X-37B": "entity_collect", "China 2026 ASAT development dual-use co-orbital anti-satellite": "entity_collect", "Russia 2026 Nudol co-orbital ASAT system operational status": "entity_collect", "India 2026 ASAT Mission Shakti follow-up programs DRDO": "entity_collect", "2026 LEO orbital debris density Kessler Syndrome risk model": "deep", "megaconstellation collision risk Kessler cascade probability 2026": "deep", "anti-satellite weapon capabilities 2026 site:arxiv.org": "web_structure", "orbital debris Kessler syndrome risk modeling site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Vault reuse: 1 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode entity_collect: 3 queries @ max_results=14
+  [tool:exa] primary search OK (35 raw results)
+  Mode deep: 1 queries @ max_results=8
+  [tool:exa] primary search OK (8 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 5.6)
+    • [8.2] The U.S.-China Military Balance in Space - MIT Press Direct
+    • [6.6] Secure World Foundation: 2026 Global Counterspace Capabiliti
+    • [6.6] Secure World Foundation: The Counterspace Surge: A Year of A
+  Content pages: 8 (7 from Exa text, 1 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9984 raw)
+  Ingested 51 chunks (total: 101)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5884 tokens, 84% vs raw)
+  Findings: 8, Claims: 8, Gaps: 6
+
+🔎 [Critic] Evaluating iteration 2/4
+  🔄 More needed: The research lacks critical quantitative data on current orbital debris density, specific operational status of ASAT systems for the US, China, and India, and concrete risk models for Kessler Syndrome in 2026. Several sections remain underdeveloped, particularly in technical specifications and recent (2025–2026) developments.
+  Missing facts: 4 | Next queries: ['current orbital debris density in LEO 2026 NASA ESA data', 'US China Russia India operational ASAT capabilities 2026 status', 'Kessler Syndrome risk modeling LEO next decade quantitative analysis', 'current orbital debris density in LEO 2026 NASA ESA data', 'LEO debris population statistics 2026', 'space surveillance network tracking data 2026']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['2026 US Space Force operational ASAT systems status direct-ascent co-orbital', 'China PLA Strategic Support Force counterspace capabilities 2026 kinetic ASAT', 'Russian Aerospace Forces Nudol Tundra ASAT missile deployment 2026 status', 'Indian DRDO Mission Shakti ASAT operational status 2026']...
+  Search modes: {"2026 US Space Force operational ASAT systems status direct-ascent co-orbital": "entity_collect", "China PLA Strategic Support Force counterspace capabilities 2026 kinetic ASAT": "entity_collect", "Russian Aerospace Forces Nudol Tundra ASAT missile deployment 2026 status": "entity_collect", "Indian DRDO Mission Shakti ASAT operational status 2026": "entity_collect", "LEO orbital debris density cataloged objects 2026 NASA SSC data": "deep", "Kessler Syndrome cascade probability modeling LEO megaconstellation risk 2026": "deep", "Kessler syndrome LEO debris cascade risk modeling site:arxiv.org": "web_structure", "anti-satellite weapon kinetic debris generation site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode entity_collect: 3 queries @ max_results=14
+  [tool:exa] primary search OK (39 raw results)
+  Mode deep: 1 queries @ max_results=8
+  [tool:exa] primary search OK (8 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 6.0)
+    • [7.6] Space Threat Fact Sheet
+    • [7.2] New deep space radar capability employed early > United Stat
+    • [7.0] Taking LEO Off the Board: Russian Thinking About Anti-Satell
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 11038 raw)
+  Ingested 67 chunks (total: 168)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5572 tokens, 85% vs raw)
+  Findings: 9, Claims: 3, Gaps: 3
+
+🔎 [Critic] Evaluating iteration 3/4
+  🔄 More needed: Insufficient evidence-backed findings and missing data on current orbital debris density and Kessler Syndrome risk.
+  Missing facts: 3 | Next queries: ['Search for current orbital debris density metrics in Low Earth Orbit (LEO) for the year 2026.', 'Extract data on recent (2025–2026) ASAT tests or near-miss incidents that could affect debris growth.', "Investigate the effectiveness of the US Space Command's joint plan for protecting and defending space assets from threats in orbit.", 'Search for current orbital debris density metrics in Low Earth Orbit (LEO) for the year 2026.', 'Extract data on the Kessler Syndrome risk model for the next decade.', 'Investigate the impact of megaconstellations on orbital debris density.']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['2026 LEO orbital debris density metrics Kessler Syndrome risk model', 'US Space Command orbital protection joint plan effectiveness 2026', 'China counterspace capabilities direct-ascent co-orbital ASAT 2026', 'India ASAT Mission Shakti operational status 2025-2026']...
+  Search modes: {"2026 LEO orbital debris density metrics Kessler Syndrome risk model": "deep", "US Space Command orbital protection joint plan effectiveness 2026": "entity_collect", "China counterspace capabilities direct-ascent co-orbital ASAT 2026": "deep", "India ASAT Mission Shakti operational status 2025-2026": "atom", "Russia Nudol co-orbital ASAT system operational deployment 2026": "atom", "megaconstellations Starlink debris generation Kessler Syndrome amplification": "wide", "Kessler Syndrome risk model LEO debris density 2026 site:arxiv.org": "web_structure", "anti-satellite ASAT test debris generation megaconstellations site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 4 — gathering (max_results=8, extract=8)
+  Vault reuse: 3 on-topic cached sources
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 3 queries @ max_results=8
+  [tool:exa] primary search OK (24 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 23 raw results via exa
+  Guard: 23 → 23 passed (0 blocked, avg score 6.7)
+    • [8.6] The Outer Space Treaty Won’t Save Us From Ourselves
+    • [8.6] 
+    • [7.8] A Taxonomy of Space Infrastructures Attacks and Defenses
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 12386 raw)
+  Ingested 55 chunks (total: 223)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (6321 tokens, 85% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 4/4
+  ✅ Complete: Reached max iterations (4) | missing_facts=3
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['2026 LEO orbital debris density Kessler Syndrome risk model', 'US Space Command orbital protection joint plan effectiveness 2026', 'China counterspace capabilities direct-ascent co-orbital ASAT 2026', 'India ASAT Mission Shakti operational status 2025-2026']...
+  Search modes: {"2026 LEO orbital debris density Kessler Syndrome risk model": "deep", "US Space Command orbital protection joint plan effectiveness 2026": "entity_collect", "China counterspace capabilities direct-ascent co-orbital ASAT 2026": "entity_collect", "India ASAT Mission Shakti operational status 2025-2026": "entity_collect", "Russia Nudol co-orbital ASAT system operational deployment 2026": "entity_collect", "megaconstellations Starlink debris generation Kessler Syndrome amplification": "wide", "Kessler Syndrome risk model LEO debris density 2026 site:arxiv.org": "web_structure", "anti-satellite ASAT test debris generation megaconstellations site:arxiv.org": "web_structure"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 21/25 · (search 16, extract 1) · time 288/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (24 raw results)
+  Counter-evidence: +32 hits, ingested 40 chunks
+
+⚖️  [Adjudicator] claims: 11 supported, 0 contested, 0 synthetic (of 11)
+  Evidence graph: 11 edges (11 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary', 'Introduction and Temporal Scope (2026): The Shifting Counterspace Landscape and the Persistent Orbital Debris Crisis', 'Counterspace Capability Taxonomy: Direct-Ascent ASAT, Co-Orbital ASAT, Rendezvous and Proximity Operations (RPO), Electronic Warfare/Jamming, Directed Energy Systems, Cyber Counterspace, and LEO Debris Tracking & Mitigation', 'State-by-State ASAT Capability Assessment (2026): United States (Silent Barker, Deep Space Radar), China (RPO Tests), Russia (Nudol/A-235), and India (Mission Shakti, 2024 Proximity Incident)', 'Current Low Earth Orbit Debris Environment and Density Metrics: ESA Space Environment Report 2025, ESA Space Debris Office Annual Report 2026, and IADC Mitigation Guidelines', 'Kessler Syndrome Risk Modeling over the Next Decade: Debris-Generating ASAT Tests in the Presence of Megaconstellations (arXiv:2111.12196, Starlink, and Collision Cascade Threshold Analysis)', 'Comparative Evaluation Matrix: National ASAT Capabilities, Debris Generation Potential, and Orbital Risk Profiles (Including Georgetown Security Studies Review 2024 Kinetic Counterspace Systems Analysis and Secure World Foundation 2026 Global Counterspace Capabilities Report)', 'Policy, Legal, and Mitigation Implications: Outer Space Treaty Limitations, IADC Non-Binding Frameworks, Emerging State Entrants (Germany), and Cyber-Space Intersections', "Failure Modes, Uncertainties, and Devil's Advocate Limitations: Data Gaps, Classified Capabilities, and Model Assumptions", 'Conclusion', 'Sources']
+
+✍️ [Synthesizer] Writing 11 sections (10 in parallel + 1 sources)
+  [Sources] auto-generated (20 URLs, 0 LLM calls)
+  🚀 Launching 10 parallel section generators...
+  ✅ Section 'Executive Summary' completed (7388 chars)
+  ✅ Section 'Current Low Earth Orbit Debris Environment and Density Metrics: ESA Space Environment Report 2025, ESA Space Debris Office Annual Report 2026, and IADC Mitigation Guidelines' completed (11778 chars)
+  ✅ Section 'Kessler Syndrome Risk Modeling over the Next Decade: Debris-Generating ASAT Tests in the Presence of Megaconstellations (arXiv:2111.12196, Starlink, and Collision Cascade Threshold Analysis)' completed (25862 chars)
+  ✅ Section 'Counterspace Capability Taxonomy: Direct-Ascent ASAT, Co-Orbital ASAT, Rendezvous and Proximity Operations (RPO), Electronic Warfare/Jamming, Directed Energy Systems, Cyber Counterspace, and LEO Debris Tracking & Mitigation' completed (3118 chars)
+  ✅ Section 'State-by-State ASAT Capability Assessment (2026): United States (Silent Barker, Deep Space Radar), China (RPO Tests), Russia (Nudol/A-235), and India (Mission Shakti, 2024 Proximity Incident)' completed (24951 chars)
+  ✅ Section 'Introduction and Temporal Scope (2026): The Shifting Counterspace Landscape and the Persistent Orbital Debris Crisis' completed (25911 chars)
+  ✅ Section 'Failure Modes, Uncertainties, and Devil's Advocate Limitations: Data Gaps, Classified Capabilities, and Model Assumptions' completed (17711 chars)
+  ✅ Section 'Comparative Evaluation Matrix: National ASAT Capabilities, Debris Generation Potential, and Orbital Risk Profiles (Including Georgetown Security Studies Review 2024 Kinetic Counterspace Systems Analysis and Secure World Foundation 2026 Global Counterspace Capabilities Report)' completed (27522 chars)
+  ✅ Section 'Policy, Legal, and Mitigation Implications: Outer Space Treaty Limitations, IADC Non-Binding Frameworks, Emerging State Entrants (Germany), and Cyber-Space Intersections' completed (19215 chars)
+  ✅ Section 'Conclusion' completed (11661 chars)
+  🔍 Self-critique: 5 issues — ['The draft assumes a binary distinction between kinetic and non-kinetic counterspace capabilities, which oversimplifies the complexity of modern counterspace threats.', 'The section on Kessler Syndrome risk modeling relies on a single study (arXiv:2111.12196) without considering other relevant research or uncertainties in the model.']
+  Self-critique patched section: Kessler Syndrome Risk Modeling over the Next Decade: Debris-Generating ASAT Tests in the Presence of Megaconstellations (arXiv:2111.12196, Starlink, and Collision Cascade Threshold Analysis)
+  Wrote 10 sections in parallel (175847 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 11/11 supported
+  Evidence graph: 11 edges (11 support, 0 contradiction/unsupported)
+  Math detected: 290 expressions (236 inline, 54 block)
+  Report: 191483 chars, 13 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Assess the current _2026_ anti-satellite _ASAT_ ca_20260811_095306.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Assess the current _2026_ anti-satellite _ASAT_ ca_20260811_095306.html
+
+✅ [TOPIC 4] done in 483.9s — 197680 chars, 13 sections, 41 citations
+
+======================================================================
+[TOPIC 5] Avian Influenza (H5N1) Human Transmission Risk (mode=standard)
+======================================================================
+
+💭 [Thinker] Query scout (web + 3× parallel Gemini/thinker)
+  Scout web hits: 5
+  Scout/eval: ok keys=['eval_axes', 'failure_modes', 'production_topics', 'outline_hints']
+  Scout/systems: ok keys=['must_cover_systems', 'must_cover_papers', 'search_queries']
+  Scout/intent: ok keys=['refined_query', 'sub_questions', 'scope', 'assumptions']
+  Scout done: 5 web hits, 7 systems, 4 queries
+
+🧠 [Planner] Analyzing query: Analyze the genomic mutations of the current H5N1 clade circulating in dairy cat
+  Query type: breadth_first
+  Budgets (breadth-first): 3 iters max, wider tool budget
+  Outline: ['Overview']
+  Initial queries: ['Analyze the genomic mutations of the current H5N1 clade circulating in dairy cattle (2025-2026). Evaluate the efficacy of existing mRNA stockpiles versus traditional adjuvanted vaccines if human-to-human transmission is declared by the WHO.']
+
+🔍 [Researcher] Iteration 1 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 16 raw results via exa
+  Guard: 16 → 16 passed (0 blocked, avg score 7.8)
+    • [8.6] On-farm management strategies for reducing H5N1 transmission
+    • [8.6] Genomic-Informed Heterogeneous Graph Learning for Spatiotemp
+    • [8.2] A mathematical model of HPAI transmission between dairy catt
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10309 raw)
+  Ingested 48 chunks (total: 48)
+
+🔍 [Researcher] Analyzing
+  Retrieved 5 chunks (1782 tokens, 95% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 1/3
+  🔄 More needed: Insufficient evidence and analysis for the second part of the query (evaluating the efficacy of existing mRNA stockpiles versus traditional adjuvanted vaccines if human-to-human transmission is declared by the WHO)
+  Missing facts: 3 | Next queries: ['Search for studies comparing the efficacy of mRNA-based vaccines and traditional adjuvanted vaccines against H5N1 clade 2.3.4.4b', 'Evaluate the current stockpiles of mRNA-based vaccines and traditional adjuvanted vaccines for H5N1', 'Assess the feasibility of scaling up production of mRNA-based vaccines and traditional adjuvanted vaccines in response to human-to-human transmission declaration', 'Search for systematic reviews and meta-analyses comparing mRNA-based vaccines and traditional adjuvanted vaccines against H5N1', 'Evaluate the immunogenicity and protective efficacy of mRNA-based vaccines and traditional adjuvanted vaccines in animal models', 'Assess the safety and tolerability of mRNA-based vaccines and traditional adjuvanted vaccines in humans']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['H5N1 clade 2.3.4.4b genomic mutations dairy cattle 2025', 'mRNA H5N1 vaccine efficacy vs adjuvanted inactivated vaccine systematic review', 'WHO H5N1 vaccine stockpile mRNA production capacity 2025', 'H5N1 vaccine immunogenicity animal challenge model mRNA vs adjuvanted']...
+  Search modes: {"H5N1 clade 2.3.4.4b genomic mutations dairy cattle 2025": "atom", "mRNA H5N1 vaccine efficacy vs adjuvanted inactivated vaccine systematic review": "deep", "WHO H5N1 vaccine stockpile mRNA production capacity 2025": "entity_collect", "H5N1 vaccine immunogenicity animal challenge model mRNA vs adjuvanted": "wide", "H5N1 human-to-human transmission pandemic vaccine strategy mRNA": "web_structure", "H5N1 mRNA vaccine efficacy clade 2.3.4.4b site:arxiv.org": "web_structure", "genomic evolution H5N1 dairy cattle 2025 site:arxiv.org": "web_structure", "mRNA vaccine pandemic preparedness H5N1 stockpile site:arxiv.org": "web_structure"}
+
+🔍 [Researcher] Iteration 2 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode atom: 1 queries @ max_results=5
+  [tool:exa] primary search OK (5 raw results)
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.5)
+    • [8.6] On-farm management strategies for reducing H5N1 transmission
+    • [8.6] Genomic-Informed Heterogeneous Graph Learning for Spatiotemp
+    • [8.2] Highly pathogenic avian influenza H5N1 in the United States:
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 10513 raw)
+  Ingested 55 chunks (total: 103)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (5028 tokens, 86% vs raw)
+  Findings: 1, Claims: 0, Gaps: 0
+
+🔎 [Critic] Evaluating iteration 2/3
+  🔄 More needed: Insufficient evidence and findings to support a publication-grade report.
+  Missing facts: 4 | Next queries: ['Analyze the genomic mutations of the current H5N1 clade circulating in dairy cattle (2025-2026) and their potential impact on vaccine efficacy.', 'Evaluate the effectiveness of existing mRNA stockpiles against highly pathogenic H5N1 clade 2.3.4.4b influenza virus in dairy cattle and humans.', 'Assess the immune response and cross-neutralizing antibody generation in humans and dairy cattle vaccinated with licensed H5N1 vaccines.', 'Search for recent studies on H5N1 genomic mutations in dairy cattle (2025-2026)', 'Extract information on the genetic diversity of H5N1 viruses in dairy cattle from relevant databases', 'Review studies on the efficacy of mRNA-based vaccines against H5N1 clade 2.3.4.4b']
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['GraphRAG: H5N1 genomic mutations in dairy cattle (2025-2026)', 'Self-RAG: mRNA stockpiles efficacy against H5N1 clade 2.3.4.4b', 'CRAG: human-to-human transmission of H5N1 clade 2.3.4.4b', 'HyDE: immune response to mRNA-based vaccines in dairy cattle']...
+  Search modes: {"GraphRAG: H5N1 genomic mutations in dairy cattle (2025-2026)": "deep", "Self-RAG: mRNA stockpiles efficacy against H5N1 clade 2.3.4.4b": "wide", "CRAG: human-to-human transmission of H5N1 clade 2.3.4.4b": "entity_collect", "HyDE: immune response to mRNA-based vaccines in dairy cattle": "web_structure", "ColBERT: cross-neutralizing antibodies against H5N1 clade 2.3.4.4b": "atom", "RAPTOR: genetic diversity of H5N1 viruses in dairy cattle": "deep", "DPR: vaccine efficacy against H5N1 clade 2.3.4.4b in dairy cattle": "wide", "arXiv: H5N1 genomic mutations in dairy cattle (2025-2026)": "deep"}
+
+🔍 [Researcher] Iteration 3 — gathering (max_results=8, extract=8)
+  Tools available: ['wikipedia', 'builtin', 'mineru', 'nougat', 'llamaparse', 'firecrawl', 'exa']
+  Mode deep: 2 queries @ max_results=8
+  [tool:exa] primary search OK (16 raw results)
+  Mode wide: 1 queries @ max_results=12
+  [tool:exa] primary search OK (12 raw results)
+  Mode entity_collect: 1 queries @ max_results=14
+  [tool:exa] primary search OK (14 raw results)
+  Exa arXiv: +6 hits
+  Capped search pool to top 20 by score
+  Found 20 raw results via exa
+  Guard: 20 → 20 passed (0 blocked, avg score 7.5)
+    • [8.6] On-farm management strategies for reducing H5N1 transmission
+    • [8.6] Genomic-Informed Heterogeneous Graph Learning for Spatiotemp
+    • [8.2] A mathematical model of HPAI transmission between dairy catt
+  Content pages: 8 (8 from Exa text, 0 extracted)
+  Skipping factoid extraction (disabled by quality dial)
+  Factoids: 0 new → 0 total, 0 tokens (100% reduction vs 9443 raw)
+  Ingested 41 chunks (total: 144)
+
+🔍 [Researcher] Analyzing
+  Retrieved 12 chunks (4313 tokens, 88% vs raw)
+  Findings: 10, Claims: 7, Gaps: 7
+
+🔎 [Critic] Evaluating iteration 3/3
+  ✅ Complete: Reached max iterations (3) | missing_facts=6
+
+💭 [Thinker] Search strategy (thinker=fast-fallback)
+  Search strategy queries (8): ['GraphRAG: H5N1 genomic mutations in dairy cattle (2025-2026)', 'Self-RAG: mRNA stockpiles efficacy against H5N1 clade 2.3.4.4b', 'CRAG: human-to-human transmission of H5N1 clade 2.3.4.4b', 'HyDE: immune response to mRNA-based vaccines in dairy cattle']...
+  Search modes: {"GraphRAG: H5N1 genomic mutations in dairy cattle (2025-2026)": "atom", "Self-RAG: mRNA stockpiles efficacy against H5N1 clade 2.3.4.4b": "deep", "CRAG: human-to-human transmission of H5N1 clade 2.3.4.4b": "wide", "HyDE: immune response to mRNA-based vaccines in dairy cattle": "entity_collect", "ColBERT: cross-neutralizing antibodies against H5N1 clade 2.3.4.4b": "web_structure", "RAPTOR: genetic diversity of H5N1 viruses in dairy cattle": "atom", "DPR: vaccine efficacy against H5N1 clade 2.3.4.4b in dairy cattle": "deep", "arXiv: H5N1 genomic mutations in dairy cattle (2025-2026)": "atom"}
+
+⚔️  [Devil's Advocate] 5 counter-queries (LIVE BUDGET: tool calls 13/30 · (search 10, extract 0) · time 171/600s · cost $0.001/$0.50)
+  [tool:exa] primary search OK (21 raw results)
+  Counter-evidence: +20 hits, ingested 60 chunks
+
+⚖️  [Adjudicator] claims: 7 supported, 0 contested, 0 synthetic (of 7)
+  Evidence graph: 7 edges (7 support, 0 contradiction, 0 unsupported)
+
+✍️ [Synthesizer] Creating outline
+  Outline: ['Executive Summary: Pandemic Risk Assessment of H5N1 Clade 2.3.4.4b in Dairy Cattle and Vaccine Preparedness Gaps', 'Introduction: The 2024–2026 H5N1 Clade 2.3.4.4b Epizootic in U.S. Dairy Cattle and the Looming Human-to-Human Transmission Scenario', 'Genomic Evolution of H5N1 Clade 2.3.4.4b Genotype B3.13: Reassortment Events, Key HA/M1/NS Mutations, and Avian-Like Virulence Properties (Nature Communications 2025)', 'Molecular Determinants of Cross-Species Transmission: The Hemagglutinin Q226L Mutation and Receptor Specificity Switching to Human α2,6-Sialic Acid (Science 2024)', 'Comparative Efficacy of Existing mRNA Stockpiles vs. Traditional Adjuvanted Vaccines Against Clade 2.3.4.4b: Cross-Neutralization Evidence (Nature Medicine 2024)', 'Next-Generation Countermeasures: Clade-Matched Replicating RNA Vaccines Encoding 2.3.4.4b HA vs. Historical Clade 1 Antigens (Nature Communications 2024)', 'AI-Augmented Knowledge Retrieval for Outbreak Intelligence: Application of GraphRAG, Self-RAG, CRAG, HyDE, ColBERT, RAPTOR, and DPR to Genomic Surveillance and Vaccine Evidence Synthesis', 'Evaluation Matrix: Cross-Comparison of Vaccine Platforms, Genomic Surveillance Tools, and Policy Readiness under a WHO-Declared Human-to-Human Transmission Scenario', "Failure Modes and Devil's Advocate Analysis: Gaps in Current Evidence, Surveillance Limitations, and Counterarguments to Vaccine Stockpile Efficacy", 'Conclusion: Strategic Recommendations for Vaccine Deployment, Genomic Surveillance, and Pandemic Preparedness', 'Sources: Key Papers, Preprints, and Genomic Databases Referenced', 'Sources']
+
+✍️ [Synthesizer] Writing 12 sections (11 in parallel + 1 sources)
+  [Sources] auto-generated (13 URLs, 0 LLM calls)
+  🚀 Launching 11 parallel section generators...
+  ✅ Section 'Executive Summary: Pandemic Risk Assessment of H5N1 Clade 2.3.4.4b in Dairy Cattle and Vaccine Preparedness Gaps' completed (8510 chars)
+  ✅ Section 'Comparative Efficacy of Existing mRNA Stockpiles vs. Traditional Adjuvanted Vaccines Against Clade 2.3.4.4b: Cross-Neutralization Evidence (Nature Medicine 2024)' completed (16446 chars)
+  ✅ Section 'Introduction: The 2024–2026 H5N1 Clade 2.3.4.4b Epizootic in U.S. Dairy Cattle and the Looming Human-to-Human Transmission Scenario' completed (18287 chars)
+  ✅ Section 'Next-Generation Countermeasures: Clade-Matched Replicating RNA Vaccines Encoding 2.3.4.4b HA vs. Historical Clade 1 Antigens (Nature Communications 2024)' completed (12837 chars)
+  ✅ Section 'Molecular Determinants of Cross-Species Transmission: The Hemagglutinin Q226L Mutation and Receptor Specificity Switching to Human α2,6-Sialic Acid (Science 2024)' completed (10837 chars)
+  ✅ Section 'Genomic Evolution of H5N1 Clade 2.3.4.4b Genotype B3.13: Reassortment Events, Key HA/M1/NS Mutations, and Avian-Like Virulence Properties (Nature Communications 2025)' completed (19975 chars)
+  ✅ Section 'AI-Augmented Knowledge Retrieval for Outbreak Intelligence: Application of GraphRAG, Self-RAG, CRAG, HyDE, ColBERT, RAPTOR, and DPR to Genomic Surveillance and Vaccine Evidence Synthesis' completed (32421 chars)
+  ✅ Section 'Conclusion: Strategic Recommendations for Vaccine Deployment, Genomic Surveillance, and Pandemic Preparedness' completed (11454 chars)
+  ✅ Section 'Failure Modes and Devil's Advocate Analysis: Gaps in Current Evidence, Surveillance Limitations, and Counterarguments to Vaccine Stockpile Efficacy' completed (21998 chars)
+  ✅ Section 'Evaluation Matrix: Cross-Comparison of Vaccine Platforms, Genomic Surveillance Tools, and Policy Readiness under a WHO-Declared Human-to-Human Transmission Scenario' completed (18822 chars)
+  ✅ Section 'Sources: Key Papers, Preprints, and Genomic Databases Referenced' completed (2422 chars)
+  🔍 Audit Pass: Section 'Sources: Key Papers, Preprints, and Genomic Databases Referenced' missing citations — appended evidence notes
+  🔍 Self-critique: 7 issues — ["Unsupported claim: '70 human infections with 1 fatality' - provide a credible source for this number.", "Missing system: clear explanation of the WHO's human-to-human transmission declaration process."]
+  Self-critique patched section: Genomic Evolution of H5N1 Clade 2.3.4.4b Genotype B3.13: Reassortment Events, Key HA/M1/NS Mutations, and Avian-Like Virulence Properties (Nature Communications 2025)
+  Wrote 11 sections in parallel (174688 chars total)
+
+📦 [Compiler] Assembling report
+  Confidence volcano: Inference body + Bedrock + Research Debt + Sources
+  Claim–evidence (CoVe): 7/7 supported
+  Evidence graph: 7 edges (7 support, 0 contradiction/unsupported)
+  Math detected: 238 expressions (209 inline, 29 block)
+  Report: 190354 chars, 15 sections
+  Ship gate: ✅ passed
+  Saved: /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the genomic mutations of the current H5N1 _20260811_100029.md
+  HTML:  /home/sarvesh/projects/Autonomous-Research-Agent/reports/research_Analyze the genomic mutations of the current H5N1 _20260811_100029.html
+
+✅ [TOPIC 5] done in 443.3s — 196469 chars, 15 sections, 34 citations
+
+BATCH DONE: 5 ok, 0 failed

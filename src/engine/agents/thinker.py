@@ -449,23 +449,37 @@ def thinker_search_strategy(state: ResearchState) -> ResearchState:
     print(f"\n💭 [Thinker] Search strategy (thinker={'yes' if use_thinker else 'fast-fallback'})")
 
     scout = state.get("scout") or {}
+    memory = state.get("research_memory") or {}
+    consulted = list(memory.get("consulted_sources") or [])[-25:]
+    open_hyp = list(memory.get("open_hypotheses") or [])[:8]
+    missing_facts = state.get("missing_facts") or []
+    from src.engine.budget import budget_status_line
+    budget_line = budget_status_line(state)
     pack = "\n".join([
         f"QUERY: {state.get('query', '')}",
+        f"{budget_line}",
         f"OFF_TOPIC: {state.get('off_topic', False)}",
         f"REPLAN: {state.get('replan', False)}",
         f"GAPS: {json.dumps((state.get('gaps') or [])[:10])}",
+        f"OPEN_HYPOTHESES: {json.dumps(open_hyp)}",
+        f"MISSING_FACTS: {json.dumps(missing_facts[:8])}",
         f"FINDINGS: {json.dumps((state.get('findings') or [])[:8])}",
         f"MUST_COVER_SYSTEMS: {json.dumps((scout.get('must_cover_systems') or [])[:12])}",
         f"CURRENT_QUERIES: {json.dumps(state.get('search_queries') or [])}",
         f"MODE: {state.get('mode', 'standard')}",
         "Produce SHORT high-precision search queries (not the full user query repeated).",
-        "Each query should target a named system, benchmark, or failure mode from gaps/must_cover.",
+        "Each query should target a named system, benchmark, or failure mode from gaps/missing_facts/must_cover.",
+        "Cover the missing_facts: every fact without evidence needs a targeted query.",
+        "AVOID re-searching these already-consulted sources/domains if possible.",
+        f"ALREADY_CONSULTED ({len(consulted)}): {json.dumps(consulted[:12])}",
         "Optimized for Exa neural search and arXiv.",
     ])
 
     purpose = (
         "web search strategy for deep research recovery: return JSON with "
         "search_queries (list of 4-6 strings), arxiv_queries (list), "
+        "search_modes (dict mapping each search_query to one of: atom | deep | "
+        "wide | entity_collect | web_structure), "
         "rationale (string), learned (list of short strings)"
     )
 
@@ -486,6 +500,10 @@ def thinker_search_strategy(state: ResearchState) -> ResearchState:
         merged.extend(str(q) for q in queries if q)
     if isinstance(arxiv_q, list):
         merged.extend(f"{q} site:arxiv.org" if "arxiv" not in str(q).lower() else str(q) for q in arxiv_q if q)
+    # Targeted re-search from structured missing facts (r1-reasoning-rag)
+    for mf in missing_facts[:4]:
+        for sq in (mf.get("suggested_queries") or []):
+            merged.append(str(sq))
     if not merged:
         q = state.get("query", "")
         systems = (scout.get("must_cover_systems") or [])[:4]
@@ -506,6 +524,21 @@ def thinker_search_strategy(state: ResearchState) -> ResearchState:
             final.append(q.strip())
     state["search_queries"] = final[:8]
     print(f"  Search strategy queries ({len(state['search_queries'])}): {state['search_queries'][:4]}...")
+
+    # ── Search-mode routing (WebSwarm): tag each query with an execution mode ──
+    modes_from_llm = analysis.get("search_modes") if isinstance(analysis, dict) else None
+    search_modes: dict[str, str] = {}
+    for q in state["search_queries"]:
+        mode = ""
+        if isinstance(modes_from_llm, dict):
+            mode = str(modes_from_llm.get(q) or modes_from_llm.get(q.lower()) or "")
+        search_modes[q] = (
+            mode
+            if mode in ("atom", "deep", "wide", "entity_collect", "web_structure")
+            else _default_search_mode(q)
+        )
+    state["search_modes"] = search_modes
+    print(f"  Search modes: {json.dumps(search_modes)}")
 
     try:
         from src.engine.progress import get_progress
@@ -530,6 +563,28 @@ def thinker_search_strategy(state: ResearchState) -> ResearchState:
             print(f"  Re-planned outline: {[s['title'] for s in state['outline']]}")
 
     return state
+
+
+def _default_search_mode(q: str) -> str:
+    """Deterministic mode assignment when the LLM returns none (WebSwarm)."""
+    ql = (q or "").lower()
+    if "site:" in ql or "filetype:" in ql:
+        return "web_structure"
+    if any(w in ql for w in (
+        "list of", "top ", "best ", "compare", "versus", " vs ",
+        "taxonomy", "overview", "survey",
+    )):
+        return "wide"
+    if any(w in ql for w in (
+        "who ", "when ", "where ", "how many", "what is",
+        "define ", "what year",
+    )):
+        return "atom"
+    if any(w in ql for w in (
+        "systems", "papers", "benchmarks", "models", "companies", "tools",
+    )):
+        return "entity_collect"
+    return "deep"
 
 
 def reset_thinker() -> None:

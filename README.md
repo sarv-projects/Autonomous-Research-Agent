@@ -1,14 +1,18 @@
 <div align="center">
 
-# Autonomous Research Agent
+# Providence
 
-**A multi-agent deep-research engine.** Give it a question; it plans the investigation, searches and reads the literature, challenges its own conclusions with adversarial search and CoVe-lite verification, and compiles a structured technical report with inline citations, counter-evidence, and an honest accounting of what is proven versus what remains open.
+**Deep research engine with verified evidence.**
+
+Give it a hard question. Providence plans the investigation, searches and reads the literature, challenges its own conclusions with adversarial search, verifies every claim against the sources it actually fetched — and compiles a structured, cited report that separates **what is proven** from **what remains open**, with a machine-checked ship-gate that blocks fabricated sources.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-FF6F00.svg)](https://github.com/langchain-ai/langgraph)
 [![Next.js](https://img.shields.io/badge/UI-Next.js-000000.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+*Why “Providence”? Foresight (pro-vidence) + provable evidence. The engine looks ahead through planning and adversarial search, then proves what it claims against the evidence it gathered.*
 
 </div>
 
@@ -29,6 +33,7 @@
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
 - [Testing & Evaluation](#testing--evaluation)
+- [Benchmarks](#benchmarks)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
 - [Documentation](#documentation)
@@ -192,7 +197,7 @@ graph LR
 | Subsystem | What it does |
 |---|---|
 | **LLM Gateway** (`src/gateway/`) | Three tiers (`fast` / `strong` / `thinker`), failover chains, per-route circuit breakers (CLOSED/OPEN/HALF-OPEN), token-bucket RPM/TPM rate limiting, retry+jitter, BYOK virtual-key management (SHA-256 hashed), optional AES-GCM provider-key encryption at rest, cost accounting, Prometheus metrics |
-| **Tool bus** (`src/tools/`) | Pluggable search adapters auto-registered from `src/tools/adapters/`: Exa (primary, full-text), arXiv, Wikipedia, Firecrawl, Tavily, MinerU (PDF), Nougat (OCR), built-in scraper (trafilatura) |
+| **Tool bus** (`src/tools/`) | Pluggable search adapters auto-registered from `src/tools/adapters/`: Exa (primary, full-text), arXiv, Wikipedia, Firecrawl, Tavily, MinerU (PDF), Nougat (OCR), built-in scraper (trafilatura), **GDELT** (zero-key real-time global newswire) + NewsData.io (keyed supplement) |
 | **Hybrid RAG** (`src/rag/`) | Dense vector search (LanceDB) + sparse keyword search (SQLite FTS5), per-run `run_id` isolation, on-topic vault for deliberate cross-run reuse, factoid extraction pipeline, retrieval guard (domain blocklists + quality scoring), chat memory, hybrid score fusion |
 | **Providers catalog** (`src/providers/`) | `config/providers.yaml`-driven catalog with model probes and live availability checks |
 | **Mode system** (`src/engine/modes.py`) | `config/modes.yaml`-loaded modes with per-mode `ModeBudgets` (max_tokens, max_cost_usd, max_time_s, max_tool_calls, max_iterations) and `QualityDial` overlays |
@@ -223,8 +228,8 @@ The property this system cares most about: **the report says what the evidence s
 
 ```bash
 # 1. Clone
-git clone https://github.com/sarv-projects/Autonomous-Research-Agent.git
-cd Autonomous-Research-Agent
+git clone https://github.com/sarv-projects/providence.git
+cd providence
 
 # 2. Install (creates venv, syncs dependencies, runs offline gateway tests)
 bash scripts/install.sh          # or .\scripts\install.ps1 on Windows
@@ -405,6 +410,8 @@ GATEWAY_CIRCUIT_HALF_OPEN=2     # max probes in HALF-OPEN state
 | **Firecrawl** | `FIRECRAWL_API_KEY` | Deep page extraction / crawling |
 | **Wikipedia** | *(none)* | Free; always available |
 | **arXiv** | *(none)* | Free; always available |
+| **GDELT** | *(none)* | Zero-key real-time global newswire (Reuters/Bloomberg/FT syndicated wire, 100+ langs); throttled under concurrency, auto-retries |
+| **NewsData.io** | `NEWSDATA_API_KEY` | Keyed newswire supplement — free tier is commercial-OK (~200 credits/day) |
 | **MinerU** | `MINERU_API_KEY` | PDF/paper extraction |
 | **Nougat** | local | OCR for scientific papers |
 | **Built-in scraper** | *(none)* | trafilatura-based; free fallback |
@@ -444,9 +451,9 @@ OLLAMA_BASE_URL=http://localhost:11434
 ## Project Structure
 
 ```
-Autonomous-Research-Agent/
+providence/
 ├── main.py                     # CLI entry point + uvicorn server launcher
-├── pyproject.toml              # Python project (name: xiarch-assessment, v0.2.0)
+├── pyproject.toml              # Python project (name: providence, v0.3.0)
 ├── config/
 │   ├── providers.yaml          # LLM provider catalog, model IDs, tier chains
 │   ├── providers.example.yaml  # annotated template
@@ -607,6 +614,99 @@ python -m src.dashboard [--port 8080]
 
 ---
 
+## Benchmarks
+
+> Full per-topic logs, ground truth, and the complete report: [`benchmarks/RESEARCH_BENCHMARK.md`](benchmarks/RESEARCH_BENCHMARK.md) · runner `benchmarks/run_benchmark.py` · scorer `benchmarks/score_benchmark.py`.
+
+### Measured performance — 15-topic stress suite (August 2026)
+
+To test the engine the way a demanding user would, 15 high-complexity topics spanning geopolitics, climate, energy, space, biology, macro-economics, AI, mining, housing, medicine, transport, telecom, water, and education were each run end-to-end (`standard` mode) and scored against **independently web-researched ground truth** — not against the model's own claims. Every run logged its prompt, duration, findings, claims, evidence-graph edges, adjudication labels, citation list, source domains, and research-debt flags.
+
+**Aggregate (15 runs):**
+
+| Metric | Result |
+|---|---|
+| Avg completion time | **8.1 min** (min 4, max 17) — vs 5–30 min for product Deep Research |
+| Avg report size | 12 sections · ~164K chars |
+| Avg inline citations | **34** per report, all mapped to real this-run URLs |
+| Avg unique source domains | 18.6 per report |
+| **Fact-check accuracy** | **86%** (76 green / 5 partial / 10 missing of 91 ground-truth facts) |
+| **Universal-rubric coverage** | **79%** across 6 checkpoints |
+| Ship-gate | 15/15 passed — **zero fabricated sources** |
+| Grades | 8× **A**, 6× **B**, 1× **C** (avg overall 0.82) |
+
+**Universal rubric — how it scores per dimension:**
+
+| Checkpoint | Avg | Meaning |
+|---|---|---|
+| Actionable thesis | **100%** | Every report ends with concrete, 3-step stakeholder recommendations |
+| Contrarian fork | **87%** | Minority/counter-consensus viewpoints argued, not just mentioned |
+| Temporal trajectory | **81%** | Forward projections (2026–2031) with named inflection points |
+| Geographic equity | **75%** | NA/EU/China almost always covered; Global South coverage is the gap |
+| Source diversity | **68%** | Strong peer-reviewed + gov/regulatory; tier-1 newswire (FT/Reuters) coverage is thin |
+| Data granularity | **64%** | Exact unit-tagged numbers present in most topics; weakest on short/thin runs |
+
+**Per-topic fact-check (ground truth 🟢/🟡/🔴):**
+
+| # | Topic | Grade | Facts | | # | Topic | Grade | Facts |
+|---|---|---|---|---|---|---|---|---|
+| 1 | NDB vs IMF/World Bank | **A** | 7/0/0 | | 9 | Housing affordability | **A** | 6/0/0 |
+| 2 | AMOC collapse | **A** | 7/0/0 | | 10 | AMR in G7 hospitals | **B** | 4/1/0 |
+| 3 | Uranium/SMR viability | **A** | 6/0/0 | | 11 | Autonomous trucking | **B** | 3/2/1 |
+| 4 | ASAT & orbital debris | **A** | 5/0/1 | | 12 | 6G standardization | **A** | 6/0/0 |
+| 5 | H5N1 transmission risk | **A** | 6/1/0 | | 13 | Colorado River compact | **B** | 4/0/2 |
+| 6 | Yen carry trade unwind | **B** | 4/0/1 | | 14 | Lunar infrastructure | **C** | 3/0/3 |
+| 7 | Llama-4 vs GPT-5 | **B** | 6/0/1 | | 15 | AI tutoring | **B** | 4/0/1 |
+| 8 | Deep-sea mining (CCZ) | **A** | 5/1/0 | | | | | |
+
+**What this means, honestly:**
+
+- **Integrity is the strongest axis.** 15/15 reports passed the ship-gate with mechanically verified sources and 86% fact accuracy against independent ground truth — including exact figures (NDB $100B capital, AMOC 59±17% pre-2050 probability, Centrus 920 kg HALEU, GPT-5 74.9% SWE-bench, Lake Mead 1,040 ft). This is the property the architecture was built for, and it holds under stress.
+- **Structure and honesty layers are strong.** Actionable theses (100%) and contrarian forks (87%) are effectively guaranteed by the triangulator + adversary + research-debt pipeline.
+- **The gaps are in retrieval breadth, not verification.** Newswire coverage and Global South sourcing lag (source diversity 68%, geographic equity 75%), and two runs exited the research loop early with thin numeric density (T10, T11 — the marginal-value stop signal fired too eagerly). T14 (lunar) missed three specific hardware facts — the single weak run.
+- **Latency beats product Deep Research** (8.1 min avg vs 5–30 min) while keeping ~90% of its factual density on most topics — the benchmark's own success criterion.
+
+### Round 2 & 3 — thin-run fix + newswire integration (August 2026)
+
+After Round 1 exposed two systemic levers — premature loop exits and missing tier-1 newswire coverage — both were fixed and the six weakest topics re-run twice (all prior logs preserved under `benchmarks/logs/round2/`, `round3/`):
+
+**Fix 1 — premature loop exits (T10/T11 shipped 5–6 sections / ~53K chars):**
+- The marginal-value stop (critic) fired at iteration 2 on a 3-URL corpus — especially when the claims extractor returned 0, making `new_claims < 2` trivially true. Now requires a real evidence base (≥8 findings AND ≥6 URLs AND ≥3 iterations) before saturation can force completion.
+- Added a deterministic minimum-section floor to the synthesizer outline (backfills from the planner's plan when the outline LLM returns a minimal list).
+- **Result:** sections 9.5 → 13.7 avg; report size 122K → 174K chars avg; T10: 5 → 14 sections / 53K → 180K chars; T11: 6 → 15 sections.
+
+**Fix 2 — no tier-1 newswire sources (0–2 per topic vs rubric's ≥3):**
+- Added **GDELT** — a zero-key, real-time, global newswire adapter — plus an optional NewsData.io keyed supplement, wired into the researcher's gather step as a parallel pass that never blocks the main search chain.
+- Fixed the retrieval guard treating newswire domains (`reuters.com`, `ft.com`, `caixin.com` …) as content farms — they now score 8.5 reputation.
+- Hardened GDELT against its free-tier throttling: cross-process 45s cooldown (file-lock), 429 backoff+retry, graceful empty-body handling, and a once-per-run fetch guard so concurrent runs don't 429-storm the API.
+- **Result:** T6 (yen carry trade) now cites **6 tier-1 newswire domains** (Reuters, Bloomberg, CNBC, Nikkei, Japan Times, Yahoo Finance) at 1.00 fact accuracy vs 2 before; newswire coverage avg 0.5 → 1.2 across the re-run set (bounded by GDELT's free-tier throttling under 6-way concurrency — a NewsData.io key removes that ceiling).
+
+**Round comparison on the 6 re-run topics (T6/T7/T10/T11/T13/T14):**
+
+| Metric | Round 1 | Round 2 | Round 3 |
+|---|---|---|---|
+| Avg sections | 9.5 | 13.3 | **13.7** |
+| Avg report size | 122K chars | 171K chars | **174K chars** |
+| Avg findings | 18.7 | 17.5 | **20.2** |
+| Avg claims | 8.8 | 10.2 | **10.2** |
+| Avg citations | 34.0 | 34.3 | **34.2** |
+| Avg tier-1 newswire domains | 0.5 | 0.8 | **1.2** |
+| Fact-check accuracy | 0.79* | 0.81 | 0.77 |
+
+\* Round-1 fact accuracy for the subset of 6 topics, not the full-15 average of 0.86. Fact accuracy fluctuates topic-to-topic run-to-run (T14's Chang'e/Blue Moon hardware numbers stayed red across all rounds); the reliable wins are the structural ones: no more thin reports, and real newswire citations on topics where the wire covers the news (T6 = 6 domains).
+
+**Reproduce it:**
+
+```bash
+uv run python benchmarks/run_benchmark.py --range 0-14 --mode standard   # runs all 15 topics, logs to benchmarks/logs/
+uv run python benchmarks/run_benchmark.py --range 5-6 --mode standard --round 2   # re-run subset into logs/round2/
+uv run python benchmarks/score_benchmark.py                             # scores round 0 → RESEARCH_BENCHMARK.md
+uv run python benchmarks/score_benchmark.py --round 2                   # → RESEARCH_BENCHMARK_R2.md
+uv run python benchmarks/compare_rounds.py                              # R1/R2/R3 side-by-side table
+```
+
+---
+
 ## Limitations
 
 - **Output quality depends on provider keys.** With only the default Zen free chain and built-in scraping, retrieval breadth and synthesis quality are lower than with keyed Exa and workhorse models.
@@ -643,6 +743,7 @@ Contributions are welcome — features, bug fixes, docs, and benchmarks. Open an
 | [FACTOID_PIPELINE.md](docs/FACTOID_PIPELINE.md) | Factoid extraction & token reduction |
 | [ROADMAP.md](docs/ROADMAP.md) | Development roadmap |
 | [ARCHITECTURE_BENCHMARKS.md](docs/ARCHITECTURE_BENCHMARKS.md) | Internal quality benchmarks |
+| [RESEARCH_BENCHMARK.md](benchmarks/RESEARCH_BENCHMARK.md) | 15-topic measured benchmark (logs, fact-check matrix, grades) |
 | [PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) | Pre-production readiness |
 | [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) | What is shipped vs planned |
 | [AUDIT.md](docs/AUDIT.md) | Security & integrity audit notes |

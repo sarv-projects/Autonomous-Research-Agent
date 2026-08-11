@@ -10,6 +10,7 @@ Outputs:
 """
 
 import json
+import re
 
 from src.llm import call_llm
 from src.state import ResearchState
@@ -20,6 +21,62 @@ PLANNER_SYSTEM = (
     "into a structured plan with an outline, subtopics, and search queries. "
     "Always return valid JSON. Be thorough and specific."
 )
+
+
+def classify_query_type(query: str, mode: str = "") -> str:
+    """Classify a query into depth_first / breadth_first / straightforward.
+
+    Anthropic's multi-agent research finding: 80% of quality variance is
+    token budget — matching the plan shape to the query type is the lever.
+    Deterministic (no LLM call): comparisons/surveys are breadth-first,
+    simple fact lookups are straightforward, everything else is a deep dive.
+    """
+    q = (query or "").lower()
+    if mode == "compare" or any(
+        w in q
+        for w in (
+            "compare", "versus", " vs ", "differences between",
+            "which is better", "pros and cons", "alternatives to",
+        )
+    ):
+        return "breadth_first"
+    if any(
+        w in q
+        for w in (
+            "survey", "overview", "state of", "landscape", "list of",
+            "taxonomy", "comprehensive", "top 10", " best", "trends in",
+        )
+    ):
+        return "breadth_first"
+    # Short single-fact lookups ("what is X", "who invented Y") are cheap
+    if re.match(
+        r"^(what is|who is|who invented|when did|when was|where is|"
+        r"how many|what year|define)\s+",
+        q,
+    ) and len(q) < 90:
+        return "straightforward"
+    if q.endswith("?") and len(q.split()) <= 7 and not any(
+        w in q for w in ("how does", "why does", "mechanism", "works")
+    ):
+        return "straightforward"
+    return "depth_first"
+
+
+_TYPE_HINTS = {
+    "depth_first": (
+        "QUERY TYPE: depth-first — investigate a narrow topic deeply. "
+        "Prefer FEW subtopics with heavy mechanisms, named systems/papers, and "
+        "evidence per section."
+    ),
+    "breadth_first": (
+        "QUERY TYPE: breadth-first — cover many aspects broadly. "
+        "Prefer MANY subtopics, broad coverage, and a comparison/taxonomy structure."
+    ),
+    "straightforward": (
+        "QUERY TYPE: straightforward — answer directly. "
+        "Keep the plan compact (2-3 sections) and factual."
+    ),
+}
 
 
 @register("planner")
@@ -36,9 +93,22 @@ def planner(state: ResearchState) -> ResearchState:
         )[:8]
         if not state.get("outline"):
             state["outline"] = [
-                {"title": s.get("title", f"Section {i+1}"), "order": i}
+                {
+                    "title": s.get("title", f"Section {i+1}"),
+                    "order": i,
+                    "task_id": f"T{i+1}",
+                }
                 for i, s in enumerate(plan.get("outline", []))
             ]
+        else:
+            # Ensure task_ids on pre-existing outline entries (approved-plan path)
+            for i, s in enumerate(state["outline"]):
+                if isinstance(s, dict) and not s.get("task_id"):
+                    s["task_id"] = f"T{i+1}"
+        if not state.get("query_type"):
+            state["query_type"] = classify_query_type(
+                state.get("query", ""), mode=state.get("mode", "")
+            )
         state["status"] = f"Using approved plan: {len(state.get('outline') or [])} sections"
         print(f"\n🧠 [Planner] Using approved plan ({len(state['search_queries'])} queries)")
         try:
@@ -57,6 +127,11 @@ def planner(state: ResearchState) -> ResearchState:
     except Exception:
         pass
     print(f"\n🧠 [Planner] Analyzing query: {state['query'][:80]}")
+
+    # ── Query-type classification (Anthropic) → drives plan shape + budgets ──
+    qtype = classify_query_type(state.get("query", ""), mode=state.get("mode", ""))
+    state["query_type"] = qtype
+    print(f"  Query type: {qtype}")
 
     flags = state.get("mode_flags") or {}
     structured = bool(flags.get("structured_output")) or state.get("mode") == "compare"
@@ -99,9 +174,15 @@ REQUIRE: outline/sections should name key systems from must_cover_systems when r
 REQUIRE: include Evaluation Matrix and Failure-Mode Taxonomy for deep/academic modes.
 """
 
+    type_extra = _TYPE_HINTS.get(qtype, "")
+
+    from src.engine.budget import budget_status_line
+    budget_line = budget_status_line(state)
     prompt = f"""Analyze this research query and create a structured plan.
 
 Query: "{state['query']}"
+{budget_line}
+{type_extra}
 {clarif}{scout_extra}{compare_extra}{deep_extra}
 Return a JSON object with:
   - "topic": main topic (string)
@@ -127,6 +208,7 @@ Example outline entry:
         }
 
     state["plan"] = plan
+    plan["query_type"] = qtype
     # Prefer plan queries; keep scout seeds if plan weak
     planned_q = plan.get("search_queries") or []
     if planned_q:
@@ -135,11 +217,34 @@ Example outline entry:
         state["search_queries"] = [state["query"]]
     else:
         state["search_queries"] = list(state.get("search_queries") or [state["query"]])[:6]
+    # Task-id ledger (langgraph-deep-research): every plan section gets a stable id
     state["outline"] = [
-        {"title": s.get("title", f"Section {i+1}"), "order": i}
+        {
+            "title": s.get("title", f"Section {i+1}"),
+            "order": i,
+            "task_id": f"T{i+1}",
+        }
         for i, s in enumerate(plan.get("outline", []))
     ]
     state["findings"] = [f"Research topic: {plan.get('topic', state['query'])}"]
+
+    # ── Per-type budget dials (Anthropic: 80% of variance is token budget) ──
+    budgets = state.setdefault("budgets", {})
+    quality = state.setdefault("quality", {})
+    if qtype == "straightforward":
+        budgets["max_iterations"] = min(int(budgets.get("max_iterations") or 6), 2)
+        state["max_iterations"] = min(int(state.get("max_iterations") or 6), 2)
+        budgets["max_tool_calls"] = min(int(budgets.get("max_tool_calls") or 25), 12)
+        quality["max_search_results"] = min(int(quality.get("max_search_results") or 10), 6)
+        quality["max_extract_pages"] = min(int(quality.get("max_extract_pages") or 8), 4)
+        print("  Budgets (straightforward): 2 iters max, slim search/extract")
+    elif qtype == "breadth_first":
+        budgets["max_iterations"] = min(int(budgets.get("max_iterations") or 6), 3)
+        state["max_iterations"] = min(int(state.get("max_iterations") or 6), 3)
+        budgets["max_tool_calls"] = max(int(budgets.get("max_tool_calls") or 25), 30)
+        print("  Budgets (breadth-first): 3 iters max, wider tool budget")
+    else:
+        print("  Budgets (depth-first): keep mode defaults (fewer queries, deeper iterations)")
     state["status"] = f"Plan: {len(state['outline'])} sections, {len(state['search_queries'])} queries"
     print(f"  Outline: {[s['title'] for s in state['outline']]}")
     print(f"  Initial queries: {state['search_queries']}")
