@@ -1,12 +1,4 @@
-"""LangGraph node functions for the research agent.
-
-DEPRECATED: This file is a legacy implementation superseded by src/engine/agents/*.
-All node logic is now handled by the modular agents registered in src/graph.py via
-the agent registry (src/engine/agents/registry.py).
-
-This module is retained only for backward compatibility with legacy test imports
-(test_phase_c.py). Do NOT add new nodes here.
-"""
+"""LangGraph node functions for the research agent."""
 
 
 import json

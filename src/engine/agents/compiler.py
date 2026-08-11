@@ -454,6 +454,9 @@ def compiler(state: ResearchState) -> ResearchState:
         if not _is_sources_like(s.get("title", ""))
         and s.get("title", "").lower().strip() not in skip_titles
     ]
+    # Inference layer label (optional banner section)
+    if body and not any("inference" in s.get("title", "").lower() for s in body[:1]):
+        pass  # body already is inference layer
 
     # P0.4 cleanup pass on parallel-written body sections:
     #  1. drop duplicate title headings  2. drop mid-report References blocks

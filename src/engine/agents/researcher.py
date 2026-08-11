@@ -25,58 +25,6 @@ RESEARCHER_SYSTEM = (
 )
 
 
-def _llm_filter_chunks(chunks: list[dict], query: str) -> list[dict]:
-    """LLM relevance pass: discard chunks that are topically irrelevant to the query.
-
-    Mirrors Onyx's Stage-3 selection step — the primary hallucination entry point
-    is chunks that score high on keyword/vector overlap but are semantically off-topic
-    being passed straight into the analysis prompt.
-
-    Uses the fast model with a tight token budget (max_tokens=200) so it doesn't
-    add meaningful wall-time on free providers. Full fallback: if the call fails
-    or returns nothing to keep, the original chunk list is returned unchanged.
-    """
-    if not chunks or not query:
-        return chunks
-    # Build compact chunk index (id, first 200 chars of text)
-    index = [
-        {"id": i, "text": (c.get("text") or "")[:200]}
-        for i, c in enumerate(chunks)
-    ]
-    prompt = (
-        f'Research query: "{query[:200]}"\n\n'
-        "For each chunk, decide: KEEP (directly relevant to the query) or "
-        "DISCARD (off-topic, generic, or only tangentially related).\n"
-        'Return JSON: {"keep": [0, 2, 5, ...], "discard": [1, 3, 4, ...]}\n\n'
-        + "\n".join(f'[{c["id"]}] {c["text"]}' for c in index)
-    )
-    try:
-        raw = call_llm(
-            "You are a strict relevance filter. Return only valid JSON with 'keep' and 'discard' integer lists.",
-            prompt,
-            model="fast",
-            max_tokens=200,
-        )
-        cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()
-        if "{" in cleaned:
-            cleaned = cleaned[cleaned.find("{") : cleaned.rfind("}") + 1]
-        data = json.loads(cleaned)
-        keep_ids = set(
-            int(x) for x in (data.get("keep") or [])
-            if isinstance(x, (int, str)) and str(x).isdigit()
-        )
-        if not keep_ids:
-            return chunks  # model returned nothing to keep — safe fallback
-        filtered = [chunks[i] for i in sorted(keep_ids) if i < len(chunks)]
-        discarded = len(chunks) - len(filtered)
-        if discarded > 0:
-            print(f"  [relevance filter] {len(filtered)}/{len(chunks)} chunks kept ({discarded} discarded as off-topic)")
-        return filtered
-    except Exception as e:
-        print(f"  [relevance filter] skipped ({e}) — using all {len(chunks)} chunks")
-        return chunks
-
-
 def _progress(stage: str, status: str = "", **kwargs) -> None:
     try:
         from src.engine.progress import get_progress
@@ -386,15 +334,6 @@ def researcher_analyze(state: ResearchState) -> ResearchState:
     factoids = state.get("factoids", [])
     run_id = state.get("run_id", "")
     results = hybrid_retrieve(query, k=12, factoids=factoids, run_id=run_id)
-
-    # ── LLM Relevance Filter (Onyx Stage-3) ──────────────────────────────────
-    # Discard chunks that scored high on keyword/vector overlap but are
-    # semantically off-topic. This is the #1 hallucination entry point in
-    # comparable systems (Onyx paper, Gap 1 in eval). Only applied when we
-    # have enough chunks that filtering is worthwhile (>4).
-    base_query = state.get("query", "")
-    if len(results) > 4:
-        results = _llm_filter_chunks(results, base_query)
     state["retrieved_chunks"] = results
 
     # Accumulate run-wide corpus so later adjudication can verify claims

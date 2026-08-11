@@ -639,15 +639,24 @@ async def get_settings():
     if os.path.exists(path):
         try:
             with open(path, "r") as f:
-                return json.load(f)
+                data = yaml.safe_load(f) or {}  # yaml handles JSON too poorly; use json
+        except Exception:
+            data = {}
+        # Prefer json
+        try:
+            import json
+            with open(path, "r") as f:
+                data = json.load(f)
         except Exception:
             pass
+        return data
     return SettingsModel().model_dump()
 
 
 @app.post("/api/settings")
 async def save_settings(settings: SettingsModel):
     """Persist workspace research settings to data/workspace_settings.json."""
+    import json
     os.makedirs("data", exist_ok=True)
     path = _settings_path()
     payload = settings.model_dump()
