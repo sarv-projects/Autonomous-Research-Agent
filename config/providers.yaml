@@ -1,38 +1,97 @@
-# Provider Configuration
-# Copy to providers.yaml and customize.
-# Empty base_url → OpenCode Zen free (https://opencode.ai/zen/v1)
-# Empty api_key → no Authorization header sent
+# Provider catalog — OpenCode Zen free is the DEFAULT primary.
+# Empty base_url → https://opencode.ai/zen/v1 (no key)
+# Empty api_key_env → no Authorization header
+#
+# Live free models verified 2026-08-10 against https://opencode.ai/zen/v1/models
+# Working: big-pickle, deepseek-v4-flash-free, mimo-v2.5-free,
+#          nemotron-3-ultra-free, laguna-s-2.1-free, longcat-2.0-free
+# Flaky: ling-3.0-*-free (503), north-mini-code-free (401 without Zen key)
 
 providers:
-  # ── OpenCode Zen free (no key required) ──
+  # ── OpenCode Zen free (always available, no key) ──
   opencode_free:
     name: "OpenCode Zen (Free)"
-    base_url: ""                    # empty → https://opencode.ai/zen/v1
-    api_key_env: ""                 # empty → no auth
+    base_url: ""
+    api_key_env: ""
     default: true
     models:
-      - mimo-v2.5-free              # MiMo free — preferred default
-      - deepseek-v4-flash-free      # DeepSeek v4 Flash free
-      - big-pickle                  # Big Pickle free
+      - laguna-s-2.1-free          # verified OK, clean content
+      - mimo-v2.5-free             # verified OK
+      - deepseek-v4-flash-free     # verified OK
+      - big-pickle                 # verified OK (reasoning model)
+      - nemotron-3-ultra-free      # verified OK
+      - longcat-2.0-free           # verified OK
+      - ling-3.0-flash-free        # may 503
+      - ling-3.0-tiny-free         # may 503
+      - north-mini-code-free       # may need Zen paid key
 
-  # ── NVIDIA NIM ──
-  nvidia_nim:
-    name: "NVIDIA NIM"
-    base_url: "https://integrate.api.nvidia.com"
-    api_key_env: "NVIDIA_API_KEY"
+  # ── Groq (https://console.groq.com/docs/openai · /docs/models) ──
+  # OpenAI-compatible base: https://api.groq.com/openai/v1
+  # Env: GROQ_API_KEY=gsk_...
+  # List: GET https://api.groq.com/openai/v1/models
+  # Chat: POST https://api.groq.com/openai/v1/chat/completions
+  groq:
+    name: "Groq"
+    # catalog appends /v1 if missing → effective https://api.groq.com/openai/v1
+    base_url: "https://api.groq.com/openai"
+    api_key_env: "GROQ_API_KEY"
     models:
-      - nvidia/nemotron-3-ultra-550b-a55b
-      - openai/gpt-oss-20b
-      - meta/llama-3.3-70b-instruct
+      # Live chat IDs verified against /v1/models with this account
+      - llama-3.1-8b-instant              # fast / cheap
+      - openai/gpt-oss-20b                # solid workhorse
+      - llama-3.3-70b-versatile           # strong quality
+      - openai/gpt-oss-120b               # strongest text
+      - qwen/qwen3.6-27b                  # reasoning-capable
+      - allam-2-7b
+      - groq/compound                     # agentic compound system
+      - groq/compound-mini
 
-  # ── OpenRouter ──
+  # ── OpenRouter (https://openrouter.ai/docs) ──
+  # Base: https://openrouter.ai/api/v1  Key: OPENROUTER_API_KEY
+  # Free models use :free suffix
   openrouter:
     name: "OpenRouter"
     base_url: "https://openrouter.ai/api"
     api_key_env: "OPENROUTER_API_KEY"
     models:
+      - openrouter/free
       - cohere/north-mini-code:free
+      - nvidia/nemotron-3-ultra-550b-a55b:free
+      - nvidia/nemotron-3-super-120b-a12b:free
+      - poolside/laguna-s-2.1:free
       - xiaomi/mimo-v2.5
+      - deepseek/deepseek-chat
+      - meta-llama/llama-3.3-70b-instruct
+
+  # ── NVIDIA NIM (https://docs.api.nvidia.com / build.nvidia.com) ──
+  # Base: https://integrate.api.nvidia.com/v1  Key: NVIDIA_API_KEY
+  # List: GET /v1/models
+  nvidia_nim:
+    name: "NVIDIA NIM"
+    base_url: "https://integrate.api.nvidia.com"
+    api_key_env: "NVIDIA_API_KEY"
+    models:
+      - meta/llama-3.1-70b-instruct
+      - meta/llama-3.1-8b-instruct
+      - meta/llama-3.3-70b-instruct
+      - deepseek-ai/deepseek-v4-flash-0731
+      - google/gemma-3-12b-it
+      - google/gemma-3-4b-it
+      - mistralai/mistral-large-2-instruct
+      - mistralai/mixtral-8x22b-instruct-v0.1
+      - nvidia/llama-3.1-nemotron-70b-instruct
+      - qwen/qwen2.5-coder-32b-instruct
+
+  # ── Google Gemini ──
+  gemini:
+    name: "Gemini (Google)"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+    api_key_env: "GEMINI_API_KEY"
+    models:
+      - gemini-3.5-flash-lite
+      - gemini-3.1-flash-lite
+      - gemini-3.6-flash
+      - gemini-2.5-flash
 
   # ── OpenAI ──
   openai:
@@ -42,6 +101,7 @@ providers:
     models:
       - gpt-4o-mini
       - gpt-4o
+      - gpt-4.1-mini
 
   # ── Anthropic Claude ──
   claude:
@@ -50,30 +110,8 @@ providers:
     api_key_env: "ANTHROPIC_API_KEY"
     protocol: "anthropic_messages"
     models:
-      - claude-sonnet-5
+      - claude-sonnet-4-5
       - claude-haiku-4-5
-
-  # ── Google Gemini (AI Studio Dashboard Tiering) ──
-  gemini:
-    name: "Gemini (Google)"
-    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
-    api_key_env: "GEMINI_API_KEY"
-    models:
-      - gemini-3.5-flash-lite       # 15 RPM, 500 RPD, 250K TPM (High Quota Primary)
-      - gemini-3.1-flash-lite       # 15 RPM, 500 RPD, 250K TPM (High Quota Backup)
-      - gemini-3.6-flash            # 5 RPM, 20 RPD, 250K TPM
-      - gemini-2.5-flash            # 5 RPM, 20 RPD, 250K TPM
-
-  # ── Groq ──
-  groq:
-    name: "Groq"
-    base_url: "https://api.groq.com/openai"
-    api_key_env: "GROQ_API_KEY"
-    models:
-      - openai/gpt-oss-20b
-      - openai/gpt-oss-120b
-      - llama-3.3-70b-versatile
-      - llama-3.1-8b-instant
 
   # ── DeepSeek ──
   deepseek:
@@ -81,47 +119,73 @@ providers:
     base_url: "https://api.deepseek.com"
     api_key_env: "DEEPSEEK_API_KEY"
     models:
-      - deepseek-v4-flash
-      - deepseek-v4-pro
+      - deepseek-chat
+      - deepseek-reasoner
 
-  # ── Cohere Platform ──
+  # ── Cohere ──
   cohere:
     name: "Cohere Platform"
     base_url: "https://api.cohere.com"
     api_key_env: "CO_API_KEY"
     protocol: "cohere_v2_chat"
     models:
-      - command-a-plus-05-2026
       - command-a-03-2025
+      - command-r-plus
 
-# ── Tier definitions (fast / strong / thinker) ──
+# ── Tiers ──
+# Primary: Groq openai/gpt-oss-120b (best quality on account); Zen free fallback
+# Gemini remains thinker-only backup (not on fast/strong)
 tiers:
   fast:
-    - provider: gemini
-      model: gemini-3.5-flash-lite
-    - provider: opencode_free
-      model: mimo-v2.5-free
+    - provider: groq
+      model: openai/gpt-oss-120b
     - provider: groq
       model: openai/gpt-oss-20b
+    - provider: groq
+      model: llama-3.1-8b-instant
+    - provider: opencode_free
+      model: laguna-s-2.1-free
+    - provider: opencode_free
+      model: mimo-v2.5-free
+    - provider: opencode_free
+      model: deepseek-v4-flash-free
+    - provider: openrouter
+      model: openrouter/free
+    - provider: nvidia_nim
+      model: meta/llama-3.1-8b-instruct
     - provider: openai
       model: gpt-4o-mini
 
   strong:
-    - provider: gemini
-      model: gemini-3.5-flash-lite
     - provider: groq
       model: openai/gpt-oss-120b
+    - provider: groq
+      model: llama-3.3-70b-versatile
     - provider: opencode_free
       model: deepseek-v4-flash-free
+    - provider: opencode_free
+      model: nemotron-3-ultra-free
+    - provider: opencode_free
+      model: big-pickle
+    - provider: nvidia_nim
+      model: meta/llama-3.1-70b-instruct
+    - provider: openrouter
+      model: openrouter/free
     - provider: openai
       model: gpt-4o-mini
 
   thinker:
-    - provider: gemini
-      model: gemini-3.5-flash-lite     # 500 RPD
-    - provider: gemini
-      model: gemini-3.1-flash-lite     # 500 RPD
-    - provider: gemini
-      model: gemini-3.6-flash          # 20 RPD
+    - provider: groq
+      model: openai/gpt-oss-120b
+    - provider: groq
+      model: qwen/qwen3.6-27b
     - provider: opencode_free
       model: big-pickle
+    - provider: opencode_free
+      model: nemotron-3-ultra-free
+    - provider: gemini
+      model: gemini-3.5-flash-lite
+    - provider: gemini
+      model: gemini-3.1-flash-lite
+    - provider: gemini
+      model: gemini-3.6-flash

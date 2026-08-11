@@ -1,8 +1,7 @@
 # Installation
 
-Supports **Bash (Linux/macOS)** and **PowerShell (Windows)**.
-
-For **built vs target** features, read [AUDIT.md](AUDIT.md).
+Supports **Bash (Linux/macOS)** and **PowerShell (Windows)**.  
+Product overview: [../README.md](../README.md). Status: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 ---
 
@@ -10,12 +9,13 @@ For **built vs target** features, read [AUDIT.md](AUDIT.md).
 
 | Tool | Notes |
 |------|--------|
-| **Python** | 3.14+ (`pyproject.toml`) |
+| **Python** | 3.10+ (see `pyproject.toml`) |
 | **uv** | [docs.astral.sh/uv](https://docs.astral.sh/uv/) |
-| **Git** | Clone repo |
-| **Keys (live research today)** | At least one of `GROQ_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` **and** `TAVILY_API_KEY` |
-| **Temporal Server** (optional) | For durable execution (Phase C3) - see below |
-| **Ollama/vLLM** (optional) | For local factoid extraction (Phase F) - see below |
+| **Git** | Clone |
+| **Node 18+** (optional) | Frontend UI |
+| **Keys (recommended for A4 quality)** | `GROQ_API_KEY` + `EXA_API_KEY` + `GEMINI_API_KEY` |
+| **Keys (minimum free path)** | None — OpenCode Zen free + Wikipedia / built-in scrape |
+| **Temporal** (optional) | Ultra-long durable runs — [TEMPORAL.md](TEMPORAL.md) |
 
 ---
 
@@ -24,15 +24,21 @@ For **built vs target** features, read [AUDIT.md](AUDIT.md).
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # if needed
 
-git clone <repo-url>
+git clone https://github.com/sarv-projects/Autonomous-Research-Agent.git
 cd Autonomous-Research-Agent
 bash scripts/install.sh
-# edit .env
+cp .env.example .env
+# edit .env — add GROQ_API_KEY, EXA_API_KEY, GEMINI_API_KEY for best quality
 
-uv run python main.py "your research topic"
-uv run python main.py --history
-uv run python -m src.dashboard --port 8080
-uv run python test_gateway.py
+uv run python main.py doctor
+uv run python main.py research "your research topic" --mode deep
+```
+
+Web UI:
+
+```bash
+bash scripts/start-dev.sh
+# API :8000 · UI :3000
 ```
 
 ---
@@ -40,138 +46,48 @@ uv run python test_gateway.py
 ## PowerShell (Windows)
 
 ```powershell
-irm https://astral.sh/uv/install.ps1 | iex   # if needed
-
-git clone <repo-url>
+# install uv if needed: https://docs.astral.sh/uv/
+git clone https://github.com/sarv-projects/Autonomous-Research-Agent.git
 cd Autonomous-Research-Agent
 .\scripts\install.ps1
+copy .env.example .env
 # edit .env
 
-uv run python main.py "your research topic"
+uv run python main.py doctor
+uv run python main.py research "your research topic" --mode deep
 ```
 
 ---
 
-## Environment
+## Environment variables (common)
 
-Copy [`.env.example`](../.env.example) → `.env`.
+| Variable | Role |
+|----------|------|
+| `GROQ_API_KEY` | Primary fast/strong generation (recommended) |
+| `EXA_API_KEY` | Primary neural web search |
+| `GEMINI_API_KEY` | Parallel scout (Flash-Lite class) |
+| `OPENAI_API_KEY` / `DEEPSEEK_API_KEY` | Optional failover |
+| `FIRECRAWL_API_KEY` / `TAVILY_API_KEY` | Optional search/extract |
+| `EMBEDDING_API_KEY` | Better vectors than local Dummy/BoW |
 
-| Variable | Today | Notes |
-|----------|-------|--------|
-| `GROQ_API_KEY` | Required* | *or* OpenAI / OpenRouter |
-| `OPENAI_API_KEY` | Optional | Failover |
-| `OPENROUTER_API_KEY` | Optional | Failover |
-| `TAVILY_API_KEY` | Required for web search | |
-| OpenCode / Claude / Gemini / NIM / … | Target Phase A | See [PROVIDERS.md](PROVIDERS.md) |
-| `VECTOR_BACKEND` | Target Phase B | Unused by prototype |
-| `TEMPORAL_SERVER_ADDRESS` | Phase C3 | Temporal server for durable execution |
-| `OLLAMA_BASE_URL` | Phase F | Ollama server for factoid extraction |
-| `VLLM_BASE_URL` | Phase F | vLLM server for factoid extraction |
-| `FACTOID_MODEL` | Phase F | Model for factoid extraction (e.g., llama3:8b) |
+See [PROVIDERS.md](PROVIDERS.md) and `config/providers.yaml`.
 
 ---
 
-## Optional: Qdrant (target)
+## Verify
 
 ```bash
-docker run -p 6333:6333 qdrant/qdrant
+uv run python main.py doctor
+uv run python main.py research "RAG hallucination reduction" --mode quick
 ```
-
-Not used until RAG lands.
-
----
-
-## Optional: Temporal Server (Phase C3)
-
-For durable execution, crash recovery, and 24h+ research runs:
-
-```bash
-# Install Temporal CLI
-curl -sSf https://temporal.io/cli.sh | sh
-
-# Start Temporal Server (development mode)
-temporal server start-dev
-
-# Or run via Docker
-docker run --rm -p 7233:7233 temporalio/auto-setup:latest
-```
-
-Set environment variable:
-```bash
-export TEMPORAL_SERVER_ADDRESS="localhost:7233"
-```
-
-See [ARCHITECTURE.md §8](ARCHITECTURE.md#8-temporal-integration-new---durable-execution) for details.
-
----
-
-## Optional: Ollama/vLLM (Phase F)
-
-For local factoid extraction with token optimization:
-
-### Option 1: Ollama (easier)
-
-```bash
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Pull model for factoid extraction
-ollama pull llama3:8b
-# or
-ollama pull phi3
-
-# Start Ollama server
-ollama serve
-```
-
-Set environment variable:
-```bash
-export OLLAMA_BASE_URL="http://localhost:11434"
-export FACTOID_MODEL="llama3:8b"
-```
-
-### Option 2: vLLM (faster, GPU required)
-
-```bash
-# Install vLLM
-pip install vllm
-
-# Start vLLM server
-python -m vllm.entrypoints.openai.api_server --model meta-llama/Meta-Llama-3-8B --port 8000
-```
-
-Set environment variable:
-```bash
-export VLLM_BASE_URL="http://localhost:8000"
-export FACTOID_MODEL="meta-llama/Meta-Llama-3-8B"
-```
-
-See [FACTOID_PIPELINE.md](FACTOID_PIPELINE.md) for details on factoid extraction.
-
----
-
-## Verify (today)
-
-```bash
-uv run python test_gateway.py    # must: 9/9
-uv run python main.py --history  # history CLI
-# with keys: uv run python main.py "smoke test topic"
-```
-
-**Not available yet:** `main.py chat`, `main.py doctor`, `main.py eval` (roadmap).
 
 ---
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| `All LLM providers failed` / no routes | Set `GROQ_API_KEY` (or OpenAI/OpenRouter) |
-| Tavily errors | Set `TAVILY_API_KEY` |
-| `No module named 'src'` | Run from repo root after `uv sync` |
-| Rate limits | Wait; add failover key; reduce concurrent use |
-| Temporal connection failed | Ensure Temporal server is running on `localhost:7233` |
-| Ollama connection failed | Ensure Ollama server is running: `ollama serve` |
-| vLLM connection failed | Ensure vLLM server is running on configured port |
-| Factoid extraction errors | Verify local model is downloaded: `ollama pull llama3:8b` |
-| GPU out of memory for vLLM | Use smaller model or reduce batch size |
+| Issue | Check |
+|-------|--------|
+| No search results | Set `EXA_API_KEY` or other search keys |
+| Slow / weak text | Prefer Groq over free Zen alone |
+| Gemini 429 | Scout is 3 parallel calls; free tier ~15 RPM — wait and retry |
+| Frontend 404 on API | Backend on :8000; `next.config.js` rewrites `/api/*` |

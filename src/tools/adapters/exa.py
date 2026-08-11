@@ -12,8 +12,11 @@ import urllib.request
 from typing import List, Dict
 
 
-def exa_search(query: str, max_results: int = 5) -> List[Dict]:
-    """Execute neural web search via Exa API."""
+def exa_search(query: str, max_results: int = 10) -> List[Dict]:
+    """Neural web search via Exa API (https://docs.exa.ai).
+
+    Returns results with full text when available (contents.text).
+    """
     api_key = os.getenv("EXA_API_KEY", "")
     if not api_key:
         return []
@@ -22,8 +25,12 @@ def exa_search(query: str, max_results: int = 5) -> List[Dict]:
         url = "https://api.exa.ai/search"
         payload = {
             "query": query,
-            "numResults": max_results,
-            "contents": {"text": True}
+            "numResults": min(max(max_results, 1), 25),
+            "type": "auto",
+            "contents": {
+                "text": {"maxCharacters": 8000},
+            },
+            "useAutoprompt": True,
         }
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
@@ -32,21 +39,26 @@ def exa_search(query: str, max_results: int = 5) -> List[Dict]:
             headers={
                 "accept": "application/json",
                 "content-type": "application/json",
-                "x-api-key": api_key
-            }
+                "x-api-key": api_key,
+            },
         )
-        with urllib.request.urlopen(req, timeout=10.0) as resp:
+        with urllib.request.urlopen(req, timeout=30.0) as resp:
             body = json.loads(resp.read().decode("utf-8"))
 
         results = []
         for r in body.get("results", []):
+            text = r.get("text") or ""
+            # Some responses nest text under highlights
+            if not text and isinstance(r.get("contents"), dict):
+                text = r["contents"].get("text") or ""
             results.append({
-                "title": r.get("title", ""),
-                "url": r.get("url", ""),
-                "content": r.get("text", "")[:2000],
-                "raw_content": r.get("text", ""),
-                "score": r.get("score", 0.8),
-                "source": "exa"
+                "title": r.get("title", "") or "",
+                "url": r.get("url", "") or "",
+                "content": text[:2500],
+                "raw_content": text,
+                "score": float(r.get("score") or 0.9),
+                "source": "exa",
+                "published_date": r.get("publishedDate") or r.get("published_date") or "",
             })
         return results
     except Exception as e:
@@ -55,14 +67,17 @@ def exa_search(query: str, max_results: int = 5) -> List[Dict]:
 
 
 def exa_extract(urls: List[str]) -> List[Dict]:
-    """Extract content from URLs via Exa contents API."""
+    """Extract full page text via Exa /contents API."""
     api_key = os.getenv("EXA_API_KEY", "")
     if not api_key or not urls:
         return []
 
     try:
         url = "https://api.exa.ai/contents"
-        payload = {"urls": urls[:5], "text": True}
+        payload = {
+            "urls": urls[:20],
+            "text": {"maxCharacters": 12000},
+        }
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             url,
@@ -70,18 +85,20 @@ def exa_extract(urls: List[str]) -> List[Dict]:
             headers={
                 "accept": "application/json",
                 "content-type": "application/json",
-                "x-api-key": api_key
-            }
+                "x-api-key": api_key,
+            },
         )
-        with urllib.request.urlopen(req, timeout=15.0) as resp:
+        with urllib.request.urlopen(req, timeout=45.0) as resp:
             body = json.loads(resp.read().decode("utf-8"))
 
         results = []
         for r in body.get("results", []):
+            text = r.get("text") or ""
             results.append({
                 "url": r.get("url", ""),
-                "content": r.get("text", ""),
-                "title": r.get("title", "")
+                "content": text,
+                "title": r.get("title", "") or "",
+                "source": "exa",
             })
         return results
     except Exception as e:

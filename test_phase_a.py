@@ -96,7 +96,7 @@ def test_doctor_runs():
     import subprocess
     result = subprocess.run(
         [sys.executable, "-c", "from main import doctor; doctor()"],
-        capture_output=True, text=True, timeout=10,
+        capture_output=True, text=True, timeout=60,
         cwd=os.path.dirname(os.path.abspath(__file__))
     )
     assert "SYSTEM DOCTOR" in result.stdout

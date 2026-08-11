@@ -12,7 +12,6 @@ from temporalio import activity
 
 # Import gateway and LLM functions
 from src.llm import call_llm
-from src.state import ResearchState
 from src.engine.agents.planner import planner
 from src.engine.agents.researcher import researcher_gather, researcher_analyze
 from src.engine.agents.synthesizer import synthesizer_write, synthesizer_outline
@@ -57,15 +56,30 @@ def submit_human_approval(approval_id: str, approved: bool, comments: str = "") 
     return True
 
 
+def _full_state(query: str, config: Optional[Dict] = None) -> Dict:
+    """Build a complete ResearchState dict (never a partial TypedDict)."""
+    from src.state import initial_state
+    state = dict(initial_state(query))
+    if config:
+        # Only merge known-safe keys
+        for key in (
+            "mode", "autonomy", "quality", "budgets", "mode_flags",
+            "max_iterations", "search_queries", "plan", "outline",
+            "findings", "claims", "evidence_map",
+        ):
+            if key in config:
+                state[key] = config[key]
+        if config.get("max_iterations"):
+            state["max_iterations"] = int(config["max_iterations"])
+    return state
+
+
 @activity.defn
 async def plan_research_activity(query: str, config: Dict) -> Dict:
-    """
-    Activity: Plan the research approach using the Planner agent.
-    """
-    state = ResearchState(query=query)
-    state.update(config)
+    """Activity: Plan the research approach using the Planner agent."""
+    state = _full_state(query, config)
     planned_state = planner(state)
-    
+
     return {
         "topic": planned_state.get("plan", {}).get("topic", query),
         "subtopics": planned_state.get("plan", {}).get("subtopics", []),
@@ -77,18 +91,17 @@ async def plan_research_activity(query: str, config: Dict) -> Dict:
 
 @activity.defn
 async def research_subtask_activity(subtask: Dict, config: Dict) -> Dict:
-    """
-    Activity: Execute a research subtask using the Researcher agent.
-    """
-    query = subtask.get("query", "")
-    state = ResearchState(query=query)
-    state.update(config)
-    state.update(subtask)
-    
-    # Run gathering & analysis
+    """Activity: Execute a research subtask using the Researcher agent."""
+    query = subtask.get("query") or subtask.get("title") or config.get("query", "")
+    state = _full_state(query, config)
+    if subtask.get("search_queries"):
+        state["search_queries"] = subtask["search_queries"]
+    elif query:
+        state["search_queries"] = [query]
+
     gathered = researcher_gather(state)
     analyzed = researcher_analyze(gathered)
-    
+
     return {
         "findings": analyzed.get("findings", []),
         "sources": [r.get("url") for r in analyzed.get("search_results", []) if r.get("url")],
@@ -99,34 +112,29 @@ async def research_subtask_activity(subtask: Dict, config: Dict) -> Dict:
 
 @activity.defn
 async def synthesize_report_activity(plan: Dict, results: List, config: Dict) -> str:
-    """
-    Activity: Synthesize the final report using Synthesizer and Compiler agents.
-    """
-    query = plan.get("topic", "")
-    state = ResearchState(query=query)
-    state.update(config)
+    """Activity: Synthesize the final report using Synthesizer and Compiler agents."""
+    query = plan.get("topic") or config.get("query", "")
+    state = _full_state(query, config)
     state["plan"] = plan
     state["outline"] = plan.get("outline", [])
-    
-    all_findings = []
-    all_sources = []
-    all_claims = []
-    all_evidence = {}
-    
+
+    all_findings: List = []
+    all_claims: List = []
+    all_evidence: Dict = {}
+
     for result in results:
         all_findings.extend(result.get("findings", []))
-        all_sources.extend(result.get("sources", []))
         all_claims.extend(result.get("claims", []))
         all_evidence.update(result.get("evidence_map", {}))
-    
+
     state["findings"] = all_findings
     state["claims"] = all_claims
     state["evidence_map"] = all_evidence
-    
+
     outlined = synthesizer_outline(state)
     synthesized = synthesizer_write(outlined)
     compiled = compiler(synthesized)
-    
+
     return compiled.get("report", "")
 
 
@@ -134,29 +142,49 @@ async def synthesize_report_activity(plan: Dict, results: List, config: Dict) ->
 async def human_approval_activity(gate_type: str, data: Dict) -> Dict:
     """
     Activity: Request human approval for workflow gates.
-    
-    Registers request in pending approvals store and processes human response.
+
+    Polls pending store until resolved or timeout. Default autonomy L1/L3
+    auto-approves; L2 waits up to timeout_s for an operator via REST API.
     """
+    import asyncio
+
     approval_id = register_approval_request(gate_type, data)
-    
-    # Check if human response received or fallback if interactive session not active
-    approval_req = _PENDING_APPROVALS.get(approval_id)
-    if approval_req and approval_req["status"] == "resolved":
+    autonomy = (data or {}).get("autonomy") or (data or {}).get("config", {}).get("autonomy", "L1")
+    timeout_s = float((data or {}).get("timeout_s") or 3600)
+
+    # L1 / L3: auto-approve immediately (unattended)
+    if str(autonomy).upper() in ("L1", "L3", ""):
+        submit_human_approval(approval_id, True, comments=f"auto-approved under autonomy={autonomy}")
         return {
             "approval_id": approval_id,
-            "approved": approval_req["approved"],
-            "approved_by": "human_operator",
-            "approved_at": approval_req.get("resolved_at", "now"),
-            "comments": approval_req.get("comments", "")
+            "approved": True,
+            "approved_by": f"system_autonomy_{autonomy or 'L1'}",
+            "approved_at": datetime.utcnow().isoformat(),
+            "comments": f"Auto-approved gate={gate_type}",
         }
-    
-    # Auto-approve if operating in fully autonomous mode
+
+    # L2: poll for human response
+    deadline = datetime.utcnow().timestamp() + timeout_s
+    while datetime.utcnow().timestamp() < deadline:
+        req = _PENDING_APPROVALS.get(approval_id)
+        if req and req["status"] == "resolved":
+            return {
+                "approval_id": approval_id,
+                "approved": bool(req["approved"]),
+                "approved_by": "human_operator",
+                "approved_at": req.get("resolved_at", datetime.utcnow().isoformat()),
+                "comments": req.get("comments", ""),
+            }
+        await asyncio.sleep(2.0)
+
+    # Timeout → reject to be safe under L2
+    submit_human_approval(approval_id, False, comments="timed out waiting for human")
     return {
         "approval_id": approval_id,
-        "approved": True,
-        "approved_by": "system_autonomy_L1",
+        "approved": False,
+        "approved_by": "system_timeout",
         "approved_at": datetime.utcnow().isoformat(),
-        "comments": f"Approval request {approval_id} registered and auto-approved for gate: {gate_type}"
+        "comments": f"Timed out after {timeout_s}s for gate={gate_type}",
     }
 
 

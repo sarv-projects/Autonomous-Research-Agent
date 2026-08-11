@@ -133,10 +133,12 @@ def retrieve_chunks(
     k: int = 10,
     store: Optional[VectorStore] = None,
     embedder: Optional[Embedder] = None,
+    run_id: str = "",
 ) -> list[dict]:
     """Retrieve relevant chunks for a query. Uses module-level singletons.
 
-    Vector similarity when embeddings available, falls back to FTS5 keyword.
+    When run_id is set, only returns chunks from that research run
+    (prevents cross-run contamination).
     """
     if store is None:
         store = _get_or_create_store()
@@ -149,6 +151,39 @@ def retrieve_chunks(
     except RuntimeError:
         pass  # Will use FTS fallback
 
-    results = store.query(text=query, embedding=embedding, k=k)
+    # Over-fetch heavily when isolating so current-run chunks survive filtering
+    fetch_k = k * 20 if run_id else k
+    results = store.query(text=query, embedding=embedding, k=fetch_k)
 
-    return results
+    if run_id:
+        filtered = [r for r in results if r.get("run_id") == run_id]
+        if filtered:
+            results = filtered
+        else:
+            # Direct FTS-by-run fallback (dense top-k can be dominated by old runs)
+            try:
+                if getattr(store, "_fts", None):
+                    fts_hits = store._fts.query(query, k=k * 10)
+                    filtered = [r for r in fts_hits if r.get("run_id") == run_id]
+                    if filtered:
+                        results = filtered
+                    else:
+                        tagged = [r for r in results if r.get("run_id")]
+                        results = [] if tagged else results  # refuse cross-run
+                else:
+                    tagged = [r for r in results if r.get("run_id")]
+                    results = [] if tagged else results
+            except Exception:
+                tagged = [r for r in results if r.get("run_id")]
+                results = [] if tagged else results
+
+    return results[:k]
+
+
+def begin_run(run_id: str) -> None:
+    """Mark start of a research run; optionally purge prior data for this run_id."""
+    store = _get_or_create_store()
+    try:
+        store.delete_by_run(run_id)
+    except Exception:
+        pass

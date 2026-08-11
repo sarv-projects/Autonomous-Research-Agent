@@ -49,14 +49,17 @@ class VectorStore:
         self._lancedb = None
         self._qdrant = None
 
+        # Always attach FTS for hybrid sparse search (except pure-fts backend which is only FTS)
+        from .backends.fts import FTSStore
+        self._fts = FTSStore()
+
         if backend == "fts":
-            from .backends.fts import FTSStore
-            self._fts = FTSStore()
+            pass  # FTS-only
         elif backend == "qdrant":
             from .backends.qdrant_backend import QdrantStore
             self._qdrant = QdrantStore(vector_dim=self.vector_dim)
         else:
-            # Default: LanceDB with matching dimension
+            # Default: LanceDB dense + FTS sparse (hybrid)
             from .backends.lancedb_backend import LanceDBStore
             self._lancedb = LanceDBStore(vector_dim=self.vector_dim)
 
@@ -94,10 +97,9 @@ class VectorStore:
             embedding = embedding[:self.vector_dim]
             results = self._lancedb.query(embedding, k=k)
 
-        # FTS fallback if vector results are empty or we have no embeddings
-        if self._fts and (not results or not embedding):
+        # Always blend FTS keyword results (hybrid) when text is available
+        if self._fts and text:
             fts_results = self._fts.query(text, k=k)
-            # Merge, deduplicating by id
             seen = {r["id"] for r in results}
             for r in fts_results:
                 if r["id"] not in seen:

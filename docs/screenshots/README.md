@@ -1,39 +1,26 @@
-# Screenshots Directory
+# Screenshots
 
-This directory is reserved for screenshots and images to be used in the README.md and documentation.
+## Available assets
 
-## Planned Screenshots
+| File | Description |
+|------|-------------|
+| [architecture.svg](architecture.svg) | High-level system topology diagram |
 
-### README.md
-- [ ] `hero.png` - Hero screenshot of the web dashboard
-- [ ] `capabilities.png` - Overview of key capabilities
-- [ ] `video-thumbnail.png` - Thumbnail for demo video
-- [ ] `terminal.png` - Terminal output showing research in progress
-- [ ] `docs.png` - Documentation overview
-- [ ] `architecture.png` - System architecture diagram
-- [ ] `chat-ui.png` - Chat interface with streaming
-- [ ] `research-ui.png` - Research interface with progress
-- [ ] `export-ui.png` - Export options panel
-- [ ] `sample-report.png` - Sample research report output
+## Capturing live UI screenshots
 
-### Documentation
-- [ ] Screenshots for UX_DESIGN.md wireframes
-- [ ] Screenshots for INSTALL.md setup process
-- [ ] Screenshots for GATEWAY.md dashboard
+With the dev stack running (`bash scripts/start-dev.sh`):
 
-## Guidelines
+1. Open http://localhost:3000 — capture **chat** and **research** modes
+2. Settings → http://localhost:3000/settings
+3. Vault → http://localhost:3000/vault
+4. History → http://localhost:3000/history
+5. API docs → http://localhost:8000/docs
 
-- Use PNG format for screenshots
-- Optimize images for web (max 500KB per image)
-- Use consistent styling and branding
-- Include descriptive captions
-- Maintain aspect ratio of 16:9 for UI screenshots
-- Use dark mode screenshots for better visibility
+Suggested filenames for README:
 
-## Tools
+- `hero.png` — main chat UI
+- `research-progress.png` — research with progress banner
+- `settings.png` — provider catalog
+- `terminal.png` — `main.py research` CLI output
 
-Recommended screenshot tools:
-- macOS: Cmd+Shift+4 (region), Cmd+Shift+5 (with timer)
-- Windows: Win+Shift+S (Snipping Tool)
-- Linux: gnome-screenshot, shutter
-- Browser: Use Chrome DevTools device mode for consistent sizing
+Use PNG, ≤500KB, dark mode preferred.

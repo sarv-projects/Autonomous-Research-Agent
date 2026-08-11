@@ -1,0 +1,20 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is a vector database? one sentence",
+      "timestamp": 1786392804.7982764
+    },
+    {
+      "role": "assistant",
+      "content": "A vector database is a specialized data store that indexes and retrieves high\u2011dimensional vector embeddings (e.g., from machine\u2011learning models) using similarity search algorithms such as approximate nearest neighbor (ANN) to enable fast, semantic queries over large collections of unstructured data\u30101\u2020source\u3011.",
+      "timestamp": 1786392806.392371
+    },
+    {
+      "role": "user",
+      "content": "What is a vector database? one sentence",
+      "timestamp": 1786392854.896668
+    }
+  ],
+  "summary": ""
+}

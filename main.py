@@ -21,6 +21,19 @@ from src.eval import create_component_evaluator, create_system_evaluator
 from src.web import app
 
 
+def _should_escalate_to_research(text: str) -> bool:
+    """Heuristic: long / multi-part / explicit research intent → deep research."""
+    t = text.lower().strip()
+    if len(t.split()) < 8:
+        return False
+    triggers = (
+        "research", "deep dive", "comprehensive", "compare ", " vs ",
+        "versus", "literature review", "survey of", "write a report",
+        "investigate", "analyze in depth", "pros and cons",
+    )
+    return any(x in t for x in triggers)
+
+
 def print_header(text: str) -> None:
     print()
     print("=" * 60)
@@ -44,16 +57,46 @@ def doctor() -> None:
     """Display provider/tool readiness."""
     print_header("SYSTEM DOCTOR")
 
-    print_section("LLM Gateway")
+    print_section("LLM Gateway (Zen free is PRIMARY)")
     info = gateway_info()
-    print(f"  Fast routes: {info['fast_routes']}  |  Strong routes: {info['strong_routes']}")
+    print(
+        f"  Fast: {info['fast_routes']}  |  Strong: {info['strong_routes']}"
+        f"  |  Thinker: {info.get('thinker_routes', 0)}"
+    )
     if info["routes"]:
         print()
         for r in info["routes"]:
-            key_status = "key" if r["has_key"] else "free"
+            key_status = "free" if not r["has_key"] else "key"
             print(f"  [{r['tier']}] {r['provider']}/{r['model']}  [{key_status}]")
     else:
         print("  No routes — check .env")
+
+    print_section("OpenCode Zen free")
+    try:
+        from src.providers.catalog import load_catalog
+        from src.providers.models_catalog import probe_model
+        slot = load_catalog().providers.get("opencode_free")
+        models = list(slot.models) if slot else []
+        print(f"  Configured free models: {', '.join(models[:6])}{'…' if len(models)>6 else ''}")
+        print(f"  Primary default: {models[0] if models else 'laguna-s-2.1-free'}")
+        # One quick live check only (full matrix: Settings → Test Zen free models)
+        probe_id = models[0] if models else "laguna-s-2.1-free"
+        r = probe_model("opencode_free", probe_id, timeout=20.0)
+        if r.get("ok"):
+            print(f"  Live check OK  {probe_id}  ({r.get('latency_s')}s)  {(r.get('reply') or '')[:40]}")
+        else:
+            print(f"  Live check FAIL {probe_id}: {(r.get('error') or '')[:80]}")
+        print("  Full free-model matrix: uv run / Settings → Test Zen free models")
+    except Exception as e:
+        print(f"  Probe skipped: {e}")
+
+    try:
+        from src.engine.temporal.client import temporal_configured
+        print_section("Temporal")
+        print(f"  Configured: {'yes' if temporal_configured() else 'no (in-process fallback)'}")
+        print(f"  Worker: uv run python main.py worker")
+    except Exception:
+        pass
 
     from src.tools import get_registry
     print_section("Research Tools")
@@ -126,23 +169,44 @@ def chat(mode: str = "chat") -> None:
                 print("  Usage: /research <topic>")
             continue
 
-        # Add user message to memory
+        # Auto-escalate to research when mode allows and query looks research-heavy
+        if chat_mode.escalate_to_research and _should_escalate_to_research(user_input):
+            print(f"  ↗ Escalating to research (detected deep-research intent)...")
+            memory.add("user", user_input)
+            _run_research(user_input, mode="standard")
+            memory.add("assistant", f"[Escalated to research] Topic: {user_input}")
+            continue
+
+        # Add user message to memory and build multi-turn context
         memory.add("user", user_input)
         messages = memory.build_context(SYSTEM_PROMPT)
 
+        # Format prior turns into the user prompt (gateway takes system+user strings)
+        history_lines = []
+        for m in messages:
+            role = m.get("role", "user")
+            if role == "system":
+                continue
+            history_lines.append(f"{role.upper()}: {m.get('content', '')}")
+        # Keep recent window only
+        history_block = "\n".join(history_lines[-12:])
+        user_prompt = (
+            f"Conversation so far:\n{history_block}\n\n"
+            f"Respond to the latest user message."
+            if history_lines
+            else user_input
+        )
+
         print("  ", end="", flush=True)
         try:
-            response = call_llm(
-                SYSTEM_PROMPT,
-                user_input
-            )
+            response = call_llm(SYSTEM_PROMPT, user_prompt)
             print(f"Assistant: {response}\n")
             memory.add("assistant", response)
         except RuntimeError as e:
             print(f"\n  Error: {e}\n")
 
 
-def _run_research(query: str, mode: str = "standard") -> None:
+def _run_research(query: str, mode: str = "standard", autonomy: str = "L1") -> None:
     """Run multi-agent research with progressive output display."""
     from src.engine.modes import load_modes, get_mode
     registry = load_modes()
@@ -150,11 +214,12 @@ def _run_research(query: str, mode: str = "standard") -> None:
 
     print_header(f"RESEARCH: {query}")
     print(f"  Mode: {mode} ({mode_config.description})")
+    print(f"  Autonomy: {autonomy}")
     print(f"  Budget: {mode_config.budgets.max_iterations} iters, ${mode_config.budgets.max_cost_usd:.2f} max")
     start = time.time()
 
     try:
-        result = run_research(query, mode=mode)
+        result = run_research(query, mode=mode, autonomy=autonomy)
         elapsed = time.time() - start
 
         print_header("RESEARCH COMPLETE")
@@ -274,9 +339,11 @@ def print_usage() -> None:
     print("  uv run python main.py doctor")
     print("  uv run python main.py eval [suite]")
     print("  uv run python main.py server")
+    print("  uv run python main.py worker          # Temporal durable worker")
     print("  uv run python main.py --history")
     print()
     print("Modes: chat | quick | standard | deep | recency | academic | compare | ultra-long")
+    print("Autonomy: --autonomy L1|L2|L3")
     print()
     print("Eval suites: component | system | all")
 
@@ -304,10 +371,60 @@ def main() -> None:
         return
 
     if args[0] == "server":
+        import os
         import uvicorn
+        port_raw = os.getenv("PORT", "8000")
+        try:
+            port = int(port_raw)
+        except ValueError:
+            print(f"  Invalid PORT '{port_raw}' — defaulting to 8000")
+            port = 8000
         print("Starting web API server...")
-        print("API docs: http://localhost:8000/docs")
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        print(f"API docs: http://localhost:{port}/docs")
+        uvicorn.run(app, host="0.0.0.0", port=port)
+        return
+
+    if args[0] == "worker":
+        # Temporal worker for ultra-long / durable research
+        try:
+            import asyncio
+            from temporalio.client import Client
+            from temporalio.worker import Worker
+            from src.engine.temporal.workflows import ResearchWorkflow, HumanInLoopWorkflow
+            from src.engine.temporal.activities import (
+                plan_research_activity,
+                research_subtask_activity,
+                synthesize_report_activity,
+                human_approval_activity,
+                gateway_llm_activity,
+            )
+        except ImportError as e:
+            print(f"Temporal worker dependencies missing: {e}")
+            print("Install temporalio and start a Temporal server (localhost:7233).")
+            sys.exit(1)
+
+        address = __import__("os").getenv("TEMPORAL_SERVER_ADDRESS", "localhost:7233")
+        task_queue = __import__("os").getenv("TEMPORAL_TASK_QUEUE", "research-agent")
+
+        async def _run_worker() -> None:
+            print(f"Connecting Temporal worker → {address} queue={task_queue}")
+            client = await Client.connect(address)
+            worker = Worker(
+                client,
+                task_queue=task_queue,
+                workflows=[ResearchWorkflow, HumanInLoopWorkflow],
+                activities=[
+                    plan_research_activity,
+                    research_subtask_activity,
+                    synthesize_report_activity,
+                    human_approval_activity,
+                    gateway_llm_activity,
+                ],
+            )
+            print("Temporal worker running. Ctrl+C to stop.")
+            await worker.run()
+
+        asyncio.run(_run_worker())
         return
 
     if args[0] == "chat":
@@ -325,11 +442,15 @@ def main() -> None:
         remaining = args
 
     mode = "standard"
+    autonomy = "L1"
     query_parts = []
     i = 0
     while i < len(remaining):
         if remaining[i] == "--mode" and i + 1 < len(remaining):
             mode = remaining[i + 1]
+            i += 2
+        elif remaining[i] == "--autonomy" and i + 1 < len(remaining):
+            autonomy = remaining[i + 1].upper()
             i += 2
         else:
             query_parts.append(remaining[i])
@@ -338,7 +459,7 @@ def main() -> None:
     query = " ".join(query_parts)
     if not query:
         print("Error: Please provide a research topic.")
-        print('Usage: uv run python main.py research "your topic" [--mode standard]')
+        print('Usage: uv run python main.py research "your topic" [--mode standard] [--autonomy L1]')
         sys.exit(1)
 
     similar = find_similar(query)
@@ -349,7 +470,7 @@ def main() -> None:
             print(f"    Report: {s.get('report_path', 'N/A')}")
         print()
 
-    _run_research(query, mode=mode)
+    _run_research(query, mode=mode, autonomy=autonomy)
 
 
 if __name__ == "__main__":

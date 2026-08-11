@@ -172,17 +172,55 @@ class DummyEmbedder(Embedder):
         return vec[:self.dim]
 
 
+class BagOfWordsEmbedder(Embedder):
+    """Lightweight local embedder: hashed bag-of-words (better than single SHA vector).
+
+    Produces dim-dimensional vectors without any API. Useful hybrid with FTS.
+    """
+
+    def __init__(self, dim: int = 384) -> None:
+        self.dim = dim
+
+    def embed(self, text: str) -> list[float]:
+        vec = [0.0] * self.dim
+        tokens = text.lower().split()
+        if not tokens:
+            return vec
+        for tok in tokens:
+            h = int(hashlib.md5(tok.encode()).hexdigest(), 16)
+            idx = h % self.dim
+            sign = 1.0 if (h >> 8) & 1 else -1.0
+            vec[idx] += sign
+        # L2 normalize
+        norm = sum(v * v for v in vec) ** 0.5
+        if norm > 0:
+            vec = [v / norm for v in vec]
+        return vec
+
+
 def get_embedder(dim: int = 1536) -> Embedder:
     """Get the appropriate embedder based on environment.
 
-    Uses EMBEDDING_API_KEY or OPENAI_EMBEDDING_KEY if available.
-    Falls back to DummyEmbedder (hash-based pseudo-vectors) otherwise —
-    chat API keys typically don't cover embeddings, so we don't use those.
+    Priority:
+      1. EMBEDDING_API_KEY / OPENAI_EMBEDDING_KEY → OpenAI embeddings
+      2. USE_CHAT_KEY_FOR_EMBEDDINGS=1 + OPENAI_API_KEY → OpenAI embeddings
+      3. BagOfWordsEmbedder (local hashed BoW, dim=384 padded to store dim)
+      4. DummyEmbedder last resort
     """
     api_key = (
         os.getenv("EMBEDDING_API_KEY", "")
         or os.getenv("OPENAI_EMBEDDING_KEY", "")
     )
+    if not api_key and os.getenv("USE_CHAT_KEY_FOR_EMBEDDINGS", "").lower() in (
+        "1", "true", "yes",
+    ):
+        api_key = os.getenv("OPENAI_API_KEY", "")
     if api_key:
         return OpenAIEmbedder(api_key=api_key)
+
+    # Prefer BoW over pure Dummy for slightly better dense ranking with FTS hybrid
+    use_bow = os.getenv("EMBEDDING_LOCAL", "bow").lower()
+    if use_bow in ("bow", "bag", "1", "true", ""):
+        # Store often expects 1536; BoW uses smaller dim then pad in store
+        return BagOfWordsEmbedder(dim=min(dim, 384) if dim > 384 else dim)
     return DummyEmbedder(dim=dim)

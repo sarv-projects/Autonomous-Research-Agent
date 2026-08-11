@@ -39,24 +39,24 @@ def _register_builtin() -> None:
         priority=5,
     )
 
-# ── MinerU Document Parser (ALWAYS — PDF/Office parser) ───────────────
+# ── MinerU Document Parser (PDF extract + arXiv academic search) ──────
 def _register_mineru() -> None:
-    from .mineru import mineru_extract
+    from .mineru import mineru_extract, mineru_search
     register_tool(
         name="mineru",
-        capabilities={"extract", "pdf", "documents", "free", "always"},
-        search_fn=lambda q, n: [],
+        capabilities={"extract", "pdf", "documents", "free", "academic"},
+        search_fn=mineru_search,
         extract_fn=mineru_extract,
         priority=15,
     )
 
-# ── Nougat Academic OCR (ALWAYS — Math PDF parser) ───────────────────
+# ── Nougat Academic OCR (PDF/math extract + arXiv search) ────────────
 def _register_nougat() -> None:
-    from .nougat import nougat_extract
+    from .nougat import nougat_extract, nougat_search
     register_tool(
         name="nougat",
-        capabilities={"extract", "pdf", "latex", "math", "academic", "free", "always"},
-        search_fn=lambda q, n: [],
+        capabilities={"extract", "pdf", "latex", "math", "academic", "free"},
+        search_fn=nougat_search,
         extract_fn=nougat_extract,
         priority=20,
     )
@@ -93,17 +93,17 @@ def _register_tavily() -> None:
         priority=105,
     )
 
-# ── Exa (optional — needs EXA_API_KEY) ───────────────────────────────
+# ── Exa (PRIMARY when EXA_API_KEY set — neural search + content) ─────
 def _register_exa() -> None:
     from .exa import exa_search, exa_extract
     if not os.getenv("EXA_API_KEY"):
         return
     register_tool(
         name="exa",
-        capabilities={"web_search", "neural", "extract", "paid"},
+        capabilities={"web_search", "neural", "extract", "paid", "primary"},
         search_fn=exa_search,
         extract_fn=exa_extract,
-        priority=110,
+        priority=200,  # above Firecrawl/Tavily — primary research search
     )
 
 

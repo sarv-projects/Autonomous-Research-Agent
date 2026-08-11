@@ -101,6 +101,16 @@ def nougat_parse_pdf(file_or_url: str) -> Dict[str, str]:
                 pass
 
 
+def nougat_search(query: str, max_results: int = 5) -> List[Dict]:
+    """Search arXiv for academic PDFs suitable for Nougat math OCR."""
+    from .mineru import mineru_search
+    results = mineru_search(query, max_results=max_results)
+    for r in results:
+        r["source"] = "arxiv-nougat"
+        r["score"] = 0.78
+    return results
+
+
 def nougat_extract(urls: List[str]) -> List[Dict]:
     """Extract academic PDF content using Nougat adapter."""
     results = []

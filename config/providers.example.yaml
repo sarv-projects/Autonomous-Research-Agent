@@ -1,40 +1,58 @@
-# Provider Configuration
 # Copy to providers.yaml and customize.
-# Empty base_url → OpenCode Zen free (https://opencode.ai/zen/v1)
-# Empty api_key → no Authorization header sent
+# Default policy: OpenCode Zen free first, then paid providers when keys exist.
 
 providers:
-  # ── OpenCode Zen free (no key required) ──
   opencode_free:
     name: "OpenCode Zen (Free)"
-    base_url: ""                    # empty → https://opencode.ai/zen/v1
-    api_key_env: ""                 # empty → no auth
+    base_url: ""
+    api_key_env: ""
     default: true
     models:
-      - mimo-v2.5-free              # MiMo free — preferred default
-      - deepseek-v4-flash-free      # DeepSeek v4 Flash free
-      - big-pickle                  # Big Pickle free
+      - laguna-s-2.1-free
+      - mimo-v2.5-free
+      - deepseek-v4-flash-free
+      - big-pickle
+      - nemotron-3-ultra-free
+      - longcat-2.0-free
 
-  # ── NVIDIA NIM ──
-  nvidia_nim:
-    name: "NVIDIA NIM"
-    base_url: "https://integrate.api.nvidia.com"
-    api_key_env: "NVIDIA_API_KEY"
+  # OpenAI-compatible: https://api.groq.com/openai/v1  (GROQ_API_KEY=gsk_...)
+  groq:
+    name: "Groq"
+    base_url: "https://api.groq.com/openai"
+    api_key_env: "GROQ_API_KEY"
     models:
-      - nvidia/nemotron-3-ultra-550b-a55b
+      - llama-3.1-8b-instant
       - openai/gpt-oss-20b
-      - meta/llama-3.3-70b-instruct
+      - llama-3.3-70b-versatile
+      - openai/gpt-oss-120b
+      - qwen/qwen3.6-27b
 
-  # ── OpenRouter ──
   openrouter:
     name: "OpenRouter"
     base_url: "https://openrouter.ai/api"
     api_key_env: "OPENROUTER_API_KEY"
     models:
+      - openrouter/free
       - cohere/north-mini-code:free
-      - xiaomi/mimo-v2.5
+      - nvidia/nemotron-3-ultra-550b-a55b:free
 
-  # ── OpenAI ──
+  nvidia_nim:
+    name: "NVIDIA NIM"
+    base_url: "https://integrate.api.nvidia.com"
+    api_key_env: "NVIDIA_API_KEY"
+    models:
+      - meta/llama-3.1-70b-instruct
+      - meta/llama-3.1-8b-instruct
+      - google/gemma-3-12b-it
+
+  gemini:
+    name: "Gemini (Google)"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+    api_key_env: "GEMINI_API_KEY"
+    models:
+      - gemini-3.5-flash-lite
+      - gemini-2.5-flash
+
   openai:
     name: "OpenAI"
     base_url: "https://api.openai.com"
@@ -43,77 +61,27 @@ providers:
       - gpt-4o-mini
       - gpt-4o
 
-  # ── Anthropic Claude ──
-  claude:
-    name: "Claude (Anthropic)"
-    base_url: "https://api.anthropic.com"
-    api_key_env: "ANTHROPIC_API_KEY"
-    protocol: "anthropic_messages"
-    models:
-      - claude-sonnet-5
-      - claude-haiku-4-5
-
-  # ── Google Gemini ──
-  gemini:
-    name: "Gemini (Google)"
-    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
-    api_key_env: "GEMINI_API_KEY"
-    models:
-      - gemini-3.6-flash
-      - gemini-2.5-flash
-
-  # ── Groq ──
-  groq:
-    name: "Groq"
-    base_url: "https://api.groq.com/openai"
-    api_key_env: "GROQ_API_KEY"
-    models:
-      - openai/gpt-oss-20b
-      - openai/gpt-oss-120b
-      - llama-3.3-70b-versatile
-      - llama-3.1-8b-instant
-
-  # ── DeepSeek ──
-  deepseek:
-    name: "DeepSeek"
-    base_url: "https://api.deepseek.com"
-    api_key_env: "DEEPSEEK_API_KEY"
-    models:
-      - deepseek-v4-flash
-      - deepseek-v4-pro
-
-  # ── Cohere Platform ──
-  cohere:
-    name: "Cohere Platform"
-    base_url: "https://api.cohere.com"
-    api_key_env: "CO_API_KEY"
-    protocol: "cohere_v2_chat"
-    models:
-      - command-a-plus-05-2026
-      - command-a-03-2025
-
-# ── Tier definitions (fast / strong) ──
 tiers:
   fast:
+    - provider: opencode_free
+      model: laguna-s-2.1-free
     - provider: opencode_free
       model: mimo-v2.5-free
     - provider: groq
       model: openai/gpt-oss-20b
-    - provider: openai
-      model: gpt-4o-mini
-    - provider: openrouter
-      model: cohere/north-mini-code:free
+    - provider: gemini
+      model: gemini-3.5-flash-lite
 
   strong:
-    - provider: groq
-      model: openai/gpt-oss-120b
     - provider: opencode_free
       model: deepseek-v4-flash-free
-    - provider: openai
-      model: gpt-4o-mini
-
-  thinker:
-    - provider: gemini
-      model: gemini-3.6-flash
     - provider: opencode_free
       model: big-pickle
+    - provider: groq
+      model: openai/gpt-oss-120b
+
+  thinker:
+    - provider: opencode_free
+      model: big-pickle
+    - provider: gemini
+      model: gemini-3.5-flash-lite

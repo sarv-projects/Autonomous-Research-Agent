@@ -1,8 +1,10 @@
-# Architecture (final)
+# Architecture
 
-**Version:** 2.0 · Aligns with [SPEC.md](SPEC.md)
+**Version:** 2.1 · Live graph: **A4** (`src/graph.py`) · Aligns with [SPEC.md](SPEC.md)  
+**Benchmarks / arch IDs:** [ARCHITECTURE_BENCHMARKS.md](ARCHITECTURE_BENCHMARKS.md) · **README** has the user-facing architecture + product DR comparison.
 
-> **Major Update (v2.0):** Integration of LangGraph + Temporal plugin for durable execution, adversarial triangulation for bias mitigation, factoid extraction pipeline for token optimization, dynamic task graph with live injection, and mathematical output rendering.
+> **A4 (current):** Scout (Exa + Gemini×3) → plan → research loop → devil’s advocate → claim adjudicator (Socratic hop) → triangulator → synth → compiler (Evidence Bedrock + Research Debt + Sources).  
+> Workhorse LLM: Groq; search: Exa; RAG: LanceDB+FTS with `run_id` isolation.
 
 ---
 
@@ -11,31 +13,34 @@
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  Surfaces                                                         │
-│   Web (primary) · CLI (secondary) · Desktop shell (later)         │
-│   Ops: gateway dashboard /metrics                                 │
+│   Web (Next.js) · CLI (main.py) · FastAPI /docs                   │
+│   Jobs + SSE thinking panel (learned / gaps / next)               │
 └────────────────────────────┬─────────────────────────────────────┘
                              │
 ┌────────────────────────────▼─────────────────────────────────────┐
 │  Router                                                           │
 │   chat | quick | standard | deep | recency | academic | compare  │
 │   + quality dial: fast | balanced | accurate | comprehensive     │
+│   + autonomy L1 / L2 (plan review) / L3                          │
 └────────────────────────────┬─────────────────────────────────────┘
                              │
 ┌────────────────────────────▼─────────────────────────────────────┐
-│  Engine (LangGraph + Temporal)                                    │
+│  Engine (LangGraph + optional Temporal)                           │
 │                                                                   │
-│  RESEARCH:                                                        │
-│   plan → tools → gather → ingest → retrieve → analyze → reflect  │
-│     ↺ gap loop                                                    │
-│   outline → section×N (stream) → citations → polish → export     │
+│  RESEARCH (A4):                                                   │
+│   scout → plan → refine                                           │
+│   gather → analyze → contradiction → critic → search_strategy ↺  │
+│   devil_advocate → adjudicator → [socratic gather?]               │
+│   triangulate → outline → parallel write → compile                │
+│   export: Inference + Bedrock + Research Debt + Sources           │
 │                                                                   │
 │  CHAT:                                                            │
 │   intent → LLM [+ vault RAG] | short tools | escalate research   │
 │                                                                   │
-│  State: claims[], gaps[], outline, budgets, run_id, evidence map │
+│  State: claims[], gaps[], scout{}, run_id, debt, adjudicated[]   │
 │                                                                   │
-│  NEW - Durable Execution (Temporal):                             │
-│   Checkpoint recovery, 24h ultra-long research, HITL signals       │
+│  Durable (Temporal, optional):                                    │
+│   Checkpoint recovery, ultra-long mode, HITL signals              │
 └───────────┬─────────────────────────────┬────────────────────────┘
             │                             │
 ┌───────────▼───────────┐   ┌─────────────▼────────────────────────┐

@@ -49,9 +49,10 @@ modes:
     budgets:
       max_tokens: 500000
       max_cost_usd: 2.00
-      max_time_s: 1800
-      max_tool_calls: 50
-      max_iterations: 15
+      max_time_s: 900
+      max_tool_calls: 30
+      # Exa breadth + free LLMs: 3–4 iters is enough (wall-time bound)
+      max_iterations: 4
     quality_dial: "accurate"
     vault_rag: true
     allow_tools: true
@@ -134,12 +135,13 @@ quality_dials:
 
   accurate:
     description: "More retrieval, critique, cite-check"
-    max_tokens_per_call: 16000
-    max_search_results: 20
-    max_extract_pages: 8
+    max_tokens_per_call: 12000
+    max_search_results: 10
+    max_extract_pages: 10
     thinker_enabled: true
     triangulation_enabled: true
-    factoid_enabled: true
+    # Factoids add free-model latency; keep off for deep speed (still have full Exa text)
+    factoid_enabled: false
 
   comprehensive:
     description: "Highest coverage, deeper gaps"

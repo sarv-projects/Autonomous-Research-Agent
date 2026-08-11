@@ -2,86 +2,530 @@
 Compiler agent — assembles the final report from sections, validates citations,
 and exports the result.
 
-Ship gate:
-  - End Sources section present
-  - Key claims have evidence ids
+Ship gate (P0.3 / P0.4):
+  - Sources section present and last
+  - Sources must be this run's evidence URLs (not empty / fake monographs)
+  - Claim–evidence: claim quotes appear in retrieved text when possible
   - No empty body
-  - Progressive write completed
 """
 
+from __future__ import annotations
+
+import re
 import time
 
+from src.rag.guard import STOP_WORDS
 from src.state import ResearchState
 from src.export import save_markdown, save_html
 from src.render.math import render_mathjax_html, has_math, detect_math
+from src.urlutil import canonical_url
 from .registry import register
+
+# Banned placeholder / fake monograph patterns
+_FAKE_SOURCE_PATTERNS = (
+    re.compile(r"^about:blank$", re.I),
+    re.compile(r"^https?://example\.(com|org)", re.I),
+    re.compile(r"placeholder", re.I),
+    re.compile(r"lorem ipsum", re.I),
+    re.compile(r"^factoid://", re.I),
+    re.compile(r"^n/?a$", re.I),
+)
+
+
+def _is_fake_url(url: str) -> bool:
+    if not url or len(url) < 8:
+        return True
+    if any(p.search(url) for p in _FAKE_SOURCE_PATTERNS):
+        return True
+    # Malformed / LLM-hallucinated URLs
+    if " " in url or "[" in url or "]" in url:
+        return True
+    if "..." in url:
+        return True
+    if not url.startswith(("http://", "https://")):
+        return True
+    return False
+
+
+def _collect_run_urls(state: ResearchState) -> list[tuple[str, str]]:
+    """Collect (url, title) pairs from this run only.
+
+    P0.4 hardening: a URL counts as evidence only if it was ACTUALLY retrieved
+    during this run (retrieved_chunks / extracted_pages / search_results).
+    evidence_map keys that were never retrieved (LLM-fabricated IDs) are excluded.
+    URLs are canonicalized so html/abs/pdf variants of the same paper dedupe.
+    """
+    seen: set[str] = set()
+    out: list[tuple[str, str]] = []
+
+    def _add(url: str, title: str) -> None:
+        url = canonical_url(url)
+        if not url or url in seen or _is_fake_url(url):
+            return
+        seen.add(url)
+        out.append((url, (title or url).strip()))
+
+    # 1. Sources actually retrieved & read this run (all iterations)
+    for c in state.get("run_corpus") or []:
+        _add(c.get("url"), c.get("title") or c.get("url"))
+    for c in state.get("retrieved_chunks") or []:
+        _add(c.get("url"), c.get("title") or c.get("url"))
+    for p in state.get("extracted_pages") or []:
+        _add(p.get("url"), p.get("title") or p.get("url"))
+    for r in state.get("search_results") or []:
+        _add(r.get("url"), r.get("title") or r.get("url"))
+    # 2. evidence_map keys — only if they were actually retrieved above
+    known = set(seen)
+    for url in (state.get("evidence_map") or {}):
+        if canonical_url(url) in known:
+            _add(url, url)
+    return out
+
+
+_MATH_RE = re.compile(r"\$\$[^\n]+?\$\$|\$[^\n$]+\$|\\\([^\n]+?\\\)|\\\[[^\n]+?\\\]")
+_CODE_FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+
+# Writer-appended reference blocks: "## References (source order)",
+# "## References (as mapped from source materials)", "## Sources & Bibliography"…
+_REF_BLOCK_RE = re.compile(
+    r"^#{1,6}\s+(references|bibliography|works cited|"
+    r"sources?\s*(&|and)?\s*bibliography)(\s*\([^)]*\))?\s*$",
+    re.I,
+)
+
+
+def _renumber_section_citations(content: str, section_urls: list[str], final_urls: list[str]) -> str:
+    """Rewrite inline [N] markers in a section to match the final Sources order.
+
+    The parallel section writers number citations against their OWN retrieved
+    chunk order (section_urls). The compiler rebuilds a single Sources list
+    (final_urls), so markers must be remapped: [k] -> [m] where m is the index of
+    section_urls[k-1] in final_urls. Markers whose URL did not make the final
+    list (dropped/fake) are removed, and out-of-range markers (writer invented a
+    number larger than any possible source) are dropped too, so no dangling
+    citations remain. Math expressions and code fences are left untouched.
+    """
+    if not section_urls or not final_urls:
+        return content
+    # Canonicalize section URLs so they match the canonicalized final list
+    # (synthesizer stores raw chunk URLs; _collect_run_urls canonicalizes)
+    section_urls = [canonical_url(u) for u in section_urls]
+    url_to_final: dict[str, int] = {
+        u: i + 1 for i, (u, _) in enumerate(final_urls)
+    }
+
+    def _sub(m: re.Match) -> str:
+        # Handle single AND multi-citation markers: [1], [1,2], [1, 2], [1-3]
+        parts = re.split(r"\s*[,–—-]\s*", m.group(1))
+        mapped: list[str] = []
+        for p in parts:
+            k = int(p)
+            if 1 <= k <= len(section_urls):
+                url = section_urls[k - 1]
+                if url in url_to_final:
+                    mapped.append(str(url_to_final[url]))
+                    continue
+                continue  # URL dropped from final list → drop this number
+            if k > len(final_urls):
+                continue  # writer invented an impossible citation number
+            mapped.append(p)  # within-range but unmappable — keep original
+        if not mapped:
+            return ""  # every number in the marker was dropped
+        return "[" + ", ".join(mapped) + "]"
+
+    # Protect math, code fences, and inline code: substitute placeholders first
+    protected: dict[str, str] = {}
+
+    def _protect_math(m: re.Match) -> str:
+        key = f"\x00M{len(protected)}\x00"
+        protected[key] = m.group(0)
+        return key
+
+    def _protect_code(m: re.Match) -> str:
+        key = f"\x00C{len(protected)}\x00"
+        protected[key] = m.group(0)
+        return key
+
+    content = _MATH_RE.sub(_protect_math, content)
+    content = _CODE_FENCE_RE.sub(_protect_code, content)
+    content = _INLINE_CODE_RE.sub(_protect_math, content)
+    content = re.sub(r"\[(\d{1,3}(?:\s*[,–—-]\s*\d{1,3})*)\]", _sub, content)
+    for key, val in protected.items():
+        content = content.replace(key, val)
+    return content
+
+
+def _strip_heading_duplicates(content: str, title: str) -> str:
+    """Remove heading lines that duplicate the section title (parallel-writer artifact)."""
+    t = (title or "").strip()
+    if not t:
+        return content
+    lines = content.split("\n")
+    out: list[str] = []
+    seen_title_heading = False
+    for ln in lines:
+        stripped = ln.strip()
+        m = re.match(r"^#{1,6}\s+(.*)$", stripped)
+        if m and m.group(1).strip().lower() == t.lower():
+            if not seen_title_heading:
+                seen_title_heading = True
+                continue  # drop the duplicate title heading
+        out.append(ln)
+    return "\n".join(out)
+
+
+def _strip_trailing_references(content: str) -> str:
+    """Drop a trailing References/Bibliography block a section writer appended.
+
+    The compiler appends its own Sources section; mid-report reference lists
+    would duplicate it and can carry unreviewed URLs. Matches headings like
+    "References (source order)" / "Sources & Bibliography". Only a block at the
+    END of the section (no other heading after) is removed — a legitimately
+    placed mid-section heading is left untouched.
+    """
+    lines = content.split("\n")
+    cut = -1
+    for i, ln in enumerate(lines):
+        if _REF_BLOCK_RE.match(ln.strip()):
+            cut = i
+    if cut >= 0:
+        rest = "\n".join(lines[cut + 1:])
+        if re.search(r"^#{1,6}\s+", rest, re.M):
+            return content
+        return "\n".join(lines[:cut]).rstrip()
+    return content
+
+
+def _is_sources_like(title: str) -> bool:
+    """True if a section title is a sources/references section.
+
+    The compiler appends its own # Sources section, so writer-produced
+    bibliography sections ("Sources & Bibliography", "8. References") are
+    dropped from the body to avoid duplication.
+    """
+    t = re.sub(r"[^a-z ]", " ", (title or "").lower()).strip()
+    t = re.sub(r"^\d+\s*", "", t).strip()
+    if "sources" in t and "bibliograph" in t:
+        return True
+    return t in ("sources", "references", "bibliography", "works cited")
+
+
+def _claim_evidence_check(state: ResearchState) -> tuple[int, int, list[str]]:
+    """Stricter CoVe-lite: prefer adjudicated labels; else phrase/word match."""
+    # Prefer adjudicator results when present
+    adj = state.get("adjudicated_claims") or []
+    if adj:
+        supported = sum(1 for a in adj if a.get("status") == "supported")
+        total = len(adj)
+        unsupported = [
+            (a.get("text") or "")[:80]
+            for a in adj
+            if a.get("status") in ("contested", "synthetic")
+        ][:5]
+        return supported, total, unsupported
+
+    claims = state.get("claims") or []
+    if not claims:
+        return 0, 0, []
+    corpus = " ".join(
+        (c.get("text") or "") for c in (state.get("run_corpus") or [])
+    ).lower()
+    corpus += " " + " ".join(
+        (c.get("text") or "") for c in (state.get("retrieved_chunks") or [])
+    ).lower()
+    corpus += " " + " ".join(
+        (p.get("content") or "")[:2000]
+        for p in (state.get("extracted_pages") or [])[:20]
+    ).lower()
+
+    supported = 0
+    unsupported: list[str] = []
+    run_urls = {u for u, _ in _collect_run_urls(state)}
+    for c in claims:
+        text = (c.get("text") or "").strip()
+        if not text:
+            continue
+        words = re.findall(r"[a-zA-Z]{4,}", text.lower())
+        eids = c.get("evidence_ids") or []
+        # Canonicalize so html/pdf/abs variants match run_urls (P0.4)
+        eid_hit = any(canonical_url(e) in run_urls for e in eids)
+        if len(words) < 4:
+            if eid_hit:
+                supported += 1
+            else:
+                unsupported.append(text[:80])
+            continue
+        # 3-gram phrase hit (stopword-heavy trigrams excluded) OR strong unigram overlap
+        phrases = []
+        for i in range(min(6, max(0, len(words) - 2))):
+            ph = words[i : i + 3]
+            if sum(1 for w in ph if w in STOP_WORDS) >= 2:
+                continue
+            phrases.append(" ".join(ph))
+        phrase_hit = any(ph in corpus for ph in phrases)
+        hits = sum(1 for w in words[:12] if w in corpus)
+        if phrase_hit or hits >= max(3, len(words[:12]) // 2):
+            supported += 1
+        elif eids and eid_hit:
+            supported += 1  # URL-linked soft support
+        else:
+            unsupported.append(text[:80])
+    total = len([c for c in claims if (c.get("text") or "").strip()])
+    return supported, total, unsupported[:5]
+
+
+def _build_bedrock_section(state: ResearchState) -> dict:
+    """Layer 1 — Bedrock: quotes / claims with support status (zero-hallucination zone)."""
+    lines = [
+        "# Evidence Bedrock\n",
+        "_Direct evidence from this run's retrieval. Prefer this layer over inference._\n",
+    ]
+    adj = state.get("adjudicated_claims") or []
+    if adj:
+        lines.append("## Adjudicated claims\n")
+        for i, a in enumerate(adj[:20], 1):
+            st = a.get("status", "?")
+            sc = a.get("score", "")
+            eids = a.get("evidence_ids") or []
+            eid = eids[0] if eids else ""
+            flag = {"supported": "✅", "contested": "⚠️", "synthetic": "🧪"}.get(st, "•")
+            lines.append(f"{flag} **[{i}] ({st}** score={sc}) {a.get('text', '')}")
+            if eid and not _is_fake_url(str(eid)):
+                lines.append(f"   - evidence: {eid}")
+            lines.append("")
+    else:
+        # Fallback path (no adjudicator run): only surface evidence URLs that
+        # were actually retrieved this run — never raw LLM-provided IDs.
+        run_urls = {u for u, _ in _collect_run_urls(state)}
+        claims = state.get("claims") or []
+        for i, c in enumerate(claims[:15], 1):
+            lines.append(f"{i}. {c.get('text', '')[:300]}")
+            shown: set[str] = set()
+            for u in (c.get("evidence_ids") or [])[:4]:
+                cu = canonical_url(u)
+                if cu and cu in run_urls and cu not in shown:
+                    shown.add(cu)
+                    lines.append(f"   - {cu}")
+            lines.append("")
+    # Top chunk quotes
+    chunks = state.get("retrieved_chunks") or []
+    if chunks:
+        lines.append("## Retrieved source excerpts\n")
+        for i, c in enumerate(chunks[:8], 1):
+            title = (c.get("title") or c.get("url") or "chunk")[:100]
+            url = c.get("url") or ""
+            quote = (c.get("text") or "")[:400].replace("\n", " ")
+            lines.append(f"**[{i}] {title}**")
+            if url and not _is_fake_url(url):
+                lines.append(f"- {url}")
+            lines.append(f"> {quote}\n")
+    if len(lines) < 4:
+        lines.append("_No bedrock evidence captured._\n")
+    return {"title": "Evidence Bedrock", "content": "\n".join(lines), "sources": []}
+
+
+def _build_research_debt_section(state: ResearchState) -> dict:
+    """Layer 3 — Research Debt: what remains unknown / experiments still needed."""
+    debt = list(state.get("research_debt") or [])
+    gaps = state.get("gaps") or []
+    contested = state.get("contested_claims") or []
+    synthetic = state.get("synthetic_claims") or []
+    note = state.get("confidence_note") or ""
+
+    lines = [
+        "# Research Debt\n",
+        "_To be more certain, these items still need work (intellectual honesty layer)._\n",
+    ]
+    if note:
+        lines.append(f"**Confidence note:** {note}\n")
+    if debt:
+        lines.append("## Outstanding debt\n")
+        for d in debt[:10]:
+            lines.append(f"- {d}")
+        lines.append("")
+    if contested:
+        lines.append("## Contested claims (need better evidence)\n")
+        for c in contested[:6]:
+            lines.append(f"- {c.get('text', '')[:200]}")
+        lines.append("")
+    if synthetic:
+        lines.append("## Synthetic inferences (no solid source chunk)\n")
+        for c in synthetic[:6]:
+            lines.append(f"- {c.get('text', '')[:200]}")
+        lines.append("")
+    if gaps and not debt:
+        lines.append("## Open gaps\n")
+        for g in gaps[:8]:
+            lines.append(f"- {g}")
+        lines.append("")
+    if len(lines) < 5:
+        lines.append(
+            "- No major residual debt flagged; still verify key citations against primary sources.\n"
+        )
+    lines.append(
+        "\n_This section is intentionally incomplete knowledge — not a failure of the agent._\n"
+    )
+    return {"title": "Research Debt", "content": "\n".join(lines), "sources": []}
 
 
 def _validate_ship_gate(state: ResearchState) -> tuple[bool, list[str]]:
     """Validate the report passes the ship gate before export."""
-    issues = []
+    issues: list[str] = []
 
     sections = state.get("sections", [])
     if not sections:
         issues.append("No sections written")
 
-    # Check for Sources section
     source_section = None
     for s in sections:
-        if s["title"].lower() in ("sources", "references"):
+        if s.get("title", "").lower() in ("sources", "references"):
             source_section = s
             break
     if not source_section:
         issues.append("Missing Sources/References section")
 
-    # Check for empty body
     total_content = sum(len(s.get("content", "")) for s in sections)
     if total_content < 100:
         issues.append("Report body is too short (<100 chars)")
 
-    # Check evidence coverage
-    claims = state.get("claims", [])
-    evidence_map = state.get("evidence_map", {})
-    if claims and not evidence_map:
-        issues.append("No evidence URLs tracked for claims")
+    run_urls = _collect_run_urls(state)
+    if not state.get("abort_synthesis"):
+        if not run_urls:
+            issues.append("No this-run evidence URLs (ban empty/fake monographs)")
+        # Detect fake-only sources
+        fake_count = 0
+        for s in sections:
+            for u in s.get("sources") or []:
+                if _is_fake_url(u):
+                    fake_count += 1
+        if fake_count and not run_urls:
+            issues.append("Only empty/fake source URLs present")
+
+    claims = state.get("claims") or []
+    if claims and not state.get("abort_synthesis"):
+        supported, total, samples = _claim_evidence_check(state)
+        if total >= 3 and supported / max(total, 1) < 0.3:
+            issues.append(
+                f"Claim–evidence check failed ({supported}/{total} supported); "
+                f"e.g. {samples[:2]}"
+            )
 
     return len(issues) == 0, issues
 
 
+def _build_sources_section(state: ResearchState) -> dict:
+    urls = _collect_run_urls(state)
+    lines = ["# Sources\n"]
+    if urls:
+        for i, (url, title) in enumerate(urls[:60], 1):
+            safe_title = (title or url).replace("\n", " ").strip()[:120]
+            lines.append(f"[{i}] [{safe_title}]({url})")
+    else:
+        lines.append("_No external sources were retained for this run._")
+    return {
+        "title": "Sources",
+        "content": "\n".join(lines) + "\n",
+        "sources": [u for u, _ in urls],
+    }
+
+
 @register("compiler")
 def compiler(state: ResearchState) -> ResearchState:
-    """Assemble report, run ship gate, and export."""
+    """Assemble report, run ship gate, and export.
+
+    Confidence volcano (Ultra steal):
+      Inference body (existing sections)
+      + Evidence Bedrock
+      + Research Debt
+      + Sources (last)
+    """
     state["status"] = "Compiling final report..."
     print(f"\n📦 [Compiler] Assembling report")
 
+    # Strip special trailing sections then re-append in order (P0.4: also drop
+    # writer-produced "Sources & Bibliography" sections — the compiler appends
+    # the single authoritative # Sources at the end)
+    skip_titles = {
+        "research debt", "evidence bedrock", "bedrock",
+    }
+    body = [
+        s for s in (state.get("sections") or [])
+        if not _is_sources_like(s.get("title", ""))
+        and s.get("title", "").lower().strip() not in skip_titles
+    ]
+
+    # P0.4 cleanup pass on parallel-written body sections:
+    #  1. drop duplicate title headings  2. drop mid-report References blocks
+    #  3. renumber inline [N] citations against the final Sources list
+    final_urls = _collect_run_urls(state)
+    for s in body:
+        content = s.get("content") or ""
+        content = _strip_heading_duplicates(content, s.get("title") or "")
+        content = _strip_trailing_references(content)
+        content = _renumber_section_citations(
+            content, list(s.get("sources") or []), final_urls
+        )
+        s["content"] = content
+
+    body.append(_build_bedrock_section(state))
+    body.append(_build_research_debt_section(state))
+    body.append(_build_sources_section(state))
+    state["sections"] = body
+    print("  Confidence volcano: Inference body + Bedrock + Research Debt + Sources")
+
     # Run ship gate
     passed, issues = _validate_ship_gate(state)
+    autonomy = str(state.get("autonomy") or "L1").upper()
     if issues:
         print(f"  ⚠️  Ship gate issues: {issues}")
-        # Add a Sources section if missing
-        if any("Sources" in i or "References" in i for i in issues):
-            urls = list(set(
-                c.get("url", "") for c in state.get("retrieved_chunks", [])
-                if c.get("url")
-            ))
-            sources_content = "# Sources\n\n"
-            for j, url in enumerate(urls[:30]):
-                title = next((c.get("title", url) for c in state.get("retrieved_chunks", [])
-                             if c.get("url") == url), url)
-                sources_content += f"[{j+1}] [{title}]({url})\n"
-            state["sections"].append({
-                "title": "Sources", "content": sources_content, "sources": urls
-            })
-            print(f"  ✅ Auto-added Sources section with {len(urls)} URLs")
+        if any("Sources" in i or "evidence" in i.lower() or "empty" in i.lower() for i in issues):
+            body = [
+                s for s in state["sections"]
+                if s.get("title", "").lower() not in ("sources", "references")
+            ]
+            body.append(_build_sources_section(state))
+            state["sections"] = body
+            passed, issues = _validate_ship_gate(state)
 
-    # Assemble report from sections
+        if issues and autonomy in ("L3", "STRICT"):
+            state["error"] = f"Ship gate failed: {issues}"
+            state["status"] = f"Ship gate blocked: {issues}"
+            print(f"  🛑 Ship gate blocked under autonomy={autonomy}: {issues}")
+            state["report"] = (
+                f"# Research Report (BLOCKED)\n\nShip gate failures: {issues}\n\n"
+                + "\n\n".join(
+                    f"## {s.get('title','')}\n\n{s.get('content','')}"
+                    for s in state.get("sections", [])
+                )
+            )
+            return state
+
+    supported, total, unsup = _claim_evidence_check(state)
+    if total:
+        print(f"  Claim–evidence (CoVe): {supported}/{total} supported")
+        if unsup:
+            print(f"  Unsupported samples: {unsup[:2]}")
+
     sections = state.get("sections", [])
+    conf = ""
+    if total:
+        pct = int(100 * supported / max(total, 1))
+        conf = f"**Evidence confidence**: {pct}% claims supported ({supported}/{total})"
+    if state.get("confidence_note"):
+        conf = (conf + f"  \n**Note**: {state['confidence_note']}") if conf else f"**Note**: {state['confidence_note']}"
+
     report_lines = [
         f"# Research Report: {state['query']}",
         f"**Date**: {time.strftime('%Y-%m-%d %H:%M')}",
-        f"**Sources**: {len(state.get('evidence_map', {}))} references",
+        f"**Sources**: {len(_collect_run_urls(state))} references",
         f"**Iterations**: {state.get('iteration', 0)}",
-        f"**Methodology**: Multi-iterative research with RAG retrieval",
+        f"**Methodology**: Scout → research loop → devil's advocate → adjudicate → synth",
+        f"**Claim–evidence**: {supported}/{total} claims grounded" if total else "",
+        conf,
+        "",
+        "> **Report layers:** (1) Inference body below · (2) Evidence Bedrock · "
+        "(3) Research Debt · (4) Sources. Prefer Bedrock over uncited inference.",
         "",
     ]
 
@@ -91,20 +535,9 @@ def compiler(state: ResearchState) -> ResearchState:
         report_lines.append(s.get("content", "").strip())
         report_lines.append("")
 
-    # Add evidence summary if not already in Sources section
-    evidence_map = state.get("evidence_map", {})
-    if evidence_map and not any(s["title"].lower() in ("sources", "references") for s in sections):
-        report_lines.append("## Sources")
-        report_lines.append("")
-        for j, (url, claim_texts) in enumerate(evidence_map.items()):
-            report_lines.append(f"[{j+1}] {url}")
-            for ct in claim_texts[:2]:
-                report_lines.append(f"    → {ct[:100]}")
-            report_lines.append("")
+    report = "\n".join(line for line in report_lines if line is not None)
 
-    report = "\n".join(report_lines)
-
-    # ── Math Rendering (Phase L): sanitize LaTeX in report ──
+    # Math rendering
     if has_math(report):
         math_info = detect_math(report)
         print(f"  Math detected: {math_info['count']} expressions "
@@ -113,21 +546,32 @@ def compiler(state: ResearchState) -> ResearchState:
 
     state["report"] = report
 
-    # Export to files
     safe_name = "".join(c if c.isalnum() or c in " _-" else "_" for c in state["query"])[:50]
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     base = f"research_{safe_name}_{timestamp}"
 
     md_path = save_markdown(report, base)
     state["markdown_path"] = md_path
-
-    # Also export HTML with MathJax
     html_path = save_html(report, base, title=state["query"])
 
-    ship_status = "✅ passed" if passed else "⚠️  issues resolved"
+    ship_status = "✅ passed" if passed else "⚠️  issues noted"
     state["status"] = f"Report compiled ({len(report)} chars, ship gate {ship_status})"
     print(f"  Report: {len(report)} chars, {len(sections)} sections")
     print(f"  Ship gate: {ship_status}")
+    if issues:
+        print(f"  Remaining issues: {issues}")
     print(f"  Saved: {md_path}")
     print(f"  HTML:  {html_path}")
+
+    try:
+        from src.engine.progress import get_progress
+        get_progress().update(
+            stage="complete",
+            status=state["status"],
+            sources_count=len(_collect_run_urls(state)),
+            report=report,
+            markdown_path=md_path,
+        )
+    except Exception:
+        pass
     return state

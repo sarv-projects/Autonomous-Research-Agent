@@ -51,9 +51,10 @@ def gateway_info() -> dict:
     info = {
         "fast_routes": len(gw.get_routes("fast")),
         "strong_routes": len(gw.get_routes("strong")),
+        "thinker_routes": len(gw.get_routes("thinker")),
         "routes": [],
     }
-    for tier in ("fast", "strong"):
+    for tier in ("fast", "strong", "thinker"):
         for route in gw.get_routes(tier):
             info["routes"].append({
                 "tier": tier,
@@ -69,9 +70,10 @@ def call_llm(
     user_prompt: str,
     model: str = DEFAULT_MODEL,
     max_retries: int = 3,  # kept for API compatibility; gateway does its own retries
+    max_tokens: int | None = None,
 ) -> str:
     gw = _get_gateway()
-    tier = model if model in ("fast", "strong") else DEFAULT_MODEL
+    tier = model if model in ("fast", "strong", "thinker") else DEFAULT_MODEL
     if not gw.get_routes(tier):
         # If the tier has no routes, fall back to "fast".
         if tier != "fast" and gw.get_routes("fast"):
@@ -81,7 +83,7 @@ def call_llm(
         {"role": "user", "content": user_prompt},
     ]
     try:
-        result = gw.complete(messages, model=tier)
+        result = gw.complete(messages, model=tier, max_tokens=max_tokens)
     except QuotaExceeded as e:
         raise RuntimeError(f"Quota / rate limit exceeded: {e}")
     except AllRoutesFailed as e:
@@ -89,9 +91,13 @@ def call_llm(
     return result.text
 
 
-def call_llm_strong(system_prompt: str, user_prompt: str) -> str:
+def call_llm_strong(
+    system_prompt: str,
+    user_prompt: str,
+    max_tokens: int | None = None,
+) -> str:
     """Use the stronger model tier for synthesis."""
-    return call_llm(system_prompt, user_prompt, model=STRONG_MODEL)
+    return call_llm(system_prompt, user_prompt, model=STRONG_MODEL, max_tokens=max_tokens)
 
 
 def call_llm_stream(

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { apiGet } from '@/lib/api'
 
 interface VaultResult {
   url?: string
@@ -22,13 +23,10 @@ export default function VaultPage() {
     setLoading(true)
     setSearched(true)
     try {
-      const res = await fetch(`http://localhost:8000/api/vault/search?query=${encodeURIComponent(searchQuery)}&limit=10`)
-      if (res.ok) {
-        const data = await res.json()
-        setResults(data.results || [])
-      } else {
-        setResults([])
-      }
+      const data = await apiGet<{ results?: VaultResult[] }>(
+        `/api/vault/search?query=${encodeURIComponent(searchQuery)}&limit=10`
+      )
+      setResults(data.results || [])
     } catch (err) {
       console.warn('Vault API unreachable:', err)
       setResults([

@@ -1,59 +1,232 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Sparkles, FileText, Settings, History, Database, CheckCircle, XCircle } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
+import { Send } from 'lucide-react'
 import 'katex/dist/katex.min.css'
+import {
+  Sidebar,
+  ProgressBanner,
+  MessageBubble,
+  ApprovalBanner,
+  LoadingDots,
+  PlanEditor,
+} from '@/components'
+import type { ChatMessage, ApprovalRequest, ResearchPlanPayload } from '@/components'
+import { apiGet, apiPost, type ProgressSnapshot } from '@/lib/api'
 
-interface Message {
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  timestamp: Date
-}
-
-interface ApprovalRequest {
-  approval_id: string
-  gate_type: string
-  data: any
-  status: string
+async function apiPut<T = any>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || res.statusText || `PUT ${path} failed`)
+  }
+  return res.json()
 }
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hello! I\'m your Autonomous Research Agent. I can help you with:\n\n- **Chat**: Multi-turn conversation with memory\n- **Research**: Deep, cited multi-agent research reports\n\nHow can I help you today?',
-      timestamp: new Date()
-    }
+      content:
+        "Hello! I'm your Autonomous Research Agent. I can help with:\n\n- **Chat**: multi-turn conversation with memory (streaming)\n- **Research**: multi-agent cited reports with live progress\n\nHow can I help you today?",
+      timestamp: new Date(),
+    },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [mode, setMode] = useState<'chat' | 'research'>('chat')
+  const [researchMode, setResearchMode] = useState('standard')
+  const [autonomy, setAutonomy] = useState('L1')
+  const [planFirst, setPlanFirst] = useState(false)
+  const [pendingPlan, setPendingPlan] = useState<ResearchPlanPayload | null>(null)
+  const [planBusy, setPlanBusy] = useState(false)
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([])
+  const [progressStatus, setProgressStatus] = useState('')
+  const [thinking, setThinking] = useState<{
+    learned: string[]
+    gaps: string[]
+    nextAction: string
+    thoughts: { kind?: string; text?: string }[]
+    pagesScanned?: number
+    sourcesCount?: number
+    findingsCount?: number
+    offTopic?: boolean
+    stage?: string
+  }>({ learned: [], gaps: [], nextAction: '', thoughts: [] })
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  async function pollResearchJob(jobId: string, userText: string) {
+    let finished = false
+    for (let i = 0; i < 900 && !finished; i++) {
+      await new Promise((r) => setTimeout(r, 1000))
+      try {
+        let snap: ProgressSnapshot
+        if (jobId) {
+          try {
+            const job = await apiGet<ProgressSnapshot & { status?: string }>(
+              `/api/jobs/${jobId}`
+            )
+            // L2 plan pause
+            if (job.status === 'awaiting_plan') {
+              setProgressStatus('Awaiting plan approval…')
+              // try to load plan from thoughts or list
+              const plans = await apiGet<{ plans?: ResearchPlanPayload[] }>(
+                '/api/research/plans?limit=5'
+              ).catch(() => ({ plans: [] }))
+              const match = (plans.plans || []).find((p) => p.job_id === jobId) ||
+                (plans.plans || [])[0]
+              if (match) {
+                setPendingPlan(match)
+                setIsLoading(false)
+                return
+              }
+            }
+            snap = {
+              ...job,
+              finished:
+                job.finished ||
+                ['complete', 'error', 'aborted'].includes(job.status || ''),
+              status: job.status || job.stage,
+            }
+          } catch {
+            snap = await apiGet('/api/research/progress')
+          }
+        } else {
+          snap = await apiGet('/api/research/progress')
+        }
+        const label = snap.status || snap.stage || 'running'
+        const secs = snap.section_progress || ''
+        setProgressStatus(
+          `${label}${secs ? ` · sections ${secs}` : ''}${
+            snap.findings_count ? ` · findings ${snap.findings_count}` : ''
+          } · ${snap.elapsed_s || 0}s`
+        )
+        setThinking({
+          learned: snap.learned || [],
+          gaps: snap.gaps || [],
+          nextAction: snap.next_action || '',
+          thoughts: snap.thoughts || [],
+          pagesScanned: snap.pages_scanned,
+          sourcesCount: snap.sources_count,
+          findingsCount: snap.findings_count,
+          offTopic: snap.off_topic,
+          stage: snap.stage,
+        })
+        finished = !!snap.finished
+        if (snap.error && finished) throw new Error(snap.error)
+      } catch (pollErr) {
+        if (
+          pollErr instanceof Error &&
+          pollErr.message &&
+          !pollErr.message.includes('Failed')
+        ) {
+          if (
+            pollErr.message.includes('aborted') ||
+            pollErr.message.includes('Ship gate')
+          ) {
+            throw pollErr
+          }
+        }
+      }
+    }
+
+    let finalSnap: ProgressSnapshot = {}
+    if (jobId) {
+      finalSnap = await apiGet(`/api/jobs/${jobId}`).catch(() => ({}))
+    }
+    if (!finalSnap.report) {
+      finalSnap = await apiGet('/api/research/progress').catch(() => ({}))
+    }
+    let lastReport = finalSnap.report || ''
+    if (!lastReport) {
+      lastReport =
+        `## Research complete\n\n**Query:** ${userText}\n\n**Mode:** ${researchMode}\n\n` +
+        `Findings: ${finalSnap.findings_count || 0} · Elapsed: ${finalSnap.elapsed_s || 0}s\n\n` +
+        `_Path: ${finalSnap.markdown_path || 'reports/'}_`
+    } else if (finalSnap.markdown_path) {
+      lastReport += `\n\n---\n_Saved: \`${finalSnap.markdown_path}\`_`
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      { role: 'assistant', content: lastReport, timestamp: new Date() },
+    ])
+    setProgressStatus('')
+    setThinking({ learned: [], gaps: [], nextAction: '', thoughts: [] })
+  }
+
+  async function handlePlanApprove(edited: {
+    outline: { title: string }[]
+    search_queries: string[]
+    clarifications?: Record<string, string>
+  }) {
+    if (!pendingPlan) return
+    setPlanBusy(true)
+    try {
+      await apiPut(`/api/research/plans/${pendingPlan.plan_id}`, {
+        outline: edited.outline,
+        search_queries: edited.search_queries,
+        clarifications: edited.clarifications,
+        plan: {
+          ...(pendingPlan.plan || {}),
+          outline: edited.outline,
+          search_queries: edited.search_queries,
+        },
+      })
+      const runRes = await apiPost<{ job_id?: string; status?: string }>(
+        `/api/research/plans/${pendingPlan.plan_id}/run`,
+        { background: true, clarifications: edited.clarifications }
+      )
+      setPendingPlan(null)
+      setIsLoading(true)
+      setProgressStatus('Plan approved — researching…')
+      setThinking({
+        learned: [],
+        gaps: [],
+        nextAction: 'Gathering sources with approved plan',
+        thoughts: [],
+      })
+      await pollResearchJob(runRes?.job_id || '', pendingPlan.query)
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Plan run failed: ${err instanceof Error ? err.message : 'unknown'}`,
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
+      setPlanBusy(false)
+      setIsLoading(false)
+      setProgressStatus('')
+    }
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    apiGet<{ mode?: string; autonomy?: string }>('/api/settings')
+      .then((data) => {
+        if (data?.mode) setResearchMode(data.mode)
+        if (data?.autonomy) setAutonomy(data.autonomy)
+      })
+      .catch(() => {})
+  }, [])
 
-  // Poll pending workflow approvals
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, progressStatus])
+
   useEffect(() => {
     async function checkApprovals() {
       try {
-        const res = await fetch('http://localhost:8000/api/approvals')
-        if (res.ok) {
-          const data = await res.json()
-          setApprovals(data.approvals || [])
-        }
-      } catch (err) {
-        // Quiet fail if API server not running
+        const data = await apiGet<{ approvals?: ApprovalRequest[] }>('/api/approvals')
+        setApprovals(data.approvals || [])
+      } catch {
+        /* quiet */
       }
     }
     checkApprovals()
@@ -63,12 +236,11 @@ export default function Home() {
 
   async function handleApprovalResponse(approvalId: string, approved: boolean) {
     try {
-      await fetch(`http://localhost:8000/api/approvals/${approvalId}/respond`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved, comments: approved ? 'Approved by user' : 'Rejected by user' })
+      await apiPost(`/api/approvals/${approvalId}/respond`, {
+        approved,
+        comments: approved ? 'Approved by user' : 'Rejected by user',
       })
-      setApprovals(prev => prev.filter(a => a.approval_id !== approvalId))
+      setApprovals((prev) => prev.filter((a) => a.approval_id !== approvalId))
     } catch (err) {
       console.error('Failed to submit approval:', err)
     }
@@ -78,53 +250,146 @@ export default function Home() {
     e.preventDefault()
     if (!input.trim() || isLoading) return
 
-    const userMessage: Message = {
-      role: 'user',
-      content: input,
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    const userText = input
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: userText, timestamp: new Date() },
+    ])
     setInput('')
     setIsLoading(true)
+    setProgressStatus('')
 
     try {
       if (mode === 'chat') {
-        const response = await fetch('http://localhost:8000/api/chat', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: input, mode: 'chat', session_id: 'default' })
+          body: JSON.stringify({
+            message: userText,
+            mode: 'fast',
+            session_id: 'default',
+            stream: true,
+            escalate: true,
+          }),
         })
-        const data = await response.json()
-        
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response || 'Error: No response received',
-          timestamp: new Date()
+
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('text/event-stream') && response.body) {
+          const reader = response.body.getReader()
+          const decoder = new TextDecoder()
+          let acc = ''
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: '', timestamp: new Date() },
+          ])
+          let buffer = ''
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += decoder.decode(value, { stream: true })
+            const parts = buffer.split('\n\n')
+            buffer = parts.pop() || ''
+            for (const part of parts) {
+              const line = part.trim()
+              if (!line.startsWith('data: ')) continue
+              try {
+                const evt = JSON.parse(line.slice(6))
+                if (evt.type === 'token') {
+                  acc += evt.text || ''
+                  setMessages((prev) => {
+                    const copy = [...prev]
+                    copy[copy.length - 1] = {
+                      role: 'assistant',
+                      content: acc,
+                      timestamp: new Date(),
+                    }
+                    return copy
+                  })
+                } else if (evt.type === 'done' && evt.text) {
+                  acc = evt.text
+                  setMessages((prev) => {
+                    const copy = [...prev]
+                    copy[copy.length - 1] = {
+                      role: 'assistant',
+                      content: acc,
+                      timestamp: new Date(),
+                    }
+                    return copy
+                  })
+                } else if (evt.type === 'error') {
+                  throw new Error(evt.error || 'stream error')
+                }
+              } catch (parseErr) {
+                if (parseErr instanceof SyntaxError) continue
+                throw parseErr
+              }
+            }
+          }
+        } else {
+          const data = await response.json()
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: data.response || 'Error: No response received',
+              timestamp: new Date(),
+            },
+          ])
         }
-        setMessages(prev => [...prev, assistantMessage])
       } else {
-        const response = await fetch('http://localhost:8000/api/research', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: input, mode: 'standard' })
-        })
-        const data = await response.json()
-        
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.report || 'Error: No report received',
-          timestamp: new Date()
+        setProgressStatus('Starting research...')
+        setThinking({ learned: [], gaps: [], nextAction: 'Planning…', thoughts: [] })
+        setPendingPlan(null)
+
+        // L2 required plan review; L1 optional via planFirst toggle
+        const wantPlan = planFirst || autonomy === 'L2'
+        if (wantPlan) {
+          setProgressStatus('Generating editable research plan…')
+          const planRes = await apiPost<ResearchPlanPayload>('/api/research/plans', {
+            query: userText,
+            mode: researchMode,
+            autonomy,
+          })
+          setPendingPlan(planRes)
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                `## Research plan ready\n\n` +
+                `**Plan ID:** \`${planRes.plan_id}\`\n\n` +
+                `Review the outline and search queries below, then click **Approve & research**.` +
+                (planRes.needs_clarification
+                  ? `\n\n_Query looks ambiguous — answer clarifying questions if you can._`
+                  : ''),
+              timestamp: new Date(),
+            },
+          ])
+          setProgressStatus('')
+          setIsLoading(false)
+          return
         }
-        setMessages(prev => [...prev, assistantMessage])
+
+        const startRes = await apiPost<{ job_id?: string }>('/api/research', {
+          query: userText,
+          mode: researchMode,
+          autonomy,
+          background: true,
+          skip_clarify: true,
+        })
+        const jobId = startRes?.job_id || ''
+        await pollResearchJob(jobId, userText)
       }
     } catch (error) {
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          timestamp: new Date(),
+        },
+      ])
+      setProgressStatus('')
     } finally {
       setIsLoading(false)
     }
@@ -132,131 +397,60 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col border-r border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 mb-6">
-          <Sparkles className="w-6 h-6 text-blue-600" />
-          <h1 className="font-bold text-lg">Research Agent</h1>
-        </div>
-        
-        <div className="space-y-2 mb-6">
-          <button
-            onClick={() => setMode('chat')}
-            className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-left transition-colors font-medium text-sm ${
-              mode === 'chat' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            Chat
-          </button>
-          <button
-            onClick={() => setMode('research')}
-            className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-left transition-colors font-medium text-sm ${
-              mode === 'research' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            Deep Research
-          </button>
-        </div>
+      <Sidebar mode={mode} onModeChange={setMode} />
 
-        <div className="mt-auto space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <a href="/vault" className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <Database className="w-4 h-4 text-purple-500" />
-            Research Vault
-          </a>
-          <a href="/history" className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <History className="w-4 h-4 text-amber-500" />
-            History
-          </a>
-          <a href="/settings" className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <Settings className="w-4 h-4 text-gray-500" />
-            Settings
-          </a>
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Human Approval Notification Banner */}
-        {approvals.length > 0 && (
-          <div className="bg-amber-500 text-white px-6 py-3 flex justify-between items-center shadow-md">
-            <div className="text-sm font-medium flex items-center gap-2">
-              ⏳ Pending Workflow Approval ({approvals.length}): {approvals[0].gate_type.toUpperCase()} gate requires review.
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleApprovalResponse(approvals[0].approval_id, true)}
-                className="flex items-center gap-1 px-3 py-1 bg-green-700 hover:bg-green-800 rounded text-xs font-semibold"
-              >
-                <CheckCircle className="w-3.5 h-3.5" /> Approve
-              </button>
-              <button
-                onClick={() => handleApprovalResponse(approvals[0].approval_id, false)}
-                className="flex items-center gap-1 px-3 py-1 bg-red-700 hover:bg-red-800 rounded text-xs font-semibold"
-              >
-                <XCircle className="w-3.5 h-3.5" /> Reject
-              </button>
-            </div>
-          </div>
-        )}
+        <ApprovalBanner approvals={approvals} onRespond={handleApprovalResponse} />
+        <ProgressBanner
+          status={progressStatus}
+          visible={!!progressStatus}
+          learned={thinking.learned}
+          gaps={thinking.gaps}
+          nextAction={thinking.nextAction}
+          thoughts={thinking.thoughts}
+          pagesScanned={thinking.pagesScanned}
+          sourcesCount={thinking.sourcesCount}
+          findingsCount={thinking.findingsCount}
+          offTopic={thinking.offTopic}
+          stage={thinking.stage}
+        />
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-lg px-5 py-4 ${
-                    message.role === 'user'
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'bg-white dark:bg-gray-800 shadow border border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  {message.role === 'assistant' ? (
-                    <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                  )}
-                  <div className="text-[10px] mt-2 opacity-60 text-right">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                </div>
-              </div>
+              <MessageBubble key={index} message={message} />
             ))}
+            {pendingPlan && (
+              <PlanEditor
+                plan={pendingPlan}
+                busy={planBusy}
+                onCancel={() => {
+                  setPendingPlan(null)
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      role: 'assistant',
+                      content: 'Plan cancelled. Submit a new research query when ready.',
+                      timestamp: new Date(),
+                    },
+                  ])
+                }}
+                onApprove={handlePlanApprove}
+              />
+            )}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-100" />
-                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-200" />
-                    </div>
-                    <span>{mode === 'research' ? 'Executing multi-agent research graph...' : 'Thinking...'}</span>
-                  </div>
-                </div>
-              </div>
+              <LoadingDots
+                label={
+                  mode === 'research'
+                    ? progressStatus || 'Executing multi-agent research graph...'
+                    : 'Streaming response...'
+                }
+              />
             )}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
           <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
             <div className="flex gap-2">
@@ -264,7 +458,11 @@ export default function Home() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={mode === 'chat' ? 'Ask any question or start a conversation...' : 'Enter deep research topic (e.g., Quantum Cryptography in 2026)...'}
+                placeholder={
+                  mode === 'chat'
+                    ? 'Ask any question or start a conversation...'
+                    : 'Enter deep research topic...'
+                }
                 className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 disabled={isLoading}
               />
@@ -276,9 +474,52 @@ export default function Home() {
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <div className="text-xs text-gray-500 mt-2 flex justify-between">
-              <span>Mode: <strong>{mode === 'chat' ? 'Multi-Turn Chat (with session memory)' : 'Deep Research (7-agent graph synthesis)'}</strong></span>
-              <span>Proxy API: http://localhost:8000</span>
+            <div className="text-xs text-gray-500 mt-2 flex flex-wrap justify-between items-center gap-2">
+              <span>
+                Mode:{' '}
+                <strong>
+                  {mode === 'chat'
+                    ? 'Multi-Turn Chat (streaming)'
+                    : `Deep Research (${researchMode} / ${autonomy})`}
+                </strong>
+              </span>
+              {mode === 'research' && (
+                <div className="flex gap-2">
+                  <select
+                    value={researchMode}
+                    onChange={(e) => setResearchMode(e.target.value)}
+                    className="text-xs border rounded px-2 py-1 bg-white dark:bg-gray-900"
+                  >
+                    <option value="quick">quick</option>
+                    <option value="standard">standard</option>
+                    <option value="deep">deep</option>
+                    <option value="academic">academic</option>
+                    <option value="recency">recency</option>
+                    <option value="compare">compare</option>
+                    <option value="ultra-long">ultra-long</option>
+                  </select>
+                  <select
+                    value={autonomy}
+                    onChange={(e) => setAutonomy(e.target.value)}
+                    className="text-xs border rounded px-2 py-1 bg-white dark:bg-gray-900"
+                  >
+                    <option value="L1">L1 auto</option>
+                    <option value="L2">L2 plan review</option>
+                    <option value="L3">L3 hard budget</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={planFirst || autonomy === 'L2'}
+                      disabled={autonomy === 'L2'}
+                      onChange={(e) => setPlanFirst(e.target.checked)}
+                      className="rounded"
+                    />
+                    Edit plan first
+                  </label>
+                </div>
+              )}
+              <span>API: /api/*</span>
             </div>
           </form>
         </div>

@@ -35,17 +35,47 @@ def synthesizer_outline(state: ResearchState) -> ResearchState:
     findings_text = "\n".join(f"- {f}" for f in state.get("findings", [])[:30])
     plan_outline = state.get("plan", {}).get("outline", [])
     plan_titles = [s.get("title", "") for s in plan_outline]
+    flags = state.get("mode_flags") or {}
+    mode = state.get("mode") or "standard"
+    deep = mode in ("deep", "academic", "ultra-long")
+    structured = bool(flags.get("structured_output")) or mode == "compare"
+    scout = state.get("scout") or {}
+    must_sys = scout.get("must_cover_systems") or []
+    must_papers = scout.get("must_cover_papers") or []
+    compare_hint = ""
+    if structured:
+        compare_hint = (
+            "COMPARE MODE: include Criteria, Option A, Option B, Comparison Matrix, "
+            "Recommendation, Sources.\n"
+        )
+    deep_hint = ""
+    if deep:
+        deep_hint = (
+            "DEEP MODE (ChatGPT/Gemini RAG report style):\n"
+            "- Start with Executive Summary\n"
+            "- Body sections MUST name specific systems/papers (e.g. Dense Passage Retrieval, "
+            "ColBERT, RAPTOR, Self-RAG, GraphRAG, HyDE, CRAG)\n"
+            "- Include Evaluation Matrix (RAG triad: context relevance, faithfulness, answer "
+            "relevance + tools)\n"
+            "- Include Failure-Mode Taxonomy (hallucination-on-hallucination, lost-in-middle, "
+            "retrieval cascade failures, citation fabrication, etc.)\n"
+            "- End with Conclusion then Sources\n"
+        )
 
     prompt = f"""Create an exhaustive report outline based on the research findings.
 
 Query: "{state['query']}"
 Planned sections: {plan_titles}
-
+{compare_hint}{deep_hint}
 Key findings:
 {findings_text[:4000]}
 
+MUST COVER SYSTEMS (from scout): {json.dumps(must_sys[:15])}
+MUST COVER PAPERS (from scout): {json.dumps(must_papers[:10])}
+
 Return a JSON list of section objects with "title" and "order".
-Include: Introduction, 4-6 detailed body sections, Conclusion, Sources.
+Include: Executive Summary (if deep), Introduction, 4-6 detailed body sections naming real systems/papers,
+Evaluation Matrix (if deep), Failure Modes (if deep), Conclusion, Sources.
 Example: [{{"title": "Introduction", "order": 0}}, ...]"""
 
     result = call_llm_strong(SYNTH_SYSTEM, prompt)
@@ -57,6 +87,28 @@ Example: [{{"title": "Introduction", "order": 0}}, ...]"""
     except json.JSONDecodeError:
         outline = [{"title": "Overview", "order": 0}, {"title": "Findings", "order": 1},
                     {"title": "Sources", "order": 2}]
+
+    # Ensure required deep sections exist
+    titles_l = {str(s.get("title", "")).lower() for s in outline}
+    if deep:
+        required = [
+            ("Executive Summary", 0),
+            ("Evaluation Matrix", 50),
+            ("Failure-Mode Taxonomy", 51),
+            ("Conclusion", 90),
+            ("Sources", 99),
+        ]
+        for title, order in required:
+            if not any(title.lower() in t for t in titles_l):
+                outline.append({"title": title, "order": order})
+                titles_l.add(title.lower())
+        outline = sorted(outline, key=lambda s: s.get("order", 0))
+
+    # Compiler appends Bedrock + Research Debt + Sources; avoid duplicate Sources here only
+    # Still put Sources last in outline for write-path auto-sources
+    drop = {"sources", "references", "research debt", "evidence bedrock", "bedrock"}
+    outline = [s for s in outline if str(s.get("title", "")).lower().strip() not in drop]
+    outline.append({"title": "Sources", "order": 999})
 
     state["outline"] = outline
     print(f"  Outline: {[s['title'] for s in outline]}")
@@ -133,18 +185,53 @@ def _write_single_section(
     """Draft a single section in isolation with dedicated full token budget."""
     title = section_def["title"]
     section_query = f"{state['query']} {title}"
-    chunks = hybrid_retrieve(section_query, k=8, factoids=factoids)
+    run_id = state.get("run_id", "")
+    chunks = hybrid_retrieve(section_query, k=8, factoids=factoids, run_id=run_id)
     chunk_text = "\n\n".join(
         f"[Source: {c.get('title','') or c.get('url','')}]\n{c.get('text','')[:1500]}"
         for c in chunks[:8]
     ) if chunks else "No specific sources found."
 
-    all_urls = list(set(c.get("url", "") for c in chunks if c.get("url")))
+    # Preserve retrieval order so inline [k] markers map 1:1 to section sources
+    all_urls: list[str] = []
+    for c in chunks:
+        u = c.get("url", "")
+        if u and u not in all_urls:
+            all_urls.append(u)
 
     findings_context = "\n".join(f"- {f}" for f in state.get("findings", [])[:15])
     claims_context = "\n".join(
         f"- {c.get('text','')[:250]}" for c in state.get("claims", [])[:10]
     )
+    scout = state.get("scout") or {}
+    must_sys = ", ".join(str(s) for s in (scout.get("must_cover_systems") or [])[:12])
+    deep = (state.get("mode") or "") in ("deep", "academic", "ultra-long")
+    title_l = title.lower()
+    extra = ""
+    if must_sys:
+        extra += f"\nName these systems when relevant and supported: {must_sys}\n"
+    if "executive" in title_l:
+        extra = (
+            "\nWrite a crisp executive summary (bullets + short paras). "
+            "Cover: problem, key systems, main findings, recommendations.\n"
+        )
+    elif "evaluation" in title_l or "matrix" in title_l:
+        extra = (
+            "\nInclude a Markdown table for the RAG triad "
+            "(Context Relevance | Faithfulness | Answer Relevance) "
+            "plus tool/retrieval dimensions. Name real systems per cell.\n"
+        )
+    elif "failure" in title_l:
+        extra = (
+            "\nTaxonomy of failure modes: hallucination-on-hallucination, lost-in-middle, "
+            "retrieval cascade, citation fabrication, domain shift, chunking artifacts. "
+            "Use a Markdown table: Failure Mode | Symptom | Mitigation.\n"
+        )
+    elif deep:
+        extra = (
+            "\nName specific papers/systems with years where known. "
+            "Prefer evidence from the provided sources; do not invent monograph titles.\n"
+        )
 
     prompt = f"""Write the "{title}" section of an exhaustive, publication-grade research report.
 
@@ -158,20 +245,26 @@ Relevant findings:
 
 Key claims:
 {claims_context[:2000]}
-
+{extra}
 INSTRUCTIONS:
-- Write an exhaustive, deep technical passage (5-8 detailed paragraphs).
+- Write an exhaustive, deep technical passage (5-8 detailed paragraphs for body sections; shorter OK for exec summary).
 - Include ASCII architecture flowcharts/diagrams where relevant.
 - Include Markdown comparison tables and LaTeX mathematical equations ($...$) where applicable.
-- Use inline citations like [1], [2].
+- Use inline citations like [1], [2] matching source order when possible.
 - Provide rigorous analysis, specific parameters, and real-world implementations.
+- Only cite systems/papers supported by the source materials or well-known RAG literature.
 """
 
+    max_tok = None
     try:
-        content = call_llm_strong(SYNTH_SYSTEM, prompt)
+        max_tok = int((state.get("quality") or {}).get("max_tokens_per_call") or 0) or None
+    except Exception:
+        max_tok = None
+    try:
+        content = call_llm_strong(SYNTH_SYSTEM, prompt, max_tokens=max_tok)
     except Exception as e:
         try:
-            content = call_llm(SYNTH_SYSTEM, prompt, model="fast")
+            content = call_llm(SYNTH_SYSTEM, prompt, model="fast", max_tokens=max_tok)
         except Exception:
             content = f"### {title}\n\nTechnical analysis for {title} based on research findings:\n\n" + findings_context[:1000]
 
@@ -206,6 +299,10 @@ def _write_parallel_sections(
     # ── Audit & Verification Pass ──
     _audit_verification_pass(state, body_sections)
 
+    # ── Multi-pass self-critique after full draft (P3.4) ──
+    if (state.get("mode") or "") in ("deep", "academic", "ultra-long", "standard"):
+        _self_critique_pass(state, body_sections)
+
     total_chars = sum(
         len(state["sections"][idx].get("content", ""))
         for idx, _ in body_sections
@@ -215,25 +312,108 @@ def _write_parallel_sections(
 
 
 def _audit_verification_pass(state: ResearchState, body_sections: list[tuple[int, dict]]) -> None:
-    """Check assembled section drafts for missing content, formatting errors, or short sections."""
+    """Audit section drafts: short content re-draft + citation coverage check."""
+    claims = state.get("claims") or []
+    claim_texts = [c.get("text", "")[:80] for c in claims if c.get("text")]
+
     for idx, section_def in body_sections:
         title = section_def["title"]
         content = state["sections"][idx].get("content", "")
-        # If any section drafted less than 300 chars, perform targeted re-drafting
+
+        # Short sections → re-draft
         if len(content) < 300:
             print(f"  🔍 Audit Pass: Section '{title}' is short ({len(content)} chars) — re-drafting...")
             try:
-                res_idx, new_content, urls = _write_single_section(state, idx, section_def, state.get("factoids", []))
+                res_idx, new_content, urls = _write_single_section(
+                    state, idx, section_def, state.get("factoids") or []
+                )
                 state["sections"][res_idx]["content"] = new_content
+                if urls:
+                    state["sections"][res_idx]["sources"] = urls
+                content = new_content
             except Exception:
                 pass
 
+        # Citation soft-check: body sections should have at least one [n] or URL
+        has_cite = bool(
+            "[" in content and "]" in content
+        ) or "http" in content.lower()
+        if not has_cite and claim_texts and title.lower() not in ("introduction", "overview"):
+            # Append a lightweight evidence note from claims (no extra LLM call)
+            note = "\n\n**Evidence notes:**\n" + "\n".join(
+                f"- {t}" for t in claim_texts[:3]
+            )
+            state["sections"][idx]["content"] = content + note
+            print(f"  🔍 Audit Pass: Section '{title}' missing citations — appended evidence notes")
+
+
+def _self_critique_pass(state: ResearchState, body_sections: list[tuple[int, dict]]) -> None:
+    """After full draft: one LLM pass to flag unsupported claims and tighten weakest section."""
+    draft_preview = "\n\n".join(
+        f"## {state['sections'][idx].get('title','')}\n{state['sections'][idx].get('content','')[:800]}"
+        for idx, _ in body_sections[:6]
+    )
+    sources = []
+    for c in (state.get("retrieved_chunks") or [])[:15]:
+        if c.get("url"):
+            sources.append(f"- {c.get('title','')}: {c.get('url')}")
+    prompt = f"""You are a strict research editor. Review this draft for faithfulness.
+
+Query: {state.get('query','')}
+Available sources:
+{chr(10).join(sources)[:2500]}
+
+Draft excerpts:
+{draft_preview[:5000]}
+
+Return JSON:
+  - "issues": list of short issues (unsupported claims, missing systems, thin sections)
+  - "patch_section": title of the weakest section or ""
+  - "patch_notes": how to improve that section (bullets)
+  - "ok": true if draft is acceptable
+"""
+    try:
+        raw = call_llm(
+            "You are a research integrity editor. Return valid JSON only.",
+            prompt,
+            model="fast",
+        )
+        cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()
+        critique = json.loads(cleaned)
+    except Exception:
+        print("  Self-critique skipped (parse/LLM failure)")
+        return
+
+    issues = critique.get("issues") or []
+    if issues:
+        print(f"  🔍 Self-critique: {len(issues)} issues — {issues[:2]}")
+    patch_title = (critique.get("patch_section") or "").lower()
+    notes = critique.get("patch_notes") or ""
+    if patch_title and notes:
+        for idx, sd in body_sections:
+            if patch_title in (sd.get("title") or "").lower():
+                content = state["sections"][idx].get("content", "")
+                state["sections"][idx]["content"] = (
+                    content
+                    + "\n\n**Editor notes (self-critique):**\n"
+                    + (notes if isinstance(notes, str) else "\n".join(f"- {n}" for n in notes))
+                )
+                print(f"  Self-critique patched section: {sd.get('title')}")
+                break
+
 
 def _update_progress(state: ResearchState, step: str, **kwargs) -> None:
-    """Helper to push progress events if tracker is attached."""
-    tracker = state.get("progress_tracker")
-    if tracker and hasattr(tracker, "update_synthesizer"):
-        try:
-            tracker.update_synthesizer(step, **kwargs)
-        except Exception:
-            pass
+    """Push progress to the global research progress tracker (SSE/dashboard)."""
+    try:
+        from src.engine.progress import get_progress
+        sections = kwargs.get("sections") or state.get("sections") or []
+        get_progress().update(
+            stage=step,
+            status=state.get("status") or step,
+            sections=sections,
+            findings_count=len(state.get("findings") or []),
+            factoids_count=len(state.get("factoids") or []),
+            total_sections=len(sections),
+        )
+    except Exception:
+        pass

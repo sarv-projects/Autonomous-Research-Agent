@@ -296,12 +296,21 @@ class Gateway:
                 self._backoff(attempt)
         raise ProviderConnectionError(f"unreachable: {route.name}")
 
-    @staticmethod
-    def _pick_key(provider, keys: List[str]) -> Optional[str]:
+    # Per-provider key rotation counters (thread-safe enough for load balancing)
+    _key_rr_index: Dict[str, int] = {}
+    _key_rr_lock = threading.RLock()
+
+    def _pick_key(self, provider, keys: List[str]) -> Optional[str]:
         """Round-robin across the provider's key pool to spread rate limits."""
         if not keys:
             return None
-        return keys[0]
+        if len(keys) == 1:
+            return keys[0]
+        name = getattr(provider, "name", "default")
+        with self._key_rr_lock:
+            idx = self._key_rr_index.get(name, 0) % len(keys)
+            self._key_rr_index[name] = idx + 1
+            return keys[idx]
 
     @staticmethod
     def _estimate_cost(provider: str, model: str, res: ProviderResult) -> float:

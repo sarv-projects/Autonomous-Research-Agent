@@ -24,18 +24,11 @@ def hybrid_retrieve(
     store: Optional[VectorStore] = None,
     embedder=None,
     factoids: Optional[list[dict]] = None,
+    run_id: str = "",
 ) -> list[dict]:
     """Hybrid retrieval: dense vector + sparse keyword + factoid fusion.
 
-    Args:
-        query: Search query.
-        k: Number of results to return.
-        store: VectorStore instance (uses module singleton if None).
-        embedder: Embedder instance.
-        factoids: List of factoid dicts from the current run (for factoid search).
-
-    Returns:
-        List of scored result dicts with {id, text, url, title, score, source}.
+    When run_id is set, only current-run chunks are returned (isolation).
     """
     from .pipeline import _get_or_create_store, _get_or_create_embedder
 
@@ -50,7 +43,9 @@ def hybrid_retrieve(
 
     # ── Dense (vector) stream ──
     try:
-        vec_results = _vector_retrieve(query, k=k * 2, store=store, embedder=embedder)
+        vec_results = _vector_retrieve(
+            query, k=k * 2, store=store, embedder=embedder, run_id=run_id
+        )
         for rank, r in enumerate(vec_results):
             rid = r.get("id", "")
             if rid not in seen_ids:
@@ -64,7 +59,9 @@ def hybrid_retrieve(
     # ── Sparse (keyword) stream via FTS ──
     if store._fts:
         try:
-            fts_results = store._fts.query(query, k=k * 2)
+            fts_results = store._fts.query(query, k=k * 4 if run_id else k * 2)
+            if run_id:
+                fts_results = [r for r in fts_results if r.get("run_id") == run_id]
             for rank, r in enumerate(fts_results):
                 rid = r.get("id", "")
                 if rid not in seen_ids:

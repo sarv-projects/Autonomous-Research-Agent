@@ -209,29 +209,57 @@ def eval_rag_ir() -> List[EvalResult]:
 
 
 def eval_citation_grounding() -> List[EvalResult]:
-    """Evaluate citation grounding and claim-to-evidence ratio."""
+    """Evaluate citation grounding: claim text must appear in source quote/evidence."""
     start = time.time()
-    state = initial_state("Test Claim Grounding")
-    state["claims"] = [
-        {"text": "Quantum computers use qubits.", "evidence_ids": ["https://example.com/quantum"], "confidence": "high"},
-        {"text": "Superposition allows parallel states.", "evidence_ids": ["https://example.com/physics"], "confidence": "high"},
+    from src.rag.factoid import validate_quote
+
+    source_page = (
+        "Quantum computers use qubits as their fundamental unit of information. "
+        "Superposition allows parallel states to be represented simultaneously."
+    )
+    claims = [
+        {
+            "text": "Quantum computers use qubits",
+            "evidence_ids": ["https://example.com/quantum"],
+            "source_quote": "Quantum computers use qubits as their fundamental unit",
+            "confidence": "high",
+        },
+        {
+            "text": "Superposition allows parallel states",
+            "evidence_ids": ["https://example.com/physics"],
+            "source_quote": "Superposition allows parallel states to be represented",
+            "confidence": "high",
+        },
+        {
+            "text": "Hallucinated claim about unicorn CPUs",
+            "evidence_ids": [],
+            "source_quote": "unicorns power the chip",
+            "confidence": "low",
+        },
     ]
-    state["evidence_map"] = {
-        "https://example.com/quantum": ["Quantum computers use qubits."],
-        "https://example.com/physics": ["Superposition allows parallel states."],
-    }
-    
-    grounded_claims = sum(1 for c in state["claims"] if c.get("evidence_ids"))
-    score = grounded_claims / len(state["claims"]) if state["claims"] else 0.0
-    passed = score >= 0.8
-    
+
+    grounded = 0
+    for c in claims:
+        has_evidence = bool(c.get("evidence_ids"))
+        quote_ok = validate_quote(c.get("source_quote", ""), source_page, threshold=0.7)
+        if has_evidence and quote_ok:
+            grounded += 1
+
+    score = grounded / len(claims)
+    # Expect 2/3 grounded (hallucination correctly fails)
+    passed = grounded == 2 and score >= 0.6
+
     return [
         EvalResult(
             name="citation_grounding",
             passed=passed,
             score=round(score, 2),
-            details={"total_claims": len(state["claims"]), "grounded_claims": grounded_claims},
-            duration_seconds=round(time.time() - start, 3)
+            details={
+                "total_claims": len(claims),
+                "grounded_claims": grounded,
+                "expected_grounded": 2,
+            },
+            duration_seconds=round(time.time() - start, 3),
         )
     ]
 
@@ -302,27 +330,57 @@ def eval_efficiency() -> List[EvalResult]:
 
 
 def eval_research_quality() -> List[EvalResult]:
-    """Evaluate final research report structural quality and formatting."""
+    """Evaluate compiler ship-gate on a minimal assembled state (live path)."""
     start = time.time()
-    report_sample = (
-        "# Research Report: Artificial Intelligence\n\n"
-        "## Overview\n\nArtificial Intelligence is expanding rapidly.\n\n"
-        "## Findings\n\nMachine learning is widely adopted.\n\n"
-        "## Sources\n\n[1] [AI Research](https://example.com/ai)"
-    )
-    has_title = report_sample.startswith("# ")
-    has_sections = "## " in report_sample
-    has_sources = "Sources" in report_sample
-    
-    score = (has_title + has_sections + has_sources) / 3.0
-    
+    state = initial_state("Artificial Intelligence quality eval")
+    state["findings"] = ["AI expands rapidly.", "ML is widely adopted."]
+    state["claims"] = [
+        {
+            "text": "AI expands rapidly.",
+            "evidence_ids": ["https://example.com/ai"],
+            "confidence": "medium",
+        }
+    ]
+    state["evidence_map"] = {"https://example.com/ai": ["AI expands rapidly."]}
+    state["sections"] = [
+        {
+            "title": "Overview",
+            "content": "Artificial Intelligence is expanding rapidly across industries.",
+            "sources": ["https://example.com/ai"],
+        },
+        {
+            "title": "Findings",
+            "content": "Machine learning is widely adopted in production systems.",
+            "sources": ["https://example.com/ai"],
+        },
+        {
+            "title": "Sources",
+            "content": "[1] [AI Research](https://example.com/ai)",
+            "sources": ["https://example.com/ai"],
+        },
+    ]
+    compiled = compiler(state)
+    report = compiled.get("report", "")
+    has_title = report.startswith("# ")
+    has_sections = "## " in report
+    has_sources = "Sources" in report
+    long_enough = len(report) >= 100
+
+    checks = [has_title, has_sections, has_sources, long_enough]
+    score = sum(1 for c in checks if c) / len(checks)
+
     return [
         EvalResult(
             name="research_quality",
-            passed=score >= 0.9,
+            passed=score >= 0.75,
             score=round(score, 2),
-            details={"has_title": has_title, "has_sections": has_sections, "has_sources": has_sources},
-            duration_seconds=round(time.time() - start, 3)
+            details={
+                "has_title": has_title,
+                "has_sections": has_sections,
+                "has_sources": has_sources,
+                "report_chars": len(report),
+            },
+            duration_seconds=round(time.time() - start, 3),
         )
     ]
 

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiGet, apiPost } from '@/lib/api'
+import { ModelPicker } from '@/components'
 
 interface Provider {
   name: string
@@ -15,6 +17,7 @@ export default function SettingsPage() {
   const [autonomy, setAutonomy] = useState('L1')
   const [maxCost, setMaxCost] = useState(5.0)
   const [maxIterations, setMaxIterations] = useState(3)
+  const [selectedModel, setSelectedModel] = useState('opencode_free/laguna-s-2.1-free')
   
   // New Provider Form State
   const [showAddProvider, setShowAddProvider] = useState(false)
@@ -27,20 +30,29 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchProviders() {
       try {
-        const res = await fetch('http://localhost:8000/api/providers')
-        if (res.ok) {
-          const data = await res.json()
-          setProviders(data)
-        }
-      } catch (err) {
-        console.warn('API offline, using default provider slots')
+        const data = await apiGet<Provider[]>('/api/providers')
+        setProviders(data)
+      } catch {
         setProviders([
           { name: 'OpenCode Zen (Free)', base_url: 'https://opencode.ai/zen/v1', has_auth: false, models: ['mimo-v2.5-free', 'big-pickle'] },
           { name: 'Groq', base_url: 'https://api.groq.com/openai', has_auth: true, models: ['llama-3.3-70b-versatile'] },
         ])
       }
     }
+    async function fetchSettings() {
+      try {
+        const data = await apiGet<any>('/api/settings')
+        if (data.mode) setMode(data.mode)
+        if (data.autonomy) setAutonomy(data.autonomy)
+        if (data.max_cost != null) setMaxCost(data.max_cost)
+        if (data.max_iterations != null) setMaxIterations(data.max_iterations)
+        if (data.default_model) setSelectedModel(data.default_model)
+      } catch {
+        /* ignore */
+      }
+    }
     fetchProviders()
+    fetchSettings()
   }, [])
 
   async function handleAddProvider(e: React.FormEvent) {
@@ -50,37 +62,36 @@ export default function SettingsPage() {
     const modelsList = newProvModels.split(',').map((m) => m.trim()).filter(Boolean)
     
     try {
-      const res = await fetch('http://localhost:8000/api/providers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newProvName,
-          base_url: newProvUrl,
-          api_key: newProvKey,
-          models: modelsList
-        })
+      await apiPost('/api/providers', {
+        name: newProvName,
+        base_url: newProvUrl,
+        api_key: newProvKey,
+        models: modelsList,
       })
-
-      if (res.ok) {
-        setStatusMsg(`✅ Provider '${newProvName}' added successfully!`)
-        setShowAddProvider(false)
-        setNewProvName('')
-        setNewProvUrl('')
-        setNewProvKey('')
-        // Refresh provider list
-        const refresh = await fetch('http://localhost:8000/api/providers')
-        if (refresh.ok) setProviders(await refresh.json())
-      } else {
-        const errData = await res.json()
-        setStatusMsg(`❌ Error: ${errData.detail || 'Failed to add provider'}`)
-      }
+      setStatusMsg(`✅ Provider '${newProvName}' added successfully!`)
+      setShowAddProvider(false)
+      setNewProvName('')
+      setNewProvUrl('')
+      setNewProvKey('')
+      setProviders(await apiGet('/api/providers'))
     } catch (err: any) {
-      setStatusMsg(`❌ Network error: ${err.message}`)
+      setStatusMsg(`❌ Error: ${err.message}`)
     }
   }
 
-  function handleSaveSettings() {
-    setStatusMsg('✅ Settings saved locally for current workspace session.')
+  async function handleSaveSettings() {
+    try {
+      await apiPost('/api/settings', {
+        mode,
+        autonomy,
+        max_cost: maxCost,
+        max_iterations: maxIterations,
+        default_model: selectedModel,
+      })
+      setStatusMsg(`✅ Settings saved. Default model: ${selectedModel}`)
+    } catch (err: any) {
+      setStatusMsg(`❌ Failed to save: ${err.message}`)
+    }
   }
 
   return (
@@ -96,6 +107,17 @@ export default function SettingsPage() {
             {statusMsg}
           </div>
         )}
+
+        {/* Model picker — Zen free first, then Groq / NIM / etc. */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <ModelPicker
+            selected={selectedModel}
+            onSelect={(provider, model) => setSelectedModel(`${provider}/${model}`)}
+          />
+          <p className="text-xs text-gray-500 mt-3">
+            Selected default: <code className="font-mono">{selectedModel}</code>
+          </p>
+        </div>
 
         {/* Dynamic Provider Management */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">

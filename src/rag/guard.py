@@ -249,12 +249,67 @@ def _authority_signals(url: str, title: str = "") -> float:
     return min(bonus, 2.0)
 
 
+STOP_WORDS = frozenset({
+    "the", "a", "an", "and", "or", "of", "in", "on", "for", "to", "how",
+    "does", "what", "with", "as", "by", "is", "are", "be", "from", "that",
+    "this", "into", "about", "cover", "methods", "best", "practices", "do",
+    "it", "its", "can", "use", "using", "vs", "versus", "their", "there",
+})
+
+
+# Common acronym expansions so topicality survives RAG/LLM-type queries where
+# papers spell out the terms ("retrieval-augmented generation", "language models")
+_TOPIC_SYNONYMS = {
+    "rag": {"rag", "retrieval", "augmented", "generation", "retrieval-augmented"},
+    "llm": {"llm", "llms", "language", "model", "models"},
+    "gpt": {"gpt", "chatgpt", "transformer"},
+    "ai": {"ai", "artificial", "intelligence"},
+    "knn": {"knn", "nearest", "neighbor"},
+}
+
+
+def _topic_keywords(query: str) -> set[str]:
+    """Extract meaningful topic keywords from the research query (3+ chars)."""
+    words = re.findall(r"[a-zA-Z]{3,}", (query or "").lower())
+    out: set[str] = set()
+    for w in words:
+        if w in STOP_WORDS:
+            continue
+        out.add(w)
+        out.update(_TOPIC_SYNONYMS.get(w, set()))
+    return out
+
+
+def _topicality_score(title: str, snippet: str, topic_keywords: set[str]) -> float:
+    """Return 0-10 topical relevance of a result to the query's keywords.
+
+    Uses title + snippet overlap. If we have enough text to judge (>=80 chars)
+    and the result shares NO keywords with the query, score 0 (off-topic).
+    Otherwise score by keyword-hit density, capped at 10.
+    """
+    if not topic_keywords:
+        return 5.0  # nothing to judge against — neutral
+    blob = f"{title} {snippet}".lower()
+    if len(blob) < 80:
+        return 5.0  # not enough text — do not punish
+    hits = sum(1 for k in topic_keywords if k in blob)
+    if hits == 0:
+        return 0.0
+    return min(10.0, 4.0 + hits * 2.0)
+
+
 def assess_source(
     url: str,
     title: str = "",
     snippet: str = "",
+    topic: str = "",
 ) -> SourceAssessment:
     """Evaluate a single source's credibility.
+
+    Args:
+        topic: The research query, used to score topical relevance. Pass it so
+            real-but-irrelevant pages (e.g. an arXiv paper on teaching Cantonese
+            returned for a RAG-hallucination query) get demoted/blocked.
 
     Returns a SourceAssessment with scores and flags.
     """
@@ -281,7 +336,24 @@ def assess_source(
     )
     assessment.composite_score = min(max(assessment.composite_score, 0.0), 10.0)
 
-    # 5. Classification
+    # 5. Topicality (P0.4): demote/block real-but-irrelevant hits
+    top = _topicality_score(title, snippet, _topic_keywords(topic))
+    if top == 0.0 and (snippet or title):
+        if assessment.reputation >= 7.5:
+            # High-reputation academic/government domain: demote rather than
+            # block — snippets are often too short to judge topicality, and
+            # arXiv/ACL papers legitimately spell out terms differently.
+            assessment.composite_score = min(assessment.composite_score, 5.5)
+        else:
+            assessment.composite_score = min(assessment.composite_score, 1.5)
+            assessment.is_blocked = True
+            assessment.block_reason = "Off-topic: no query keyword overlap in content"
+    else:
+        # Mild relevance weight — do not let a hot domain carry irrelevant pages
+        assessment.composite_score = assessment.composite_score * 0.8 + top * 0.2
+        assessment.composite_score = min(max(assessment.composite_score, 0.0), 10.0)
+
+    # 6. Classification
     if assessment.reputation <= 1.5:
         assessment.is_blocked = True
         assessment.block_reason = f"Low-reputation domain: {domain}"
@@ -295,6 +367,7 @@ def filter_results(
     results: list[dict],
     min_score: float = 3.0,
     sort_by_score: bool = True,
+    topic: str = "",
 ) -> tuple[list[dict], dict]:
     """Filter and assess search results through the Retriever Guard.
 
@@ -302,6 +375,8 @@ def filter_results(
         results: List of search result dicts with {url, title, content/snippet}.
         min_score: Minimum composite score to keep a result.
         sort_by_score: If True, return results sorted by score descending.
+        topic: The research query — enables topicality blocking of
+            real-but-irrelevant results.
 
     Returns:
         (filtered_results, guard_stats)
@@ -309,6 +384,7 @@ def filter_results(
     if not results:
         return [], {"total": 0, "passed": 0, "blocked": 0, "avg_score": 0}
 
+    topic_kw = _topic_keywords(topic)
     assessments: list[SourceAssessment] = []
     pass_count = 0
     block_count = 0
@@ -318,7 +394,7 @@ def filter_results(
         title = r.get("title", "")
         snippet = r.get("content", "") or r.get("snippet", "") or r.get("raw_content", "")
 
-        assessment = assess_source(url, title, snippet)
+        assessment = assess_source(url, title, snippet, topic=topic)
         assessments.append(assessment)
 
         if assessment.is_blocked:
@@ -335,6 +411,7 @@ def filter_results(
             r["guard_freshness"] = round(a.freshness, 1)
             r["guard_domain"] = a.domain
             r["guard_blocked"] = a.is_blocked
+            r["guard_reason"] = a.block_reason
 
     # Filter: drop blocked, drop low-score
     filtered = [
@@ -354,6 +431,9 @@ def filter_results(
         "passed": len(filtered),
         "blocked": block_count,
         "avg_score": round(avg_score, 1),
+        "off_topic_blocked": sum(
+            1 for a in assessments if a.block_reason and "Off-topic" in a.block_reason
+        ),
         "domains": _domain_summary(assessments),
     }
 

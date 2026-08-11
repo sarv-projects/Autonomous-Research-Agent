@@ -27,6 +27,11 @@ class ResearchState(TypedDict):
     # --- Planner output ---
     plan: dict            # {topic, subtopics, outline: [{title, queries}], source_types}
     search_queries: list[str]
+    plan_approved: bool
+    plan_id: str
+    clarifications: dict
+    clarifying_questions: list[str]
+    scout: dict  # pre-plan thinker web + Gemini scout
 
     # --- Researcher output ---
     search_results: list[SearchResult]
@@ -50,6 +55,20 @@ class ResearchState(TypedDict):
     findings: list[str]
     gaps: list[str]
     needs_more_research: bool
+    replan: bool
+    off_topic: bool
+    abort_synthesis: bool
+
+    # --- Adversary / CoVe / Research debt (Ultra steals) ---
+    devil_advocate_done: bool
+    socratic_hops: int
+    socratic_reopen: bool
+    socratic_done: bool
+    adjudicated_claims: list
+    contested_claims: list
+    synthetic_claims: list
+    research_debt: list
+    confidence_note: str
 
     # --- Synthesizer output ---
     outline: list[dict]         # [{title, order}]
@@ -66,9 +85,17 @@ class ResearchState(TypedDict):
     mode: str
     status: str
     error: str
+    job_id: str
+
+    # --- Optional runtime controls (modes / autonomy / budgets) ---
+    autonomy: str
+    quality: dict
+    budgets: dict
+    mode_flags: dict
 
 
 def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
+    import time
     import uuid
     import src.nodes as n
     n.MAX_ITERATIONS = max_iterations
@@ -76,6 +103,11 @@ def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
         "query": query,
         "plan": {},
         "search_queries": [],
+        "plan_approved": False,
+        "plan_id": "",
+        "clarifications": {},
+        "clarifying_questions": [],
+        "scout": {},
         "search_results": [],
         "extracted_pages": [],
         "clean_content": [],
@@ -89,6 +121,18 @@ def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
         "findings": [],
         "gaps": [],
         "needs_more_research": False,
+        "replan": False,
+        "off_topic": False,
+        "abort_synthesis": False,
+        "devil_advocate_done": False,
+        "socratic_hops": 0,
+        "socratic_reopen": False,
+        "socratic_done": False,
+        "adjudicated_claims": [],
+        "contested_claims": [],
+        "synthetic_claims": [],
+        "research_debt": [],
+        "confidence_note": "",
         "outline": [],
         "sections": [],
         "evidence_map": {},
@@ -99,4 +143,31 @@ def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
         "mode": "standard",
         "status": "Starting research...",
         "error": "",
+        "job_id": "",
+        "autonomy": "L1",
+        "quality": {
+            "max_tokens_per_call": 8000,
+            "max_search_results": 10,
+            "max_extract_pages": 5,
+            "thinker_enabled": False,
+            "triangulation_enabled": False,
+            "factoid_enabled": False,
+        },
+        "budgets": {
+            "max_tokens": 100000,
+            "max_cost_usd": 0.50,
+            "max_time_s": 600,
+            "max_tool_calls": 20,
+            "max_iterations": max_iterations,
+            "started_at": time.time(),
+            "tool_calls": 0,
+            "spent_usd": 0.0,
+        },
+        "mode_flags": {
+            "recency_bias": False,
+            "academic_bias": False,
+            "structured_output": False,
+            "vault_rag": True,
+            "requires_temporal": False,
+        },
     }

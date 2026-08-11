@@ -1,94 +1,33 @@
-# Frontend - Autonomous Research Agent
+# Frontend — Autonomous Research Agent
 
-Modern web interface for the Autonomous Research Agent, built with Next.js, React, and Tailwind CSS.
+Next.js 14 UI for chat + multi-agent Deep Research (A4 backend).
 
 ## Features
 
-- **Chat Interface**: ChatGPT-like conversational interface
-- **Research Interface**: Deep research with cited reports
-- **History Page**: View past research and chat history
-- **Settings Page**: Configure research modes, autonomy levels, and provider preferences
-- **Dark Mode**: Automatic dark mode support
-- **Markdown Rendering**: Rich text with LaTeX math support
-- **Responsive Design**: Works on desktop and mobile
+- **Chat** — multi-turn streaming; optional escalate to research  
+- **Research** — modes, autonomy L1–L3, plan editor (L2 / plan-first)  
+- **Thinking panel** — learned / gaps / next action from progress SSE  
+- **History / Vault / Settings** — past runs, vault search, provider prefs  
+- **Markdown + KaTeX** — report rendering  
 
-## Tech Stack
+## Stack
 
-- **Next.js 14**: React framework with App Router
-- **React 18**: UI library
-- **TypeScript**: Type safety
-- **Tailwind CSS**: Utility-first CSS
-- **Lucide React**: Icon library
-- **React Markdown**: Markdown rendering with math support
+Next.js 14 · React 18 · TypeScript · Tailwind · Lucide · react-markdown  
 
-## Getting Started
+## Setup
 
-### Prerequisites
-
-- Node.js 18+ and npm
-- Backend API server running on port 8000
-
-### Installation
+Backend API on **:8000** (see root README).
 
 ```bash
 cd frontend
 npm install
+npm run dev          # http://localhost:3000
 ```
 
-### Development
+Or from repo root:
 
 ```bash
-npm run dev
+bash scripts/start-dev.sh   # API + UI together
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-## Project Structure
-
-```
-frontend/
-├── app/
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   ├── page.tsx             # Main chat/research interface
-│   ├── history/
-│   │   └── page.tsx         # History page
-│   └── settings/
-│       └── page.tsx         # Settings page
-├── components/              # Reusable components (to be added)
-├── public/                  # Static assets
-├── package.json
-├── tsconfig.json
-├── tailwind.config.js
-├── next.config.js
-└── postcss.config.js
-```
-
-## API Integration
-
-The frontend connects to the backend API:
-
-- `POST /api/chat` - Chat endpoint
-- `POST /api/research` - Research endpoint
-- `GET /api/history` - History endpoint
-- `GET /api/providers` - Providers endpoint
-
-API requests are proxied through Next.js rewrites to avoid CORS issues.
-
-## Future Enhancements
-
-- [ ] Streaming responses
-- [ ] Real-time research progress
-- [ ] Export to PDF/DOCX
-- [ ] Vault browser
-- [ ] Provider management UI
-- [ ] Workspace management
-- [ ] Multi-user support
-- [ ] Mobile app (React Native)
+`next.config.js` rewrites `/api/*` to the FastAPI backend.

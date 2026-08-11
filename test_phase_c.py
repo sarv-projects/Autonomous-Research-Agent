@@ -59,7 +59,11 @@ def test_ship_gate_valid():
         ],
         "claims": [{"text": "Test claim", "evidence_ids": ["http://a.com"]}],
         "evidence_map": {"http://a.com": ["Test claim"]},
-        "retrieved_chunks": [],
+        # Integrity invariant: a valid report's evidence URLs were actually
+        # retrieved this run (P0.4) — chunks must carry the URL.
+        "retrieved_chunks": [
+            {"url": "http://a.com", "title": "Source A", "text": "content", "id": "1", "score": 0.9},
+        ],
     }
     passed, issues = _validate_ship_gate(state)
     assert passed, f"Expected pass, got: {issues}"

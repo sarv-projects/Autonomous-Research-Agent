@@ -99,11 +99,57 @@ def mineru_parse_pdf(file_or_url: str) -> Dict[str, str]:
                 pass
 
 
+def mineru_search(query: str, max_results: int = 5) -> List[Dict]:
+    """Search academic PDFs via arXiv API (zero key) for MinerU extraction pipeline."""
+    if not query.strip():
+        return []
+    try:
+        import urllib.parse
+        import xml.etree.ElementTree as ET
+
+        q = urllib.parse.quote(query)
+        url = (
+            f"http://export.arxiv.org/api/query?search_query=all:{q}"
+            f"&start=0&max_results={min(max_results, 10)}"
+        )
+        req = urllib.request.Request(url, headers={"User-Agent": "AutonomousResearchAgent/1.0"})
+        with urllib.request.urlopen(req, timeout=15.0) as resp:
+            xml = resp.read().decode("utf-8", errors="ignore")
+        root = ET.fromstring(xml)
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        results: List[Dict] = []
+        for entry in root.findall("a:entry", ns):
+            title = (entry.findtext("a:title", default="", namespaces=ns) or "").strip()
+            summary = (entry.findtext("a:summary", default="", namespaces=ns) or "").strip()
+            pdf_url = ""
+            for link in entry.findall("a:link", ns):
+                if link.attrib.get("title") == "pdf" or link.attrib.get("type") == "application/pdf":
+                    pdf_url = link.attrib.get("href", "")
+                    break
+            if not pdf_url:
+                id_url = entry.findtext("a:id", default="", namespaces=ns) or ""
+                if "arxiv.org/abs/" in id_url:
+                    pdf_url = id_url.replace("/abs/", "/pdf/") + ".pdf"
+            if pdf_url:
+                results.append({
+                    "title": title.replace("\n", " "),
+                    "url": pdf_url,
+                    "content": summary[:800],
+                    "raw_content": summary,
+                    "score": 0.75,
+                    "source": "arxiv-mineru",
+                })
+        return results[:max_results]
+    except Exception as e:
+        print(f"  [mineru] arxiv search failed ({e})")
+        return []
+
+
 def mineru_extract(urls: List[str]) -> List[Dict]:
     """Extract content from multiple PDF URLs using MinerU adapter."""
     results = []
     for url in urls[:5]:
-        if url.lower().endswith(".pdf") or "/pdf/" in url.lower():
+        if url.lower().endswith(".pdf") or "/pdf/" in url.lower() or "arxiv.org" in url.lower():
             parsed = mineru_parse_pdf(url)
             if parsed and parsed.get("content"):
                 results.append(parsed)

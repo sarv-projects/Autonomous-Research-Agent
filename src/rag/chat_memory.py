@@ -78,7 +78,24 @@ class ChatMemory:
             self.summary = self.summary[-self.max_summary_length:]
 
     def _generate_summary(self, text: str) -> str:
-        """Generate a brief summary of conversation segment."""
+        """Generate a brief summary of conversation segment.
+
+        Prefers a cheap LLM summary when available; falls back to heuristics.
+        """
+        # Try LLM summary (fast tier) — best-effort, never blocks chat hard
+        try:
+            from src.llm import call_llm
+            summary = call_llm(
+                "Summarize the conversation excerpt in 1-2 short sentences. "
+                "Keep key facts and open questions. No preamble.",
+                text[:2000],
+                model="fast",
+            )
+            if summary and len(summary.strip()) > 10:
+                return f"[summary: {summary.strip()[: self.max_summary_length]}]"
+        except Exception:
+            pass
+
         sentences = [s.strip() for s in text.replace("\n", ". ").split(".") if s.strip()]
         key_indicators = ["?", "important", "key", "main", "note", "result"]
         key_sentences = [
