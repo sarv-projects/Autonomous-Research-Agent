@@ -2,17 +2,15 @@
 
 # Providence
 
-**Deep research engine with verified evidence.**
+**A deep research engine that verifies what it reports.**
 
-Give it a hard question. Providence plans the investigation, searches and reads the literature, challenges its own conclusions with adversarial search, verifies every claim against the sources it actually fetched — and compiles a structured, cited report that separates **what is proven** from **what remains open**, with a machine-checked ship-gate that blocks fabricated sources.
+Providence takes a research question, plans the investigation, searches and reads the literature, checks its own conclusions against counter-evidence, verifies each claim against the sources it actually fetched, and compiles a cited report that separates what is proven from what remains open. A ship-gate blocks reports that would cite fabricated sources.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-FF6F00.svg)](https://github.com/langchain-ai/langgraph)
 [![Next.js](https://img.shields.io/badge/UI-Next.js-000000.svg?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-
-*Why “Providence”? Foresight (pro-vidence) + provable evidence. The engine looks ahead through planning and adversarial search, then proves what it claims against the evidence it gathered.*
 
 </div>
 
@@ -43,33 +41,49 @@ Give it a hard question. Providence plans the investigation, searches and reads 
 
 ## What this is
 
-This is a **deep-research engine**, not a chat wrapper. Research is treated as a production pipeline: an investigation is planned before it is executed, sources are gathered and verified against one another, weaknesses are actively hunted by an adversarial agent, and the final report documents its own evidentiary limits in a layered structure:
+Providence is a multi-agent research pipeline. It plans an investigation before executing it, gathers sources, verifies them against each other, and writes a report that documents its own evidentiary limits. The final report is layered:
 
 | Layer | What it contains |
 |---|---|
 | **Inference body** | The synthesis, with inline citation markers `[N]` |
-| **Evidence Bedrock** | Verbatim quotes from this run's sources that anchor the report's claims, each labeled `supported` / `contested` / `synthetic` |
+| **Evidence Bedrock** | Verbatim quotes from this run's sources anchoring the report's claims, each labeled `supported` / `contested` / `synthetic` |
 | **Research Debt** | Claims that could not be fully verified, and questions the run could not close |
 | **Sources** | URLs actually retrieved during this run — nothing recycled, nothing fabricated |
 
-Every URL in Sources is one that was retrieved and read in that specific run (`run_id`-namespaced). This is enforced mechanically by the compiler, not just by prompting.
+Every URL in Sources was retrieved and read in that specific run (`run_id`-namespaced). The compiler enforces this mechanically, not by prompting.
 
 ---
 
 ## How it works
 
-Research is orchestrated as a **LangGraph state machine** (`src/graph.py`) in which ten agent roles — each implemented as a graph node — own one stage, with conditional routers that decide between iteration, Socratic re-gather, escalation, or abort after every key stage:
+Research runs as a **LangGraph state machine** (`src/graph.py`). Ten agent roles, each a graph node, own one stage; conditional routers decide between iteration, Socratic re-gather, escalation, or abort after every key stage:
 
-```
-thinker_query_scout → planner → thinker_plan_refine
-  → [researcher_gather → researcher_analyze → thinker_contradiction_check
-     → critic → thinker_search_strategy] × N
-  → devil_advocate_gather → claim_adjudicator
-  →(Socratic hop ≤1)→ researcher_gather
-  → triangulator → synthesizer_outline → synthesizer_write → compiler
+```mermaid
+flowchart TD
+    Scout["thinker_query_scout"] --> Planner["planner"]
+    Planner --> Refine["thinker_plan_refine"]
+
+    subgraph LOOP["Research loop · × N iterations"]
+        Gather["researcher_gather"]
+        Analyze["researcher_analyze"]
+        Contradiction["thinker_contradiction_check"]
+        Critic["critic"]
+        Strategy["thinker_search_strategy"]
+        Gather --> Analyze --> Contradiction --> Critic --> Strategy
+        Strategy -->|needs more| Gather
+    end
+
+    Refine --> Gather
+    Strategy -->|abort| Compiler
+
+    Strategy -->|complete| DA["devil_advocate_gather"]
+    DA --> Adjudicator["claim_adjudicator"]
+    Adjudicator -->|Socratic hop ≤1| Gather
+    Adjudicator -->|done| Triangulator["triangulator"]
+    Triangulator --> SynthOutline["synthesizer_outline"] --> SynthWrite["synthesizer_write"] --> Compiler["compiler"]
 ```
 
-An `abort_passthrough` node ensures that a run that cannot recover from off-topic contamination or budget exhaustion still reaches the compiler and emits an honest status report rather than nothing.
+An `abort_passthrough` node ensures a run that cannot recover from off-topic contamination or budget exhaustion still reaches the compiler and emits an honest status report rather than nothing.
 
 ---
 
@@ -134,7 +148,7 @@ The ship-gate. It:
 - Renumbers inline `[N]` citations across parallel-written sections against the final Sources list
 - Strips duplicate title headings and trailing References blocks from parallel-writer artifacts
 - Verifies claim–evidence coverage using adjudicator labels (or phrase/word fallback)
-- Assembles the "confidence volcano": Inference body → **Evidence Bedrock** → **Research Debt** → **Sources**
+- Assembles the report in layered order: Inference body → **Evidence Bedrock** → **Research Debt** → **Sources**
 - Detects and renders LaTeX math via MathJax/KaTeX
 - Exports Markdown and HTML to `reports/`
 - Under autonomy L3, blocks emission if the ship-gate fails
@@ -142,40 +156,6 @@ The ship-gate. It:
 ---
 
 ## Architecture
-
-### Research pipeline
-
-```mermaid
-flowchart TD
-    Q["User query + mode / autonomy"] --> Scout["Thinker scout · Exa peek + 3× parallel Gemini<br/>(intent · systems · eval)"]
-    Scout --> Planner["Planner"]
-    Planner --> Refine["Thinker plan refine"]
-
-    subgraph LOOP["Research loop · ≤ mode max iterations"]
-        direction TB
-        Gather["Researcher gather · Exa / arXiv / web search"] --> Analyze["Analyze · claims<br/>ingest LanceDB + FTS (run_id)"]
-        Analyze --> Contradiction["Thinker contradiction check"]
-        Contradiction --> Critic["Critic · off-topic / completeness gate"]
-        Critic --> Strategy["Thinker search strategy"]
-        Strategy -->|needs more| Gather
-    end
-
-    Refine --> Gather
-    Strategy -->|abort| Compiler
-
-    Strategy -->|complete| DA["Devil's advocate · counter-evidence"]
-    DA --> Adjudicator["Claim adjudicator · CoVe-lite · research debt"]
-    Adjudicator -->|Socratic hop ≤ 1| Gather
-    Adjudicator -->|done| Triangulator["Triangulator · pro / con / neutral"]
-    Triangulator --> Synth["Synthesizer · outline → parallel section writing → self-critique"]
-    Synth --> Compiler["Compiler · ship-gate · claim–evidence"]
-
-    Compiler --> Body["Inference body"]
-    Compiler --> Bedrock["Evidence Bedrock"]
-    Compiler --> Debt["Research Debt"]
-    Compiler --> Sources["Sources"]
-    Body & Bedrock & Debt & Sources --> Report["Markdown + HTML report"]
-```
 
 ### Supporting stack
 
@@ -203,16 +183,16 @@ graph LR
 | **Mode system** (`src/engine/modes.py`) | `config/modes.yaml`-loaded modes with per-mode `ModeBudgets` (max_tokens, max_cost_usd, max_time_s, max_tool_calls, max_iterations) and `QualityDial` overlays |
 | **Progress & jobs** (`src/engine/progress.py`, `jobs.py`) | Thread-safe in-process job registry + progress tracker recording `learned / gaps / next_action` for the thinking panel and SSE streaming |
 | **Plan store** (`src/engine/plan_store.py`) | Editable research plan state for autonomy L2 human-in-the-loop plan approval gate |
-| **Clarify** (`src/engine/clarify.py`) | Ambiguity detection + ChatGPT-style clarifying questions prelude for vague queries |
+| **Clarify** (`src/engine/clarify.py`) | Ambiguity detection + clarifying questions prelude for vague queries |
 | **Budget enforcement** (`src/engine/budget.py`) | Runtime checks on time, cost, token, and tool-call limits; syncs live gateway metrics into state |
 | **Durable execution** (`src/engine/temporal/`) | Optional Temporal.io workflows (`ResearchWorkflow`, `HumanInLoopWorkflow`) for ultra-long runs that must survive restarts; automatic in-process fallback |
 | **Rendering** (`src/render/`) | LaTeX detection, sanitization, MathJax CDN wrapping, Markdown→HTML conversion |
 | **Gateway dashboard** (`src/dashboard/`) | Zero-dependency stdlib-only dashboard (ThreadingHTTPServer + SSE) with live metrics, circuit breaker states, research progress stream, and Prometheus `/metrics` endpoint |
 | **Eval framework** (`src/eval/`) | Component evaluators (tool selection, plan coherence, memory recall, RAG IR, citation grounding) + system evaluators (task completion, trajectory, efficiency, research quality) |
 
-### Integrity, mechanically
+### Evidence integrity
 
-The property this system cares most about: **the report says what the evidence says**.
+The property this system cares about: **the report says what the evidence says**.
 
 - **Per-run retrieval isolation** — every run indexes into its own `run_id` namespace; topic A can never cite sources ingested for topic B
 - **Off-topic detection** — if a run drifts outside the plan, it re-searches or aborts instead of hallucinating forward
@@ -620,7 +600,7 @@ python -m src.dashboard [--port 8080]
 
 ### Measured performance — 15-topic stress suite (August 2026)
 
-To test the engine the way a demanding user would, 15 high-complexity topics spanning geopolitics, climate, energy, space, biology, macro-economics, AI, mining, housing, medicine, transport, telecom, water, and education were each run end-to-end (`standard` mode) and scored against **independently web-researched ground truth** — not against the model's own claims. Every run logged its prompt, duration, findings, claims, evidence-graph edges, adjudication labels, citation list, source domains, and research-debt flags.
+15 high-complexity topics spanning geopolitics, climate, energy, space, biology, macro-economics, AI, mining, housing, medicine, transport, telecom, water, and education were each run end-to-end (`standard` mode) and scored against **independently web-researched ground truth** — not against the model's own claims. Every run logged its prompt, duration, findings, claims, evidence-graph edges, adjudication labels, citation list, source domains, and research-debt flags.
 
 **Aggregate (15 runs):**
 
@@ -635,7 +615,7 @@ To test the engine the way a demanding user would, 15 high-complexity topics spa
 | Ship-gate | 15/15 passed — **zero fabricated sources** |
 | Grades | 8× **A**, 6× **B**, 1× **C** (avg overall 0.82) |
 
-**Universal rubric — how it scores per dimension:**
+**Universal rubric — scores per dimension:**
 
 | Checkpoint | Avg | Meaning |
 |---|---|---|
@@ -659,9 +639,9 @@ To test the engine the way a demanding user would, 15 high-complexity topics spa
 | 7 | Llama-4 vs GPT-5 | **B** | 6/0/1 | | 15 | AI tutoring | **B** | 4/0/1 |
 | 8 | Deep-sea mining (CCZ) | **A** | 5/1/0 | | | | | |
 
-**What this means, honestly:**
+**Reading the results:**
 
-- **Integrity is the strongest axis.** 15/15 reports passed the ship-gate with mechanically verified sources and 86% fact accuracy against independent ground truth — including exact figures (NDB $100B capital, AMOC 59±17% pre-2050 probability, Centrus 920 kg HALEU, GPT-5 74.9% SWE-bench, Lake Mead 1,040 ft). This is the property the architecture was built for, and it holds under stress.
+- **Integrity is the strongest axis.** 15/15 reports passed the ship-gate with mechanically verified sources and 86% fact accuracy against independent ground truth — including exact figures (NDB $100B capital, AMOC 59±17% pre-2050 probability, Centrus 920 kg HALEU, GPT-5 74.9% SWE-bench, Lake Mead 1,040 ft).
 - **Structure and honesty layers are strong.** Actionable theses (100%) and contrarian forks (87%) are effectively guaranteed by the triangulator + adversary + research-debt pipeline.
 - **The gaps are in retrieval breadth, not verification.** Newswire coverage and Global South sourcing lag (source diversity 68%, geographic equity 75%), and two runs exited the research loop early with thin numeric density (T10, T11 — the marginal-value stop signal fired too eagerly). T14 (lunar) missed three specific hardware facts — the single weak run.
 - **Latency beats product Deep Research** (8.1 min avg vs 5–30 min) while keeping ~90% of its factual density on most topics — the benchmark's own success criterion.

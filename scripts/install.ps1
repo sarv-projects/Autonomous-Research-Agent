@@ -34,10 +34,11 @@ uv run python test_gateway.py
 Write-Host ""
 Write-Host "Done."
 Write-Host ""
-Write-Host "  Built today (needs GROQ_API_KEY or OPENAI/OPENROUTER + TAVILY_API_KEY):"
-Write-Host '    uv run python main.py "your research topic"'
+Write-Host "  Getting started:"
+Write-Host "    uv run python main.py doctor"
+Write-Host '    uv run python main.py research "your research topic"'
+Write-Host "    uv run python main.py chat"
 Write-Host "    uv run python main.py --history"
 Write-Host "    uv run python -m src.dashboard --port 8080"
 Write-Host ""
-Write-Host "  Spec target (not implemented yet): chat / doctor / OpenCode free empty-key"
 Write-Host "  Docs: docs/INSTALL.md · docs/SPEC.md · docs/AUDIT.md"
