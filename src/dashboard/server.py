@@ -50,6 +50,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif self.path == "/api/status":
             snap = DEFAULT_METRICS.snapshot()
             snap["generated_at"] = time.time()
+            # Search-cache observability from the tool bus (size, TTL, hit rate).
+            try:
+                from src.tools.registry import get_registry
+                snap["search_cache"] = get_registry().cache_stats()
+            except Exception:
+                snap["search_cache"] = {}
             self._send_json(snap)
         elif self.path == "/api/events":
             self._serve_sse()

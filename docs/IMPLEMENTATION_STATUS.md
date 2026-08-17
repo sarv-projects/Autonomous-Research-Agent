@@ -27,6 +27,8 @@
 | Modes + budgets + autonomy L1–L3 | ✅ |
 | Resilient LLM gateway + providers.yaml | ✅ |
 | Tool bus (Wiki, Firecrawl, Exa/Tavily, arXiv) | ✅ |
+| Tool bus speed: TTL search cache + parallel extraction + optional provider fusion | ✅ |
+| Ops dashboard search-cache metrics (size, TTL, hit rate) | ✅ |
 | Hybrid RAG (LanceDB + FTS) + on-topic vault filter | ✅ |
 | FastAPI + Next.js UI | ✅ |
 | Temporal optional ultra-long | ✅ |

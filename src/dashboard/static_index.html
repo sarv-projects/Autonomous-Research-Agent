@@ -71,6 +71,7 @@
   <div class="card metric"><h3>Errors</h3><div class="big" id="m-errors">0</div><div class="label" id="m-err-rate">error rate —</div></div>
   <div class="card metric"><h3>Est. Cost</h3><div class="big cost" id="m-cost">$0.0000</div><div class="label">per 1M tokens pricing</div></div>
   <div class="card metric"><h3>Rate Limit</h3><div class="big" id="m-rl">0 adm / 0 den</div><div class="label" id="m-inflight">in flight —</div></div>
+  <div class="card metric"><h3>Search Cache</h3><div class="big" id="m-cache">0</div><div class="label" id="m-cache-label">entries · hit rate —</div></div>
 </section>
 
 <div class="grid2">
@@ -100,10 +101,6 @@
     <h3>Live Event Stream</h3>
     <div class="log" id="log"><div class="empty">waiting for gateway activity…</div></div>
   </section>
-  <section class="card">
-    <h3>Circuit Breakers</h3>
-    <div class="routes" id="circuits"><div class="empty">no routes yet</div></div>
-  </section>
 </div>
 
 <script>
@@ -120,6 +117,15 @@ function render(s){
   $('m-cost').textContent = '$'+cost.toFixed(4);
   const rl=s.ratelimit||{}; $('m-rl').textContent = (rl.admitted||0)+' adm / '+(rl.denied||0)+' den';
   $('m-inflight').textContent = 'uptime '+(s.uptime_s?s.uptime_s.toFixed(0)+'s':'—');
+  const sc=s.search_cache||{};
+  if(sc && typeof sc.entries==='number'){
+    $('m-cache').textContent = fmt(sc.entries) + ' / ' + fmt(sc.max_entries||0);
+    const hr = (sc.hit_rate*100).toFixed(0);
+    $('m-cache-label').textContent = 'hit '+hr+'% · '+sc.hits+' h / '+sc.misses+' m · TTL '+sc.ttl_s+'s';
+  } else {
+    $('m-cache').textContent = '—';
+    $('m-cache-label').textContent = 'no cache activity yet';
+  }
 
   // model table
   const pp=s.per_provider_model||{}; const keys=Object.keys(pp);

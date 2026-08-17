@@ -76,9 +76,11 @@ uv run python -m src.dashboard --port 8080
 | Endpoint | Purpose |
 |----------|---------|
 | `/` | SPA metrics UI |
-| `/api/status` | JSON snapshot |
+| `/api/status` | JSON snapshot (includes `search_cache` telemetry from the tool bus) |
 | `/api/events` | SSE event stream |
 | `/metrics` | Prometheus scrape |
+
+The dashboard's **Search Cache** card shows the tool-bus search cache (entries / max, hit rate, hits/misses, TTL) — see [ARCHITECTURE.md](ARCHITECTURE.md) §4c.
 
 ---
 

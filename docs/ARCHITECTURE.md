@@ -297,6 +297,20 @@ url or file → download → parser (MinerU default | Nougat if academic-math fl
 
 ---
 
+## 4c. Tool bus performance
+
+The tool registry (`src/tools/registry.py`) layers three speed/coverage optimizations on top of the adapter set:
+
+| Mechanism | What it does | Tuning |
+|-----------|--------------|--------|
+| **TTL search cache** | Repeated/overlapping sub-queries within a run (or across overlapping runs) hit an in-process cache instead of re-paying the provider. Only successful (non-empty) results are cached so failures can retry. | `TOOL_SEARCH_CACHE_TTL_S` (default 600) · `TOOL_SEARCH_CACHE_MAX` (default 256) |
+| **Parallel extraction** | URLs are fetched concurrently instead of one-by-one. Batch-API tools (Exa `/contents`, Tavily `/extract`, Wikipedia) keep a single batch call; per-URL extractors (Firecrawl, builtin scraper, MinerU, Nougat) are sharded across a bounded worker pool. | — |
+| **Provider fusion** | With `TOOL_FUSE_SEARCH=1`, the top `web_search` providers run **concurrently** and results are merged by URL instead of the sequential fallback chain — broader coverage in one round-trip. Off by default to avoid surprising rate limits. | `TOOL_FUSE_SEARCH` (`1`/`0`) |
+
+Search-cache telemetry (entries, TTL, hit/miss rate) is surfaced in the ops dashboard — see [GATEWAY.md](GATEWAY.md).
+
+---
+
 ## 5. RAG layer
 
 ```python

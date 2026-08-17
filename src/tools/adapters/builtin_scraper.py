@@ -44,12 +44,30 @@ def scrape_url(url: str) -> dict:
 
 
 def builtin_extract(urls: list[str]) -> list[dict]:
-    """Extract content from multiple URLs using the built-in scraper."""
-    results = []
-    for url in urls[:8]:
-        r = scrape_url(url)
-        if r and r.get("content"):
-            results.append(r)
+    """Extract content from multiple URLs using the built-in scraper.
+
+    URLs are fetched CONCURRENTLY (bounded worker pool) — the always-on
+    fallback path, so it should not serialize the research round.
+    """
+    if not urls:
+        return []
+    urls = list(dict.fromkeys(urls))[:8]
+    results: list[dict] = []
+    seen: set[str] = set()
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=min(len(urls), 4)) as executor:
+        futures = {executor.submit(scrape_url, url): url for url in urls}
+        for future in as_completed(futures):
+            try:
+                r = future.result()
+            except Exception:
+                continue
+            if r and r.get("content"):
+                u = r.get("url", "")
+                if u and u not in seen:
+                    seen.add(u)
+                    results.append(r)
     return results
 
 

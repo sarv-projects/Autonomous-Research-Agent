@@ -166,14 +166,30 @@ def firecrawl_scrape(url: str) -> Dict:
 
 
 def firecrawl_extract(urls: List[str]) -> List[Dict]:
-    """Extract full markdown from multiple URLs via Firecrawl."""
+    """Extract full markdown from multiple URLs via Firecrawl.
+
+    URLs are scraped CONCURRENTLY (bounded worker pool) so a slow page
+    doesn't serialize the whole batch.
+    """
     if not urls:
         return []
-    results = []
-    for url in urls[:5]:
-        r = firecrawl_scrape(url)
-        if r and r.get("content"):
-            results.append(r)
+    urls = list(dict.fromkeys(urls))[:8]
+    results: List[Dict] = []
+    seen: set = set()
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=min(len(urls), 5)) as executor:
+        futures = {executor.submit(firecrawl_scrape, url): url for url in urls}
+        for future in as_completed(futures):
+            try:
+                r = future.result()
+            except Exception:
+                continue
+            if r and r.get("content"):
+                u = r.get("url", "")
+                if u and u not in seen:
+                    seen.add(u)
+                    results.append(r)
     return results
 
 
