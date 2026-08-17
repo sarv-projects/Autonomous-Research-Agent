@@ -281,9 +281,11 @@ INSTRUCTIONS:
 - Write an exhaustive, deep technical passage (5-8 detailed paragraphs for body sections; shorter OK for exec summary).
 - Include ASCII architecture flowcharts/diagrams where relevant.
 - Include Markdown comparison tables and LaTeX mathematical equations ($...$) where applicable.
-- Use inline citations like [1], [2] matching source order when possible.
+- Use inline citations like [1], [2] matching the numbered source materials above.
+- Do NOT invent a References / Bibliography / Sources section — the compiler adds Sources.
+- Do NOT invent arXiv IDs, venues, or paper titles that are not in the source materials.
 - Provide rigorous analysis, specific parameters, and real-world implementations.
-- Only cite systems/papers supported by the source materials or well-known RAG literature.
+- Only name systems/papers that appear in the source materials.
 """
 
     max_tok = None

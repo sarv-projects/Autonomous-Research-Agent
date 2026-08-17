@@ -5,15 +5,16 @@ The interface is unchanged (``call_llm`` / ``call_llm_strong``) so the existing
 LangGraph nodes keep working. Under the hood every call goes through the
 BYOK LLM gateway with:
 
-- Multi-provider failover (paid keys → Zen free default)
+- Multi-provider failover (Zen free default → paid keys last)
 - Circuit breakers per model endpoint
 - Retries with exponential backoff + full jitter
 - Per-(tenant, model) rate limiting and concurrency caps
 - Cost/token accounting + metrics for the dashboard
 
 Provider priority:
-  1. Paid providers from env (Groq > OpenAI > OpenRouter) when keys present
-  2. OpenCode Zen free (mimo-v2.5-free, always available, no key needed)
+  1. Workhorse (fast/strong): OpenCode Zen free (no key)
+  2. Thinker: Gemini Flash only (GEMINI_API_KEY)
+  3. Paid Groq/OpenAI only after Zen workhorse routes fail
 """
 
 import os

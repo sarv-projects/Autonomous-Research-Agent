@@ -164,10 +164,10 @@ def build_gateway_from_env(
                         registered += 1
 
                 # Ensure free fallback routes if a tier is empty
+                # Thinker is Gemini-only — do not backfill it with Zen.
                 for tier_name, free_model in (
-                    ("fast", "mimo-v2.5-free"),
-                    ("strong", "deepseek-v4-flash-free"),
-                    ("thinker", "big-pickle"),
+                    ("fast", "nemotron-3-ultra-free"),
+                    ("strong", "nemotron-3-ultra-free"),
                 ):
                     if not gw.get_routes(tier_name):
                         gw.register(
@@ -198,32 +198,31 @@ def build_gateway_from_env(
     ]
     paid_providers = [p for p in paid_providers if p is not None]
 
-    # Zen free FIRST for workhorse tiers — Gemini only on thinker
+    # Zen free FIRST for every tier — paid keys are last-resort only
     default_fast = [
+        ("opencode_free", "nemotron-3-ultra-free"),
+        ("opencode_free", "hy3-free"),
+        ("opencode_free", "nemotron-3.5-lightning-free"),
         ("opencode_free", "laguna-s-2.1-free"),
         ("opencode_free", "mimo-v2.5-free"),
         ("opencode_free", "deepseek-v4-flash-free"),
         ("groq", "llama-3.1-8b-instant"),
-        ("groq", "openai/gpt-oss-20b"),
         ("openai", "gpt-4o-mini"),
     ]
     default_strong = [
-        ("opencode_free", "deepseek-v4-flash-free"),
         ("opencode_free", "nemotron-3-ultra-free"),
+        ("opencode_free", "hy3-free"),
+        ("opencode_free", "deepseek-v4-flash-free"),
         ("opencode_free", "big-pickle"),
-        ("groq", "llama-3.3-70b-versatile"),
+        ("opencode_free", "nemotron-3.5-lightning-free"),
         ("groq", "openai/gpt-oss-120b"),
         ("openai", "gpt-4o-mini"),
     ]
     default_thinker = [
-        ("opencode_free", "big-pickle"),
-        ("opencode_free", "nemotron-3-ultra-free"),
         ("gemini", "gemini-3.5-flash-lite"),
         ("gemini", "gemini-3.1-flash-lite"),
         ("gemini", "gemini-3.6-flash"),
-        ("groq", "openai/gpt-oss-120b"),
-        ("groq", "qwen/qwen3.6-27b"),
-        ("opencode_free", "deepseek-v4-flash-free"),
+        ("gemini", "gemini-2.5-flash"),
     ]
 
     fast = fast_models or default_fast

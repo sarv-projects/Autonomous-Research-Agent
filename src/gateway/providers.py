@@ -45,6 +45,8 @@ PRICING: Dict[str, tuple] = {
     "deepseek-v4-flash-free": (0.0, 0.0),
     "big-pickle": (0.0, 0.0),
     "nemotron-3-ultra-free": (0.0, 0.0),
+    "nemotron-3.5-lightning-free": (0.0, 0.0),
+    "hy3-free": (0.0, 0.0),
     "laguna-s-2.1-free": (0.0, 0.0),
     # Gemini free tier (free input/output on eligible models)
     "gemini-3.6-flash": (0.0, 0.0),

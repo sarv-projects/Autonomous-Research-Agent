@@ -78,9 +78,9 @@ def doctor() -> None:
         slot = load_catalog().providers.get("opencode_free")
         models = list(slot.models) if slot else []
         print(f"  Configured free models: {', '.join(models[:6])}{'…' if len(models)>6 else ''}")
-        print(f"  Primary default: {models[0] if models else 'laguna-s-2.1-free'}")
+        print(f"  Primary default: {models[0] if models else 'nemotron-3-ultra-free'}")
         # One quick live check only (full matrix: Settings → Test Zen free models)
-        probe_id = models[0] if models else "laguna-s-2.1-free"
+        probe_id = models[0] if models else "nemotron-3-ultra-free"
         r = probe_model("opencode_free", probe_id, timeout=20.0)
         if r.get("ok"):
             print(f"  Live check OK  {probe_id}  ({r.get('latency_s')}s)  {(r.get('reply') or '')[:40]}")

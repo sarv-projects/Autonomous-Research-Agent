@@ -37,7 +37,7 @@ from src.engine.temporal.activities import get_pending_approvals, submit_human_a
 app = FastAPI(
     title="Providence API",
     description="REST API for the Providence deep-research engine",
-    version="0.2.0"
+    version="0.3.0"
 )
 
 # Add CORS middleware
@@ -163,7 +163,7 @@ async def get_status():
     metrics = _metrics_totals(DEFAULT_METRICS.snapshot())
     return {
         "status": "healthy",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "gateway": {
             "fast_routes": info.get("fast_routes", 0),
             "strong_routes": info.get("strong_routes", 0),
@@ -625,7 +625,7 @@ class SettingsModel(BaseModel):
     autonomy: str = "L1"
     max_cost: float = 5.0
     max_iterations: int = 3
-    default_model: str = "opencode_free/laguna-s-2.1-free"
+    default_model: str = "opencode_free/nemotron-3-ultra-free"
 
 
 def _settings_path() -> str:
@@ -811,7 +811,7 @@ async def list_models(discover: bool = True, probe: bool = False, provider: Opti
         "groups": groups,
         "probes": list(probes_map.values()),
         "default_provider": "opencode_free",
-        "default_model": "laguna-s-2.1-free",
+        "default_model": "nemotron-3-ultra-free",
         "note": "OpenCode Zen free models require no API key. Set GROQ_API_KEY / NVIDIA_API_KEY / etc. for paid providers.",
     }
 
@@ -845,7 +845,7 @@ async def root():
     """Root API discovery endpoint."""
     return {
         "name": "Providence API",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "docs": "/docs",
         "endpoints": {
             "status": "/api/status",

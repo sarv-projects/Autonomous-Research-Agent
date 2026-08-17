@@ -592,6 +592,10 @@ Return a JSON object with:
             cu = canonical_url(url)
             if cu and cu in known_urls:
                 state["evidence_map"].setdefault(cu, []).append(c.get("text", "")[:100])
+    # Seed the map from URLs actually retrieved this run so critic/progress
+    # counts real sources even when the LLM invents evidence_ids.
+    for u in known_urls:
+        state["evidence_map"].setdefault(u, [])
 
     state["claims"] = state.get("claims", []) + claims
     state["gaps"] = gaps

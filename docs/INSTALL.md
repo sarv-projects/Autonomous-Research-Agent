@@ -1,93 +1,69 @@
 # Installation
 
-Supports **Bash (Linux/macOS)** and **PowerShell (Windows)**.  
-Product overview: [../README.md](../README.md). Status: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
-
----
+Product overview: [../README.md](../README.md). Index: [INDEX.md](INDEX.md).
 
 ## Prerequisites
 
 | Tool | Notes |
 |------|--------|
-| **Python** | 3.10+ (see `pyproject.toml`) |
-| **uv** | [docs.astral.sh/uv](https://docs.astral.sh/uv/) |
-| **Git** | Clone |
-| **Node 18+** (optional) | Frontend UI |
-| **Keys (recommended for A4 quality)** | `GROQ_API_KEY` + `EXA_API_KEY` + `GEMINI_API_KEY` |
-| **Keys (minimum free path)** | None — OpenCode Zen free + Wikipedia / built-in scrape |
-| **Temporal** (optional) | Ultra-long durable runs — [TEMPORAL.md](TEMPORAL.md) |
+| Python | 3.10+ |
+| [uv](https://docs.astral.sh/uv/) | package runner |
+| Git | clone |
+| Node 18+ | optional, for the web UI |
+| Keys | none required; see below |
 
----
-
-## Bash (Linux / macOS)
+## Linux / macOS
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # if needed
-
 git clone https://github.com/sarv-projects/providence.git
 cd providence
 bash scripts/install.sh
 cp .env.example .env
-# edit .env — add GROQ_API_KEY, EXA_API_KEY, GEMINI_API_KEY for best quality
+# optional: GEMINI_API_KEY, EXA_API_KEY
 
 uv run python main.py doctor
-uv run python main.py research "your research topic" --mode deep
+uv run python main.py research "your topic" --mode standard
 ```
 
-Web UI:
+UI:
 
 ```bash
 bash scripts/start-dev.sh
 # API :8000 · UI :3000
 ```
 
----
-
-## PowerShell (Windows)
+## Windows
 
 ```powershell
-# install uv if needed: https://docs.astral.sh/uv/
 git clone https://github.com/sarv-projects/providence.git
 cd providence
 .\scripts\install.ps1
 copy .env.example .env
-# edit .env
 
 uv run python main.py doctor
-uv run python main.py research "your research topic" --mode deep
+uv run python main.py research "your topic" --mode standard
 ```
 
----
-
-## Environment variables (common)
+## Environment
 
 | Variable | Role |
 |----------|------|
-| `GROQ_API_KEY` | Primary fast/strong generation (recommended) |
-| `EXA_API_KEY` | Primary neural web search |
-| `GEMINI_API_KEY` | Parallel scout (Flash-Lite class) |
-| `OPENAI_API_KEY` / `DEEPSEEK_API_KEY` | Optional failover |
-| `FIRECRAWL_API_KEY` / `TAVILY_API_KEY` | Optional search/extract |
-| `EMBEDDING_API_KEY` | Better vectors than local Dummy/BoW |
+| *(none)* | Zen free workhorse + Wikipedia / builtin scrape |
+| `GEMINI_API_KEY` | Thinker / scout |
+| `EXA_API_KEY` | Primary search |
+| `FIRECRAWL_API_KEY` / `TAVILY_API_KEY` / `NEWSDATA_API_KEY` | Extra retrieval |
+| `EMBEDDING_API_KEY` or `USE_CHAT_KEY_FOR_EMBEDDINGS=1` | Better vectors |
+| `GROQ_API_KEY` / `OPENAI_API_KEY` | Not on the default tier list |
 
-See [PROVIDERS.md](PROVIDERS.md) and `config/providers.yaml`.
-
----
-
-## Verify
-
-```bash
-uv run python main.py doctor
-uv run python main.py research "RAG hallucination reduction" --mode quick
-```
-
----
+Full catalog: [PROVIDERS.md](PROVIDERS.md) · `config/providers.yaml`.
 
 ## Troubleshooting
 
 | Issue | Check |
 |-------|--------|
-| No search results | Set `EXA_API_KEY` or other search keys |
-| Slow / weak text | Prefer Groq over free Zen alone |
-| Gemini 429 | Scout is 3 parallel calls; free tier ~15 RPM — wait and retry |
-| Frontend 404 on API | Backend on :8000; `next.config.js` rewrites `/api/*` |
+| No search results | Set `EXA_API_KEY` |
+| Slow / 429 on Zen free | Wait, or let failover hit the next Zen ID |
+| Weak scout / plan | Set `GEMINI_API_KEY` |
+| Gemini 429 | Scout is 3 parallel calls; free RPM is tight |
+| UI can’t reach API | Backend on :8000; Next rewrites `/api/*` |

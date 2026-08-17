@@ -198,17 +198,23 @@ def _strip_trailing_references(content: str) -> str:
 
 
 def _is_sources_like(title: str) -> bool:
-    """True if a section title is a sources/references section.
+    """True if a section title is a writer-produced bibliography.
 
-    The compiler appends its own # Sources section, so writer-produced
-    bibliography sections ("Sources & Bibliography", "8. References") are
-    dropped from the body to avoid duplication.
+    The compiler appends its own # Sources section, so mid-report lists
+    ("References & Sources", "8. References", "Sources & Bibliography")
+    are dropped from the body. Does not match ordinary titles that merely
+    contain the word "source" (e.g. "Open-source landscape").
     """
     t = re.sub(r"[^a-z ]", " ", (title or "").lower()).strip()
     t = re.sub(r"^\d+\s*", "", t).strip()
-    if "sources" in t and "bibliograph" in t:
+    words = set(t.split())
+    if any(w in words for w in ("references", "bibliography", "citations")):
         return True
-    return t in ("sources", "references", "bibliography", "works cited")
+    if t in ("sources", "source list", "works cited", "sources list"):
+        return True
+    if "sources" in words and any(w in words for w in ("list", "and", "bibliography")):
+        return True
+    return False
 
 
 def _claim_evidence_check(state: ResearchState) -> tuple[int, int, list[str]]:
@@ -386,6 +392,30 @@ def _build_research_debt_section(state: ResearchState) -> dict:
     return {"title": "Research Debt", "content": "\n".join(lines), "sources": []}
 
 
+def _unbound_inline_citations(state: ResearchState) -> int:
+    """Count [n] markers in body sections whose n is outside the final Sources list.
+
+    Writers invent [1] as a generic placeholder. After remapping, leftovers
+    that cannot bind to a fetched URL are counted here.
+    """
+    run_urls = _collect_run_urls(state)
+    n_src = len(run_urls)
+    if n_src == 0:
+        return 0
+    count = 0
+    for s in state.get("sections") or []:
+        if _is_sources_like(s.get("title") or ""):
+            continue
+        if (s.get("title") or "").lower() in ("evidence bedrock", "research debt", "bedrock"):
+            continue
+        content = s.get("content") or ""
+        for m in re.finditer(r"\[(\d{1,3})\]", content):
+            k = int(m.group(1))
+            if k < 1 or k > n_src:
+                count += 1
+    return count
+
+
 def _validate_ship_gate(state: ResearchState) -> tuple[bool, list[str]]:
     """Validate the report passes the ship gate before export."""
     issues: list[str] = []
@@ -427,6 +457,12 @@ def _validate_ship_gate(state: ResearchState) -> tuple[bool, list[str]]:
                 f"Claim–evidence check failed ({supported}/{total} supported); "
                 f"e.g. {samples[:2]}"
             )
+
+    unbound = _unbound_inline_citations(state)
+    if unbound >= 8 and not state.get("abort_synthesis"):
+        issues.append(
+            f"Body has {unbound} inline [n] citations that do not map to this-run URLs"
+        )
 
     # Evidence-graph gate (Argus): a meaningful graph with ZERO supported edges
     # means every claim is unsupported/contradicted — nothing should ship.

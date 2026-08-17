@@ -117,6 +117,17 @@ def test_graph_nodes_are_registered():
 
 
 # ── 4. Backward compat ──────────────────────────────────────────────────
+def test_sources_like_strips_writer_bibliographies():
+    from src.engine.agents.compiler import _is_sources_like
+    assert _is_sources_like("References & Sources")
+    assert _is_sources_like("8. References")
+    assert _is_sources_like("Sources")
+    assert _is_sources_like("Works Cited")
+    assert not _is_sources_like("Open-source landscape")
+    assert not _is_sources_like("Data sources in RAG")
+    print("8b/9 sources-like title matching OK")
+
+
 def test_old_nodes_still_work():
     # Verify the legacy nodes.py functions are still importable
     from src.nodes import parse_query, plan_searches, execute_searches
@@ -135,6 +146,7 @@ TESTS = [
     test_compiler_adds_sources_if_missing,
     test_graph_builds,
     test_graph_nodes_are_registered,
+    test_sources_like_strips_writer_bibliographies,
     test_old_nodes_still_work,
 ]
 

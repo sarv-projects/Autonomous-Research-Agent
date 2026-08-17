@@ -15,5 +15,11 @@ wheels/
 # Reports
 reports/
 
+# Runtime data (vector store, FTS, chat memory, vault)
+data/
+
 # Memory
 ~/.providence_memory.json
+
+# Third-party benchmark harness + its data (DeepResearch Bench clone)
+research/

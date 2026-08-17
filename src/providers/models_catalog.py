@@ -238,6 +238,7 @@ def probe_zen_free(timeout: float = 45.0) -> list[dict]:
     cat = load_catalog()
     slot = cat.providers.get("opencode_free")
     models = list(slot.models) if slot else [
+        "nemotron-3-ultra-free", "hy3-free", "nemotron-3.5-lightning-free",
         "laguna-s-2.1-free", "mimo-v2.5-free", "deepseek-v4-flash-free", "big-pickle",
     ]
     return [probe_model("opencode_free", m, timeout=timeout) for m in models]

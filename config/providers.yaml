@@ -1,11 +1,12 @@
-# Provider catalog — OpenCode Zen free is the DEFAULT primary.
-# Empty base_url → https://opencode.ai/zen/v1 (no key)
+# Provider catalog — OpenCode Zen FREE is the DEFAULT primary.
+# Empty base_url → https://opencode.ai/zen/v1  (POST /chat/completions)
 # Empty api_key_env → no Authorization header
 #
-# Live free models verified 2026-08-10 against https://opencode.ai/zen/v1/models
-# Working: big-pickle, deepseek-v4-flash-free, mimo-v2.5-free,
-#          nemotron-3-ultra-free, laguna-s-2.1-free, longcat-2.0-free
-# Flaky: ling-3.0-*-free (503), north-mini-code-free (401 without Zen key)
+# Official free IDs (docs 2026-08-17 + live GET /zen/v1/models, no key):
+#   nemotron-3-ultra-free, hy3-free, nemotron-3.5-lightning-free,
+#   laguna-s-2.1-free, mimo-v2.5-free, deepseek-v4-flash-free, big-pickle
+# Paid Zen / Go (https://opencode.ai/zen/go/v1) need OPENCODE_API_KEY.
+# Stale IDs removed: longcat-2.0-free, ling-3.0-*-free, north-mini-code-free
 
 providers:
   # ── OpenCode Zen free (always available, no key) ──
@@ -15,15 +16,13 @@ providers:
     api_key_env: ""
     default: true
     models:
-      - laguna-s-2.1-free          # verified OK, clean content
-      - mimo-v2.5-free             # verified OK
-      - deepseek-v4-flash-free     # verified OK
-      - big-pickle                 # verified OK (reasoning model)
-      - nemotron-3-ultra-free      # verified OK
-      - longcat-2.0-free           # verified OK
-      - ling-3.0-flash-free        # may 503
-      - ling-3.0-tiny-free         # may 503
-      - north-mini-code-free       # may need Zen paid key
+      - nemotron-3-ultra-free         # live 200 no-key, clean JSON
+      - hy3-free                      # live 200 no-key
+      - nemotron-3.5-lightning-free   # live 200 no-key
+      - laguna-s-2.1-free             # documented free; may 503
+      - mimo-v2.5-free                # documented free; may 429
+      - deepseek-v4-flash-free        # documented free; may 429
+      - big-pickle                    # documented free (reasoning)
 
   # ── Groq (https://console.groq.com/docs/openai · /docs/models) ──
   # OpenAI-compatible base: https://api.groq.com/openai/v1
@@ -133,59 +132,42 @@ providers:
       - command-r-plus
 
 # ── Tiers ──
-# Primary: Groq openai/gpt-oss-120b (best quality on account); Zen free fallback
-# Gemini remains thinker-only backup (not on fast/strong)
+# DEFAULT: OpenCode Zen free (no key). Paid keys are last-resort failover only.
+# Do not put Groq/OpenAI first even when those keys exist.
 tiers:
+  # Workhorse: OpenCode Zen free. Thinker: Gemini only (ARCHITECTURE / SPEC).
   fast:
-    - provider: groq
-      model: openai/gpt-oss-120b
-    - provider: groq
-      model: openai/gpt-oss-20b
-    - provider: groq
-      model: llama-3.1-8b-instant
+    - provider: opencode_free
+      model: nemotron-3-ultra-free
+    - provider: opencode_free
+      model: hy3-free
+    - provider: opencode_free
+      model: nemotron-3.5-lightning-free
     - provider: opencode_free
       model: laguna-s-2.1-free
     - provider: opencode_free
       model: mimo-v2.5-free
     - provider: opencode_free
       model: deepseek-v4-flash-free
-    - provider: openrouter
-      model: openrouter/free
-    - provider: nvidia_nim
-      model: meta/llama-3.1-8b-instruct
-    - provider: openai
-      model: gpt-4o-mini
 
   strong:
-    - provider: groq
-      model: openai/gpt-oss-120b
-    - provider: groq
-      model: llama-3.3-70b-versatile
+    - provider: opencode_free
+      model: nemotron-3-ultra-free
+    - provider: opencode_free
+      model: hy3-free
     - provider: opencode_free
       model: deepseek-v4-flash-free
     - provider: opencode_free
-      model: nemotron-3-ultra-free
-    - provider: opencode_free
       model: big-pickle
-    - provider: nvidia_nim
-      model: meta/llama-3.1-70b-instruct
-    - provider: openrouter
-      model: openrouter/free
-    - provider: openai
-      model: gpt-4o-mini
+    - provider: opencode_free
+      model: nemotron-3.5-lightning-free
 
   thinker:
-    - provider: groq
-      model: openai/gpt-oss-120b
-    - provider: groq
-      model: qwen/qwen3.6-27b
-    - provider: opencode_free
-      model: big-pickle
-    - provider: opencode_free
-      model: nemotron-3-ultra-free
     - provider: gemini
       model: gemini-3.5-flash-lite
     - provider: gemini
       model: gemini-3.1-flash-lite
     - provider: gemini
       model: gemini-3.6-flash
+    - provider: gemini
+      model: gemini-2.5-flash

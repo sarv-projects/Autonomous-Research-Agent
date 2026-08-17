@@ -31,6 +31,32 @@ def _topic_keywords(query: str) -> set[str]:
     return {w for w in words if w not in stop}
 
 
+def _run_source_urls(state: ResearchState) -> list[str]:
+    """URLs actually fetched/read this run — not LLM-invented evidence_map keys."""
+    from src.urlutil import canonical_url
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for bag in (
+        state.get("run_corpus") or [],
+        state.get("retrieved_chunks") or [],
+        state.get("extracted_pages") or [],
+        state.get("search_results") or [],
+    ):
+        for row in bag:
+            u = canonical_url((row or {}).get("url") or "")
+            if u and u not in seen:
+                seen.add(u)
+                out.append(u)
+    if not out:
+        for u in (state.get("evidence_map") or {}):
+            cu = canonical_url(u)
+            if cu and cu not in seen:
+                seen.add(cu)
+                out.append(cu)
+    return out
+
+
 def _findings_on_topic(query: str, findings: list[str]) -> tuple[bool, float]:
     """Heuristic: fraction of findings that share topic keywords with query."""
     kws = _topic_keywords(query)
@@ -62,6 +88,7 @@ def critic(state: ResearchState) -> ResearchState:
     findings = list(state.get("findings") or [])
     gaps = list(state.get("gaps") or [])
     query = state.get("query", "")
+    urls = _run_source_urls(state)
 
     state["status"] = f"Evaluating research ({iteration}/{max_iter})..."
     try:
@@ -72,7 +99,7 @@ def critic(state: ResearchState) -> ResearchState:
             status=state["status"],
             iteration=iteration,
             findings_count=len(findings),
-            sources_count=len(state.get("evidence_map") or {}),
+            sources_count=len(urls),
         )
         p.think("next", "Critic reviewing findings vs query")
     except Exception:
@@ -82,7 +109,6 @@ def critic(state: ResearchState) -> ResearchState:
     # ── Hard off-topic gate (P0.2) ──
     # Use findings + titles + urls (arxiv.org/abs/… has no topic words in path)
     on_topic, ratio = _findings_on_topic(query, findings)
-    urls = list((state.get("evidence_map") or {}).keys())
     query_kws = _topic_keywords(query)
     source_blob_parts: list[str] = list(urls)
     for c in state.get("retrieved_chunks") or []:
@@ -365,7 +391,7 @@ Return JSON:
         p.update(
             status=f"Evaluation: {'complete' if is_complete else 'needs more'}",
             findings_count=len(state.get("findings") or []),
-            sources_count=len(state.get("evidence_map") or {}),
+            sources_count=len(urls),
         )
     except Exception:
         pass

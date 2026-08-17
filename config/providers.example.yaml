@@ -8,12 +8,13 @@ providers:
     api_key_env: ""
     default: true
     models:
+      - nemotron-3-ultra-free
+      - hy3-free
+      - nemotron-3.5-lightning-free
       - laguna-s-2.1-free
       - mimo-v2.5-free
       - deepseek-v4-flash-free
       - big-pickle
-      - nemotron-3-ultra-free
-      - longcat-2.0-free
 
   # OpenAI-compatible: https://api.groq.com/openai/v1  (GROQ_API_KEY=gsk_...)
   groq:
@@ -64,24 +65,28 @@ providers:
 tiers:
   fast:
     - provider: opencode_free
-      model: laguna-s-2.1-free
+      model: nemotron-3-ultra-free
     - provider: opencode_free
-      model: mimo-v2.5-free
-    - provider: groq
-      model: openai/gpt-oss-20b
-    - provider: gemini
-      model: gemini-3.5-flash-lite
+      model: hy3-free
+    - provider: opencode_free
+      model: nemotron-3.5-lightning-free
+    - provider: opencode_free
+      model: laguna-s-2.1-free
 
   strong:
+    - provider: opencode_free
+      model: nemotron-3-ultra-free
+    - provider: opencode_free
+      model: hy3-free
     - provider: opencode_free
       model: deepseek-v4-flash-free
     - provider: opencode_free
       model: big-pickle
-    - provider: groq
-      model: openai/gpt-oss-120b
 
   thinker:
-    - provider: opencode_free
-      model: big-pickle
     - provider: gemini
       model: gemini-3.5-flash-lite
+    - provider: gemini
+      model: gemini-3.1-flash-lite
+    - provider: gemini
+      model: gemini-3.6-flash

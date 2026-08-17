@@ -202,7 +202,7 @@ def _ensure_fallback(cat: CatalogConfig) -> None:
         base_url="",  # empty → Zen
         api_key="",
         protocol="openai_chat",
-        models=["mimo-v2.5-free", "deepseek-v4-flash-free", "big-pickle"],
+        models=["nemotron-3-ultra-free", "hy3-free", "deepseek-v4-flash-free", "big-pickle"],
         is_default=True,
     )
     cat.providers["opencode_free"] = zen
@@ -211,11 +211,11 @@ def _ensure_fallback(cat: CatalogConfig) -> None:
     # The gateway's build_gateway_from_env adds its own routes.
     if "fast" not in cat.tiers:
         cat.tiers["fast"] = TierConfig(name="fast", routes=[
-            TierRoute(provider_name="opencode_free", model="mimo-v2.5-free", priority=1),
+            TierRoute(provider_name="opencode_free", model="nemotron-3-ultra-free", priority=1),
         ])
     if "strong" not in cat.tiers:
         cat.tiers["strong"] = TierConfig(name="strong", routes=[
-            TierRoute(provider_name="opencode_free", model="big-pickle", priority=1),
+            TierRoute(provider_name="opencode_free", model="nemotron-3-ultra-free", priority=1),
         ])
 
 

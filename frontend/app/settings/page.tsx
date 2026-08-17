@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [autonomy, setAutonomy] = useState('L1')
   const [maxCost, setMaxCost] = useState(5.0)
   const [maxIterations, setMaxIterations] = useState(3)
-  const [selectedModel, setSelectedModel] = useState('opencode_free/laguna-s-2.1-free')
+  const [selectedModel, setSelectedModel] = useState('opencode_free/nemotron-3-ultra-free')
   
   // New Provider Form State
   const [showAddProvider, setShowAddProvider] = useState(false)
@@ -34,7 +34,7 @@ export default function SettingsPage() {
         setProviders(data)
       } catch {
         setProviders([
-          { name: 'OpenCode Zen (Free)', base_url: 'https://opencode.ai/zen/v1', has_auth: false, models: ['mimo-v2.5-free', 'big-pickle'] },
+          { name: 'OpenCode Zen (Free)', base_url: 'https://opencode.ai/zen/v1', has_auth: false, models: ['nemotron-3-ultra-free', 'hy3-free', 'big-pickle'] },
           { name: 'Groq', base_url: 'https://api.groq.com/openai', has_auth: true, models: ['llama-3.3-70b-versatile'] },
         ])
       }

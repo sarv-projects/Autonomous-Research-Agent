@@ -124,8 +124,9 @@ class ResearchState(TypedDict):
 def initial_state(query: str, max_iterations: int = 6) -> ResearchState:
     import time
     import uuid
-    import src.nodes as n
-    n.MAX_ITERATIONS = max_iterations
+    # Iteration caps are enforced by the live graph / budgets; the legacy
+    # src/nodes.py path keeps its own MAX_ITERATIONS and is no longer mutated
+    # here (see src/graph.py for the active loop control).
     return {
         "query": query,
         "plan": {},
