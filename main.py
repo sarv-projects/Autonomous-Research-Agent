@@ -373,12 +373,12 @@ def main() -> None:
     if args[0] == "server":
         import os
         import uvicorn
-        port_raw = os.getenv("PORT", "8000")
+        port_raw = os.getenv("PORT", "8001")
         try:
             port = int(port_raw)
         except ValueError:
-            print(f"  Invalid PORT '{port_raw}' — defaulting to 8000")
-            port = 8000
+            print(f"  Invalid PORT '{port_raw}' — defaulting to 8001")
+            port = 8001
         print("Starting web API server...")
         print(f"API docs: http://localhost:{port}/docs")
         uvicorn.run(app, host="0.0.0.0", port=port)

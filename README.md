@@ -327,7 +327,7 @@ uv run python main.py doctor       # live provider health + tool readiness
 uv run python main.py --history    # past runs and report paths
 
 # Server & worker
-uv run python main.py server       # FastAPI on :8000 (docs at /docs)
+uv run python main.py server       # FastAPI on :8001 (docs at /docs)
 uv run python main.py worker       # Temporal durable worker (ultra-long mode)
 
 # Evaluation
@@ -338,21 +338,95 @@ uv run python main.py eval all
 
 ## Web UI & Dashboard
 
-### Full dev stack
+The frontend is a **Next.js 14** app (`frontend/`) wired to the FastAPI backend via rewrites. All `/api/*` requests are proxied to `localhost:8001` — no CORS config needed.
+
+### Launch the full dev stack
 
 ```bash
 bash scripts/start-dev.sh
-# API → http://localhost:8000   (Swagger at /docs)
-# UI  → http://localhost:3000   (Next.js 14, live streaming progress)
+# API → http://localhost:8001   (Swagger at /docs)
+# UI  → http://localhost:3000
 ```
+
+Or separately:
+
+```bash
+# Terminal 1 — Python backend
+uv run python main.py server
+
+# Terminal 2 — Next.js frontend
+cd frontend && npm run dev
+```
+
+> **Custom backend port:** set `BACKEND_URL=http://localhost:PORT` before starting Next.js.
+
+### Pages & features
+
+| Route | What it does |
+|---|---|
+| `/` | Main interface — Chat mode and Research mode in one view |
+| `/settings` | Engine & gateway configuration — model picker, mode defaults, budgets |
+| `/history` | Past research runs with links to generated reports |
+| `/vault` | Research Vault — on-topic past sources reused across sessions |
+
+### Main interface (`/`)
+
+**Chat mode** — streams responses token-by-token via SSE. Automatically escalates long or research-heavy queries to the full research pipeline.
+
+**Research mode** — dispatches a background job to the A4 pipeline and shows a live **ProgressBanner** while it runs:
+- Status line: current stage, elapsed seconds, findings count, sources count
+- **Next action** — what the agent is about to do
+- **Learned** — last 4 facts extracted from retrieved pages
+- **Gaps** — open questions the Critic identified for the next loop
+- **Thinking stream** — raw agent thought log (kind + text)
+
+**Mode & autonomy selectors** inline in the input bar:
+- Dropdown for all 8 modes (`quick` → `ultra-long`)
+- Dropdown for autonomy: `L1 auto` / `L2 plan review` / `L3 hard budget`
+- `Edit plan first` checkbox — triggers the plan editor at L1 too
+
+**Plan editor (L2 / "Edit plan first")** — when a plan is generated before research begins, an editable panel appears with:
+- Clarifying questions from the planner (with text input for answers)
+- Outline sections (one per line, editable textarea)
+- Search queries (one per line, editable textarea)
+- **Approve & research** sends the edited plan and starts the job
+
+**Approval banner** — for L3 workflow gates: polls `/api/approvals` every 10s and surfaces pending gates at the top of the screen with Approve / Reject buttons.
+
+### Settings page (`/settings`)
+
+- **Model picker** — expandable provider groups (OpenCode Zen free first), live probe buttons per provider, status (ok/fail/latency), model selection
+- **LLM providers** — registered provider catalog, + Add Provider form (name, endpoint, API key, model list)
+- **Research mode defaults** — default mode profile and autonomy level
+- **Budget controls** — max cost cap (USD) and max graph iterations
+- Save All Settings persists to the backend `/api/settings`
+
+### Tech stack (frontend)
+
+| Package | Role |
+|---|---|
+| Next.js 14 | Framework, routing, SSR |
+| React 18 | UI |
+| Tailwind CSS 3 | Styling |
+| `react-markdown` + `remark-gfm` | Markdown rendering with GFM tables, code blocks |
+| `remark-math` + `rehype-katex` | LaTeX / MathJax rendering in assistant messages |
+| `katex` | Math display engine |
+| `lucide-react` | Icons |
+| `clsx` + `tailwind-merge` | Conditional class utilities |
 
 ### Gateway ops dashboard
 
 ```bash
 uv run python -m src.dashboard --port 8080
+# http://localhost:8080
 ```
 
-Exposes real-time token spend, route health, circuit-breaker states, tool-cache stats, Prometheus metrics (`/metrics`), and SSE event stream (`/api/events`).
+| Endpoint | What it shows |
+|---|---|
+| `/` | Metrics UI — token spend, route health, circuit states |
+| `/api/status` | JSON — gateway status + tool-bus `search_cache` |
+| `/api/events` | SSE — live gateway events |
+| `/metrics` | Prometheus-format metrics |
 
 ---
 

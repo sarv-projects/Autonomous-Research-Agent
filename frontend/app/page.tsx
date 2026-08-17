@@ -519,7 +519,7 @@ export default function Home() {
                   </label>
                 </div>
               )}
-              <span>API: /api/*</span>
+              <span className="opacity-0 select-none text-[10px]">&#8203;</span>
             </div>
           </form>
         </div>

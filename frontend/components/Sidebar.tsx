@@ -14,7 +14,7 @@ export function Sidebar({ mode, onModeChange }: SidebarProps) {
     <div className="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col border-r border-gray-200 dark:border-gray-700">
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="w-6 h-6 text-blue-600" />
-        <h1 className="font-bold text-lg">Research Agent</h1>
+        <h1 className="font-bold text-lg">Providence</h1>
       </div>
 
       <div className="space-y-2 mb-6">

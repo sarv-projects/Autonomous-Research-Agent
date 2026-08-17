@@ -220,7 +220,9 @@ export default function SettingsPage() {
                 <option value="quick">Quick (fast summary)</option>
                 <option value="standard">Standard (balanced research)</option>
                 <option value="deep">Deep (multi-wave verification)</option>
-                <option value="academic">Academic (scholarly style)</option>
+                <option value="academic">Academic (arXiv-first, scholarly)</option>
+                <option value="recency">Recency (fast-moving topics)</option>
+                <option value="compare">Compare (A vs B matrix)</option>
                 <option value="ultra-long">Ultra-Long (Temporal 24h)</option>
               </select>
             </div>

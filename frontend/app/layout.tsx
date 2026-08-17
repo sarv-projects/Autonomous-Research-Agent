@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Providence — Deep Research Engine',
-  description: 'Multi-agent deep research with verified evidence, cited reports, and honest research debt',
+  description: 'Autonomous multi-agent deep research with verified citations, adversarial critique, and a strict compiler ship-gate. Zero API keys required.',
 }
 
 export default function RootLayout({
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   )
 }
