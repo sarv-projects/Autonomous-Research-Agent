@@ -174,6 +174,7 @@ class ResearchProgress:
                         ),
                         findings_count=self.findings_count,
                         sources_count=self.sources_count,
+                        pages_scanned=self.pages_scanned,
                         iterations=self.iteration,
                         report=self.report,
                         markdown_path=self.markdown_path,

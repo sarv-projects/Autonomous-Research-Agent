@@ -49,9 +49,14 @@ export function PlanEditor({ plan, onApprove, onCancel, busy }: PlanEditorProps)
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    setOutlineText(initialOutline.join('\n'))
-    setQueriesText(initialQueries.join('\n'))
-  }, [plan.plan_id])
+    const outline =
+      plan.outline?.map((o) => o.title || '') ||
+      plan.plan?.outline?.map((o) => o.title || '') ||
+      []
+    const queries = plan.search_queries || plan.plan?.search_queries || []
+    setOutlineText(outline.join('\n'))
+    setQueriesText(queries.join('\n'))
+  }, [plan])
 
   const questions = plan.clarifying_questions || []
 

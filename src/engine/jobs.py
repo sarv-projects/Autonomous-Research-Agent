@@ -29,6 +29,7 @@ class ResearchJob:
         self.markdown_path = ""
         self.findings_count = 0
         self.sources_count = 0
+        self.pages_scanned = 0
         self.iterations = 0
         self.stage = "queued"
 
@@ -55,6 +56,7 @@ class ResearchJob:
             "thoughts": self.thoughts[-30:],
             "findings_count": self.findings_count,
             "sources_count": self.sources_count,
+            "pages_scanned": self.pages_scanned,
             "iterations": self.iterations,
             "report": (self.report or "")[:50000],
             "markdown_path": self.markdown_path,

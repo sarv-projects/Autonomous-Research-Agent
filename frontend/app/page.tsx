@@ -61,10 +61,11 @@ export default function Home() {
 
   async function pollResearchJob(jobId: string, userText: string) {
     let finished = false
+    let jobError = ''
     for (let i = 0; i < 900 && !finished; i++) {
       await new Promise((r) => setTimeout(r, 1000))
+      let snap: ProgressSnapshot = {}
       try {
-        let snap: ProgressSnapshot
         if (jobId) {
           try {
             const job = await apiGet<ProgressSnapshot & { status?: string }>(
@@ -116,21 +117,15 @@ export default function Home() {
           offTopic: snap.off_topic,
           stage: snap.stage,
         })
-        finished = !!snap.finished
-        if (snap.error && finished) throw new Error(snap.error)
-      } catch (pollErr) {
-        if (
-          pollErr instanceof Error &&
-          pollErr.message &&
-          !pollErr.message.includes('Failed')
-        ) {
-          if (
-            pollErr.message.includes('aborted') ||
-            pollErr.message.includes('Ship gate')
-          ) {
-            throw pollErr
-          }
+        if (snap.error) {
+          // Job failed — capture the message and stop polling
+          jobError = snap.error
+          finished = true
+        } else {
+          finished = !!snap.finished
         }
+      } catch {
+        // Transient poll failure (backend restart etc.) — keep polling
       }
     }
 
@@ -140,6 +135,11 @@ export default function Home() {
     }
     if (!finalSnap.report) {
       finalSnap = await apiGet('/api/research/progress').catch(() => ({}))
+    }
+    // Surface real failures instead of a misleading "Research complete" message
+    const errorText = jobError || finalSnap.error
+    if (errorText) {
+      throw new Error(errorText)
     }
     let lastReport = finalSnap.report || ''
     if (!lastReport) {
